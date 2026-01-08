@@ -1,0 +1,2 @@
+# rpg-core
+ターン制RPGゲームを作る仕組みを提供するTypeScriptのライブラリ
