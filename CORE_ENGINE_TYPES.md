@@ -1067,10 +1067,11 @@ interface CraftConfig {
 /**
  * ダメージ計算式
  * - カスタムダメージ計算に使用
+ * - 攻撃者と対象の両方がキャラクターまたは敵の可能性があるためCombatantを使用
  */
 type DamageFormula = (
-  attacker: Character,
-  target: Character,
+  attacker: Combatant,
+  target: Combatant,
   skill: Skill,
   config: GameConfig
 ) => number;
@@ -1124,11 +1125,11 @@ interface CustomFormulas {
 
 ```typescript
 // 例: combat/damage.ts の実装
-import { Character, Skill, DamageResult, GameConfig } from './types';
+import { Combatant, Skill, DamageResult, GameConfig } from './types';
 
 function calculatePhysicalDamage(
-  attacker: Character,
-  target: Character,
+  attacker: Combatant,
+  target: Combatant,
   skill: Skill,
   config: GameConfig
 ): DamageResult {
