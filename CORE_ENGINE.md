@@ -309,12 +309,14 @@ Core Engineは関心事ごとに適度にモジュール化された構造を持
 CoreEngine/
 ├── combat/           # 戦闘関連の計算
 │   ├── damage.ts     # ダメージ計算
+│   ├── accuracy.ts   # 命中・クリティカル判定
 │   ├── turnOrder.ts  # 行動順計算
 │   └── victory.ts    # 勝敗判定
 ├── character/        # キャラクター関連
 │   ├── stats.ts      # ステータス計算
 │   ├── growth.ts     # 成長・レベルアップ
-│   └── job.ts        # ジョブ・クラス
+│   ├── job.ts        # ジョブ・クラス
+│   └── skill.ts      # スキル習得
 ├── item/             # アイテム関連
 │   ├── effects.ts    # アイテム効果
 │   ├── equipment.ts  # 装備判定
@@ -324,7 +326,8 @@ CoreEngine/
 │   └── duration.ts   # 持続時間管理
 ├── enemy/            # 敵関連
 │   ├── stats.ts      # 敵のステータス
-│   └── drops.ts      # ドロップ判定
+│   ├── drops.ts      # ドロップ判定
+│   └── ai.ts         # AI判断補助
 ├── craft/            # クラフト関連
 │   ├── synthesis.ts  # 合成計算
 │   └── enhance.ts    # 強化計算
@@ -345,7 +348,7 @@ CoreEngine/
 
 ```typescript
 // デフォルトのダメージ計算式
-type DamageFormula = (attacker: Character, target: Character, skill: Skill) => number;
+type DamageFormula = (attacker: Combatant, target: Combatant, skill: Skill) => number;
 
 // 計算式の例1: シンプルな引き算式
 const simpleDamageFormula: DamageFormula = (attacker, target, skill) => {
@@ -366,7 +369,7 @@ const complexDamageFormula: DamageFormula = (attacker, target, skill) => {
 class CoreEngine {
   constructor(private damageFormula: DamageFormula = simpleDamageFormula) {}
   
-  calculateDamage(attacker: Character, target: Character, skill: Skill): number {
+  calculateDamage(attacker: Combatant, target: Combatant, skill: Skill): number {
     const baseDamage = this.damageFormula(attacker, target, skill);
     const critical = this.checkCritical(attacker) ? 2.0 : 1.0;
     const elementBonus = this.getElementBonus(skill.element, target.resistance);
@@ -418,7 +421,7 @@ class CoreEngine {
     this.rules.push(rule);
   }
   
-  calculateDamage(attacker: Character, target: Character, skill: Skill): number {
+  calculateDamage(attacker: Combatant, target: Combatant, skill: Skill): number {
     const context = new CombatContext(attacker, target, skill);
     
     // すべてのルールを適用

@@ -45,8 +45,8 @@ CoreEngine/
 **calculatePhysicalDamage**
 ```typescript
 function calculatePhysicalDamage(
-  attacker: Character,
-  target: Character,
+  attacker: Combatant,
+  target: Combatant,
   skill: Skill,
   config: GameConfig
 ): DamageResult {
@@ -62,8 +62,8 @@ function calculatePhysicalDamage(
 **calculateMagicDamage**
 ```typescript
 function calculateMagicDamage(
-  attacker: Character,
-  target: Character,
+  attacker: Combatant,
+  target: Combatant,
   skill: Skill,
   config: GameConfig
 ): DamageResult {
@@ -77,8 +77,8 @@ function calculateMagicDamage(
 **calculateHealAmount**
 ```typescript
 function calculateHealAmount(
-  caster: Character,
-  target: Character,
+  caster: Combatant,
+  target: Combatant,
   skill: Skill,
   config: GameConfig
 ): number {
@@ -106,8 +106,8 @@ function calculateElementalModifier(
 **calculateHitRate**
 ```typescript
 function calculateHitRate(
-  attacker: Character,
-  target: Character,
+  attacker: Combatant,
+  target: Combatant,
   skill: Skill
 ): number {
   // 命中率の計算
@@ -129,7 +129,7 @@ function checkHit(hitRate: number): boolean {
 **calculateCriticalRate**
 ```typescript
 function calculateCriticalRate(
-  attacker: Character,
+  attacker: Combatant,
   skill: Skill,
   config: GameConfig
 ): number {
