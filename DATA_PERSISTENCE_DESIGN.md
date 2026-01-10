@@ -6,13 +6,23 @@ rpg-coreライブラリにおけるデータ永続化の包括的な設計ドキ
 
 このドキュメントでは、ゲーム状態の保存・読み込みに関する詳細な設計を定義します。
 
+### 推奨アプローチ: ハイブリッド永続化
+
+**このドキュメントでは、ID参照とフルデータ保存を組み合わせたハイブリッド方式を推奨しています。**
+
+- **マスターデータ（装備、アイテム、スキル、敵）**: ID参照で保存 → バランス調整が自動反映
+- **プレイヤー固有データ（ステータス、カスタム装備、進行）**: フルデータ保存 → プレイヤーの進行を完全保持
+
+この方式により、ゲームバランスの調整とプレイヤー体験の保護を両立します。
+
 ### 設計原則
 
-1. **ストレージ非依存**: LocalStorage、IndexedDB、サーバーなど、任意のストレージに対応
-2. **バージョン管理**: データフォーマットの変更に対応可能なバージョニング
-3. **部分保存対応**: 全体保存と差分保存の両方をサポート
-4. **検証機能**: 破損データの検出と復旧
-5. **暗号化対応**: セーブデータの改ざん防止（オプション）
+1. **ハイブリッド永続化**: マスターデータはID参照、プレイヤーデータはフルデータ
+2. **ストレージ非依存**: LocalStorage、IndexedDB、サーバーなど、任意のストレージに対応
+3. **バージョン管理**: データフォーマットの変更に対応可能なバージョニング
+4. **部分保存対応**: 全体保存と差分保存の両方をサポート
+5. **検証機能**: 破損データの検出と復旧
+6. **暗号化対応**: セーブデータの改ざん防止（オプション）
 
 ---
 
@@ -29,9 +39,14 @@ rpg-coreライブラリにおけるデータ永続化の包括的な設計ドキ
 ┌────────────▼────────────────────────┐
 │ PersistenceManager                   │ ← 永続化ロジック
 │ (シリアライズ、バージョニング)        │
-└────────────┬────────────────────────┘
-             │
-┌────────────▼────────────────────────┐
+└───┬────────┴────────────┬───────────┘
+    │                     │
+    │     ┌───────────────▼───────────┐
+    │     │ MasterDataManager         │ ← マスターデータ管理
+    │     │ (ID→オブジェクト変換)      │
+    │     └───────────────────────────┘
+    │
+┌───▼─────────────────────────────────┐
 │ StorageAdapter (Interface)           │ ← ストレージ抽象化
 │ (LocalStorage, IndexedDB, Cloud...)  │
 └─────────────────────────────────────┘
@@ -43,6 +58,7 @@ rpg-coreライブラリにおけるデータ永続化の包括的な設計ドキ
 |--------------|------|
 | **SaveLoadService** | セーブ/ロードのフロー管理、UIとの連携 |
 | **PersistenceManager** | シリアライズ/デシリアライズ、バージョン管理、検証 |
+| **MasterDataManager** | ID→オブジェクト変換、マスターデータ提供、削除IDの処理 |
 | **StorageAdapter** | 実際のストレージへの読み書き（実装者が選択） |
 | **Core Engine** | データ構造の定義、シリアライズルール |
 
@@ -541,11 +557,17 @@ class SaveDataSanitizer {
 
 ## データスキーマ
 
-### GameState 構造
+### GameState 構造（ハイブリッドアプローチ）
+
+**推奨**: マスターデータはID参照、プレイヤー固有データはフルデータ保存
 
 ```typescript
 /**
- * 永続化するゲーム状態の完全な定義
+ * 永続化するゲーム状態の完全な定義（ハイブリッド方式）
+ * 
+ * 設計方針:
+ * - マスターデータ由来（装備、アイテム、スキル、敵）: ID参照
+ * - プレイヤー固有データ（ステータス、進行、カスタム装備）: フルデータ
  */
 interface GameState {
   // メタデータ
@@ -554,34 +576,94 @@ interface GameState {
   playTime: number;             // プレイ時間（秒）
   gameVersion: string;          // ゲームバージョン
   
-  // プレイヤーデータ
+  // プレイヤーデータ（フルデータ）
   player: {
     name: string;
     playerId: string;
     flags: Record<string, boolean>;  // ストーリーフラグなど
   };
   
-  // パーティ
+  // パーティ（ハイブリッド）
   party: {
-    members: Character[];        // パーティメンバー
+    members: Array<{
+      // 基本情報: ID参照でマスターデータから取得
+      characterId: string;           // キャラクターマスターID
+      
+      // 成長データ: フルデータ（プレイヤー固有）
+      level: number;
+      exp: number;
+      hp: number;
+      mp: number;
+      stats: Stats;                  // 成長後のステータス
+      
+      // 装備: ID参照でマスターデータから取得
+      equippedIds: {
+        weapon: string | null;       // 装備マスターID
+        armor: string | null;
+        accessory: string | null;
+      };
+      
+      // 強化済み装備: フルデータ（カスタマイズ値）
+      customEquipment?: Equipment[]; // +5の剣 など
+      
+      // 習得スキル: ID参照
+      learnedSkillIds: string[];
+    }>;
+    
     formation: number;           // 隊形
-    inventory: Inventory;        // 所持アイテム
-    money: number;              // 所持金
+    
+    // インベントリ（ハイブリッド）
+    inventory: {
+      // 通常アイテム: ID参照 + 個数
+      items: Array<{
+        itemId: string;          // アイテムマスターID
+        quantity: number;
+      }>;
+      
+      // カスタムアイテム: フルデータ
+      customItems?: Item[];      // ランダム生成アイテムなど
+    };
+    
+    money: number;              // 所持金（フルデータ）
   };
   
-  // 進行状況
+  // 進行状況（フルデータ）
   progress: {
     currentMap: string;          // 現在のマップID
     currentPosition: Position;   // プレイヤー座標
-    clearedQuests: string[];     // クリア済みクエスト
-    unlockedAreas: string[];     // 解放済みエリア
+    clearedQuests: string[];     // クリア済みクエストID（ID参照）
+    unlockedAreas: string[];     // 解放済みエリアID（ID参照）
     storyFlags: Record<string, any>;  // ストーリー進行フラグ
   };
   
-  // 戦闘状態（戦闘中の場合）
-  battle?: BattleState;
+  // 戦闘状態（ハイブリッド - 戦闘中の場合のみ）
+  battle?: {
+    phase: BattlePhase;
+    turnNumber: number;
+    
+    // パーティメンバー: ID参照（party.membersを参照）
+    playerPartyIds: string[];
+    
+    // 敵: ID参照 + 現在値
+    enemies: Array<{
+      enemyId: string;           // 敵マスターID
+      hp: number;                // 現在HP（フルデータ）
+      mp: number;
+      statusEffectIds: string[]; // 状態異常マスターID（ID参照）
+    }>;
+    
+    actionHistory: BattleAction[];   // 行動履歴（フルデータ）
+  };
   
-  // カスタムデータ（ゲーム固有）
+  // Service状態（中断再開用 - フルデータ）
+  serviceStates?: {
+    battleService?: BattleServiceState;
+    commandService?: CommandServiceState;
+    statusEffectService?: StatusEffectServiceState;
+    // 他のServiceの状態...
+  };
+  
+  // カスタムデータ（ゲーム固有 - フルデータ）
   custom?: Record<string, any>;
 }
 
