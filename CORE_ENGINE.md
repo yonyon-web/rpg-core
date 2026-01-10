@@ -357,7 +357,7 @@ const simpleDamageFormula: DamageFormula = (attacker, target, skill) => {
 // 計算式の例2: 複雑な乗算式（ファイナルファンタジー風）
 const complexDamageFormula: DamageFormula = (attacker, target, skill) => {
   const attack = attacker.stats.attack;
-  const defense = target.stats.defense;
+  const defense = Math.max(1, target.stats.defense); // 0除算防止
   const power = skill.power;
   return Math.floor((attack * attack) / defense * power / 16);
 };
@@ -402,7 +402,8 @@ class ComboAttackRule implements CombatRule {
   name = "combo-attack";
   
   apply(context: CombatContext): void {
-    if (context.attacker.hasStatus("combo-ready")) {
+    // コンボ状態をチェックしてダメージを増幅
+    if (context.attacker?.hasStatus?.("combo-ready")) {
       context.damageMultiplier *= 1.5;
       context.addEffect("combo-hit");
     }
@@ -491,13 +492,16 @@ class CoreEngine {
   constructor(private params: GameParameters = defaultParameters) {}
   
   calculateExpRequired(level: number): number {
+    const clampedLevel = Math.min(level, this.params.levelCapacity);
+    
     if (this.params.expCurve === "linear") {
-      return this.params.baseExpRequired * level;
+      return this.params.baseExpRequired * clampedLevel;
     } else if (this.params.expCurve === "exponential") {
-      return Math.floor(this.params.baseExpRequired * Math.pow(level, this.params.expGrowthRate));
+      const exp = this.params.baseExpRequired * Math.pow(clampedLevel, this.params.expGrowthRate);
+      return Math.floor(Math.min(exp, Number.MAX_SAFE_INTEGER / 2));
     }
-    // custom curve implementation
-    return 0;
+    // custom curve implementation - デフォルトとして指数曲線を使用
+    return this.calculateExpRequired(level);
   }
   
   checkCritical(attacker: Character): boolean {
