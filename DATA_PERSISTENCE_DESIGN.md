@@ -48,6 +48,497 @@ rpg-coreライブラリにおけるデータ永続化の包括的な設計ドキ
 
 ---
 
+## 永続化戦略の比較: フルデータ vs ID参照
+
+### 2つのアプローチ
+
+ゲームデータの永続化には、大きく分けて2つのアプローチがあります。
+
+#### アプローチ1: フルデータ保存（現在の設計）
+
+オブジェクトの全データを保存する方式
+
+```typescript
+// 装備データをすべて保存
+{
+  equipment: {
+    weapon: {
+      id: "sword_001",
+      name: "鉄の剣",
+      attack: 10,
+      durability: 100,
+      rarity: "common",
+      effects: [...]
+    }
+  }
+}
+```
+
+#### アプローチ2: ID参照保存
+
+IDのみを保存し、マスターデータから復元する方式
+
+```typescript
+// IDのみを保存
+{
+  equipment: {
+    weaponId: "sword_001"
+  }
+}
+
+// ロード時にマスターデータから復元
+const weapon = masterData.weapons.find(w => w.id === "sword_001");
+```
+
+---
+
+### 比較表
+
+| 観点 | フルデータ保存 | ID参照保存 |
+|------|--------------|-----------|
+| **実装の簡単さ** | ◎ 簡単<br>・オブジェクトをそのままシリアライズ<br>・ロード時も単純なデシリアライズ | △ 複雑<br>・ID管理が必要<br>・マスターデータとの照合ロジックが必要<br>・欠落IDの処理が必要 |
+| **マイグレーション** | △ 頻繁に必要<br>・装備パラメータ変更時<br>・新フィールド追加時<br>・データ構造変更時<br>→ すべてのセーブデータを変換 | ◎ ほぼ不要<br>・マスターデータの更新で対応<br>・セーブデータは変更不要<br>→ バージョン管理が容易 |
+| **バランス調整** | × 反映されない<br>・古いセーブには旧パラメータ<br>・調整後も変わらない<br>→ ゲームバランスが崩れる | ◎ 即座に反映<br>・マスターデータ更新で全セーブに適用<br>・バランス調整が容易<br>→ 常に最新バランス |
+| **データサイズ** | △ 大きい<br>・全フィールドを保存<br>・同じ装備でも重複保存<br>・セーブ数×データ量 | ◎ 小さい<br>・IDのみ保存（数バイト）<br>・重複がない<br>・高速な保存/読み込み |
+| **カスタマイズ対応** | ◎ 完全対応<br>・強化装備（+5剣など）<br>・プレイヤー固有のアイテム<br>・ランダム生成装備<br>→ すべて保存可能 | △ 制限あり<br>・標準装備はOK<br>・カスタム装備は別途保存必要<br>→ ハイブリッド実装が必要 |
+| **データ整合性** | ◎ 保証される<br>・セーブ時点のデータが保持<br>・外部依存なし | △ マスターデータ依存<br>・マスターから削除されたIDの処理<br>・IDの不一致リスク |
+| **ロード時間** | ◎ 高速<br>・デシリアライズのみ<br>・追加処理不要 | △ やや遅い<br>・IDからオブジェクト再構築<br>・マスターデータ検索が必要 |
+| **デバッグ** | ◎ 容易<br>・セーブデータ見れば全情報<br>・問題の特定が簡単 | △ 困難<br>・IDだけでは内容不明<br>・マスターデータと照合必要 |
+
+---
+
+### 推奨: ハイブリッドアプローチ
+
+**両方の長所を組み合わせたハイブリッド方式を推奨します。**
+
+#### 設計方針
+
+| データ種別 | 保存方式 | 理由 |
+|----------|---------|------|
+| **マスターデータ由来** | **ID参照** | |
+| ・装備（通常） | ID参照 | バランス調整を反映したい |
+| ・アイテム（通常） | ID参照 | 効果の変更を反映したい |
+| ・スキル | ID参照 | 威力・コストの調整を反映 |
+| ・敵 | ID参照 | ステータス調整を反映 |
+| **プレイヤー固有データ** | **フルデータ** | |
+| ・キャラクターステータス | フルデータ | 成長は個別管理 |
+| ・強化済み装備 | フルデータ | カスタマイズ値を保持 |
+| ・進行状況・フラグ | フルデータ | プレイヤー固有 |
+| ・カスタムアイテム | フルデータ | ゲーム固有のランダム生成等 |
+
+#### 実装例
+
+```typescript
+/**
+ * ハイブリッド型GameState
+ */
+interface HybridGameState {
+  version: string;
+  saveDate: number;
+  playTime: number;
+  
+  // プレイヤー（フルデータ）
+  player: {
+    name: string;
+    playerId: string;
+    flags: Record<string, boolean>;
+  };
+  
+  // パーティ（ハイブリッド）
+  party: {
+    members: {
+      // 基本情報はID参照
+      characterId: string;           // マスターデータのキャラID
+      
+      // 成長データはフルデータ
+      level: number;
+      exp: number;
+      hp: number;
+      mp: number;
+      stats: Stats;                  // 成長後のステータス
+      
+      // 装備はID参照
+      equippedIds: {
+        weapon: string | null;       // 装備ID
+        armor: string | null;
+        accessory: string | null;
+      };
+      
+      // 強化済み装備はフルデータ
+      customEquipment?: Equipment[]; // +5の剣 など
+      
+      // 習得スキルはID参照
+      learnedSkillIds: string[];
+    }[];
+    
+    // インベントリ（ハイブリッド）
+    inventory: {
+      // 通常アイテムはID+個数
+      items: Array<{
+        itemId: string;              // アイテムID
+        quantity: number;
+      }>;
+      // カスタムアイテムはフルデータ
+      customItems?: Item[];          // ランダム生成アイテムなど
+    };
+    
+    money: number;                   // フルデータ
+  };
+  
+  // 進行状況（フルデータ）
+  progress: {
+    currentMap: string;
+    currentPosition: Position;
+    clearedQuests: string[];         // クエストIDのリスト
+    unlockedAreas: string[];         // エリアIDのリスト
+    storyFlags: Record<string, any>;
+  };
+  
+  // 戦闘状態（ハイブリッド）
+  battle?: {
+    phase: BattlePhase;
+    turnNumber: number;
+    
+    // パーティはID参照（上記のpartyから参照）
+    playerPartyIds: string[];
+    
+    // 敵はID参照
+    enemies: Array<{
+      enemyId: string;               // 敵マスターID
+      hp: number;                    // 現在HP（フルデータ）
+      mp: number;
+      statusEffectIds: string[];     // 状態異常ID
+    }>;
+    
+    actionHistory: BattleAction[];   // フルデータ
+  };
+}
+
+/**
+ * マスターデータマネージャー
+ */
+class MasterDataManager {
+  private items: Map<string, Item>;
+  private equipment: Map<string, Equipment>;
+  private skills: Map<string, Skill>;
+  private enemies: Map<string, Enemy>;
+  
+  /**
+   * IDから装備を取得
+   */
+  getEquipment(id: string): Equipment | null {
+    const equipment = this.equipment.get(id);
+    if (!equipment) {
+      console.warn(`Equipment not found: ${id}`);
+      // 削除された装備の場合、デフォルト値を返す
+      return this.getDefaultEquipment();
+    }
+    return equipment;
+  }
+  
+  /**
+   * IDからアイテムを取得
+   */
+  getItem(id: string): Item | null {
+    return this.items.get(id) || null;
+  }
+  
+  /**
+   * IDからスキルを取得
+   */
+  getSkill(id: string): Skill | null {
+    return this.skills.get(id) || null;
+  }
+  
+  /**
+   * IDから敵を取得
+   */
+  getEnemy(id: string): Enemy | null {
+    return this.enemies.get(id) || null;
+  }
+  
+  private getDefaultEquipment(): Equipment {
+    // 装備が見つからない場合のデフォルト
+    return {
+      id: 'default_weapon',
+      name: '素手',
+      type: 'weapon',
+      attack: 1,
+      defense: 0
+    };
+  }
+}
+
+/**
+ * ハイブリッド保存のロード処理
+ */
+class HybridSaveLoader {
+  constructor(private masterData: MasterDataManager) {}
+  
+  /**
+   * 保存されたIDから完全なGameStateを復元
+   */
+  restoreGameState(saved: HybridGameState): GameState {
+    return {
+      ...saved,
+      party: {
+        members: saved.party.members.map(member => ({
+          // ID参照データを復元
+          ...this.masterData.getCharacter(member.characterId),
+          
+          // 成長データを上書き
+          level: member.level,
+          exp: member.exp,
+          hp: member.hp,
+          mp: member.mp,
+          stats: member.stats,
+          
+          // 装備を復元
+          equipment: {
+            weapon: member.equippedIds.weapon 
+              ? this.masterData.getEquipment(member.equippedIds.weapon)
+              : null,
+            armor: member.equippedIds.armor
+              ? this.masterData.getEquipment(member.equippedIds.armor)
+              : null,
+            accessory: member.equippedIds.accessory
+              ? this.masterData.getEquipment(member.equippedIds.accessory)
+              : null
+          },
+          
+          // カスタム装備はそのまま
+          customEquipment: member.customEquipment || [],
+          
+          // スキルを復元
+          skills: member.learnedSkillIds
+            .map(id => this.masterData.getSkill(id))
+            .filter(skill => skill !== null) as Skill[]
+        })),
+        
+        inventory: {
+          items: saved.party.inventory.items
+            .map(({ itemId, quantity }) => ({
+              item: this.masterData.getItem(itemId),
+              quantity
+            }))
+            .filter(({ item }) => item !== null) as InventoryItem[],
+          
+          customItems: saved.party.inventory.customItems || []
+        },
+        
+        money: saved.party.money
+      },
+      
+      // その他のデータはそのまま
+      progress: saved.progress,
+      battle: saved.battle ? this.restoreBattleState(saved.battle) : undefined
+    };
+  }
+  
+  private restoreBattleState(saved: HybridGameState['battle']): BattleState {
+    // 戦闘状態も同様にID参照を復元
+    // ...
+  }
+}
+```
+
+---
+
+### ハイブリッドアプローチのメリット
+
+#### 1. バランス調整の即座反映
+
+```typescript
+// マスターデータ更新
+masterData.equipment.set('sword_001', {
+  id: 'sword_001',
+  name: '鉄の剣',
+  attack: 15,  // 10 → 15 に強化
+  // ...
+});
+
+// すべての既存セーブに自動適用
+// マイグレーション不要！
+```
+
+#### 2. データサイズの削減
+
+```typescript
+// フルデータ保存: 約500バイト/装備
+{
+  weapon: { id, name, attack, defense, durability, rarity, effects, ... }
+}
+
+// ID参照保存: 約10バイト/装備
+{
+  weaponId: "sword_001"
+}
+
+// 削減率: 約98%
+```
+
+#### 3. カスタマイズの柔軟性
+
+```typescript
+// 通常装備: ID参照（バランス調整が反映される）
+{
+  equippedIds: {
+    weapon: "sword_001"
+  }
+}
+
+// 強化装備: フルデータ（プレイヤー固有の値を保持）
+{
+  customEquipment: [{
+    baseId: "sword_001",
+    name: "鉄の剣+5",
+    attack: 20,  // 基本値15 + 強化+5
+    enhancement: {
+      level: 5,
+      bonusAttack: 5
+    }
+  }]
+}
+```
+
+#### 4. マイグレーション負担の軽減
+
+```typescript
+// マスターデータ変更は自動反映
+// → マイグレーション不要
+
+// プレイヤー固有データの構造変更のみマイグレーション
+migrationManager.registerMigration('1.0.0', '1.1.0', (state) => {
+  // プレイヤーデータのみ変換
+  return {
+    ...state,
+    player: {
+      ...state.player,
+      newField: defaultValue  // 新フィールド追加
+    }
+  };
+  // 装備・アイテムはID参照なので変換不要！
+});
+```
+
+---
+
+### マスターデータ削除時の処理
+
+ID参照方式では、マスターデータから削除されたIDの処理が重要です。
+
+```typescript
+class MasterDataManager {
+  getEquipment(id: string): Equipment {
+    const equipment = this.equipment.get(id);
+    
+    if (!equipment) {
+      // オプション1: デフォルト装備を返す
+      console.warn(`Equipment ${id} not found, using default`);
+      return this.getDefaultEquipment();
+      
+      // オプション2: null を返し、呼び出し側で処理
+      // return null;
+      
+      // オプション3: エラーをスロー
+      // throw new Error(`Equipment ${id} not found`);
+    }
+    
+    return equipment;
+  }
+  
+  /**
+   * 削除予定のIDを別のIDに置き換える
+   */
+  getEquipmentWithFallback(id: string, fallbackId?: string): Equipment {
+    const equipment = this.equipment.get(id);
+    
+    if (!equipment && fallbackId) {
+      console.warn(`Equipment ${id} not found, using fallback ${fallbackId}`);
+      return this.getEquipment(fallbackId);
+    }
+    
+    return equipment || this.getDefaultEquipment();
+  }
+}
+
+// セーブデータのサニタイズ
+class SaveDataSanitizer {
+  /**
+   * 削除されたIDを修正
+   */
+  sanitize(gameState: HybridGameState): HybridGameState {
+    return {
+      ...gameState,
+      party: {
+        ...gameState.party,
+        members: gameState.party.members.map(member => ({
+          ...member,
+          equippedIds: {
+            weapon: this.validateId('equipment', member.equippedIds.weapon),
+            armor: this.validateId('equipment', member.equippedIds.armor),
+            accessory: this.validateId('equipment', member.equippedIds.accessory)
+          },
+          learnedSkillIds: member.learnedSkillIds.filter(id => 
+            this.validateId('skill', id) !== null
+          )
+        }))
+      }
+    };
+  }
+  
+  private validateId(type: 'equipment' | 'skill', id: string | null): string | null {
+    if (!id) return null;
+    
+    // IDの存在確認
+    const exists = this.masterData.exists(type, id);
+    if (!exists) {
+      console.warn(`${type} ${id} no longer exists`);
+      return null;  // 装備解除
+    }
+    
+    return id;
+  }
+}
+```
+
+---
+
+### 実装推奨事項
+
+1. **マスターデータはバージョン管理**
+   ```typescript
+   interface MasterDataVersion {
+     version: string;
+     items: Item[];
+     equipment: Equipment[];
+     skills: Skill[];
+   }
+   ```
+
+2. **削除予定のIDは段階的に削除**
+   ```typescript
+   // Phase 1: 非推奨マーク（1ヶ月）
+   { id: 'old_sword', deprecated: true }
+   
+   // Phase 2: 代替IDを提供（1ヶ月）
+   { id: 'old_sword', deprecated: true, replacementId: 'new_sword' }
+   
+   // Phase 3: 削除
+   // ロード時に replacementId で自動置換
+   ```
+
+3. **ロード時のサニタイズを必須化**
+   ```typescript
+   async load(slot: number): Promise<GameState> {
+     const saved = await this.loadRaw(slot);
+     const sanitized = this.sanitizer.sanitize(saved);
+     return this.hybridLoader.restoreGameState(sanitized);
+   }
+   ```
+
+---
+
 ## データスキーマ
 
 ### GameState 構造
