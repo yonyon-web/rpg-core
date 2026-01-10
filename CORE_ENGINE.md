@@ -301,13 +301,250 @@ interface CoreEngine {
 }
 ```
 
+### モジュール構成
+
+Core Engineは関心事ごとに適度にモジュール化された構造を持ちます：
+
+```text
+CoreEngine/
+├── combat/           # 戦闘関連の計算
+│   ├── damage.ts     # ダメージ計算
+│   ├── turnOrder.ts  # 行動順計算
+│   └── victory.ts    # 勝敗判定
+├── character/        # キャラクター関連
+│   ├── stats.ts      # ステータス計算
+│   ├── growth.ts     # 成長・レベルアップ
+│   └── job.ts        # ジョブ・クラス
+├── item/             # アイテム関連
+│   ├── effects.ts    # アイテム効果
+│   ├── equipment.ts  # 装備判定
+│   └── inventory.ts  # インベントリ管理
+├── status/           # 状態異常・バフ関連
+│   ├── effects.ts    # 状態異常の計算
+│   └── duration.ts   # 持続時間管理
+├── enemy/            # 敵関連
+│   ├── stats.ts      # 敵のステータス
+│   └── drops.ts      # ドロップ判定
+├── craft/            # クラフト関連
+│   ├── synthesis.ts  # 合成計算
+│   └── enhance.ts    # 強化計算
+└── config/           # 設定とカスタマイズ
+    ├── formulas.ts   # 計算式の定義
+    └── parameters.ts # パラメータ設定
+```
+
+各モジュールは独立してテスト・保守が可能で、関心事が明確に分離されています。
+
 ### 拡張性
 
 ゲーム固有のルールに対応するため、Core Engineは以下のような拡張ポイントを提供します：
 
-- **計算式のカスタマイズ**: ダメージ計算式を変更可能
-- **ルールの追加**: 新しい判定ロジックを追加可能
-- **パラメータの調整**: 成長率、倍率などを調整可能
+#### 1. 計算式のカスタマイズ
+
+**実装方法**: Strategy パターンまたは関数注入による計算式の差し替え
+
+```typescript
+// デフォルトのダメージ計算式
+type DamageFormula = (attacker: Character, target: Character, skill: Skill) => number;
+
+// 計算式の例1: シンプルな引き算式
+const simpleDamageFormula: DamageFormula = (attacker, target, skill) => {
+  const attack = attacker.stats.attack * skill.power;
+  const defense = target.stats.defense;
+  return Math.max(1, attack - defense);
+};
+
+// 計算式の例2: 複雑な乗算式（ファイナルファンタジー風）
+const complexDamageFormula: DamageFormula = (attacker, target, skill) => {
+  const attack = attacker.stats.attack;
+  const defense = target.stats.defense;
+  const power = skill.power;
+  return Math.floor((attack * attack) / defense * power / 16);
+};
+
+// Core Engineに計算式を注入
+class CoreEngine {
+  constructor(private damageFormula: DamageFormula = simpleDamageFormula) {}
+  
+  calculateDamage(attacker: Character, target: Character, skill: Skill): number {
+    const baseDamage = this.damageFormula(attacker, target, skill);
+    const critical = this.checkCritical(attacker) ? 2.0 : 1.0;
+    const elementBonus = this.getElementBonus(skill.element, target.resistance);
+    return Math.floor(baseDamage * critical * elementBonus);
+  }
+}
+```
+
+**カスタマイズ例**:
+```typescript
+// ゲーム独自の計算式を使用
+const myCustomFormula: DamageFormula = (attacker, target, skill) => {
+  // 独自のロジック
+  return attacker.level * skill.power - target.defense / 2;
+};
+
+const engine = new CoreEngine(myCustomFormula);
+```
+
+#### 2. ルールの追加
+
+**実装方法**: プラグインシステムまたは拡張インターフェース
+
+```typescript
+// 基本インターフェース
+interface CombatRule {
+  name: string;
+  apply(context: CombatContext): void;
+}
+
+// カスタムルールの例: 連撃システム
+class ComboAttackRule implements CombatRule {
+  name = "combo-attack";
+  
+  apply(context: CombatContext): void {
+    if (context.attacker.hasStatus("combo-ready")) {
+      context.damageMultiplier *= 1.5;
+      context.addEffect("combo-hit");
+    }
+  }
+}
+
+// ルールを登録
+class CoreEngine {
+  private rules: CombatRule[] = [];
+  
+  addRule(rule: CombatRule): void {
+    this.rules.push(rule);
+  }
+  
+  calculateDamage(attacker: Character, target: Character, skill: Skill): number {
+    const context = new CombatContext(attacker, target, skill);
+    
+    // すべてのルールを適用
+    for (const rule of this.rules) {
+      rule.apply(context);
+    }
+    
+    return context.getFinalDamage();
+  }
+}
+```
+
+**カスタマイズ例**:
+```typescript
+const engine = new CoreEngine();
+engine.addRule(new ComboAttackRule());
+engine.addRule(new WeatherEffectRule());
+engine.addRule(new TeamworkBonusRule());
+```
+
+#### 3. パラメータの調整
+
+**実装方法**: 設定オブジェクトによるパラメータの外部化
+
+```typescript
+// パラメータの定義
+interface GameParameters {
+  // 成長関連
+  expCurve: "linear" | "exponential" | "custom";
+  baseExpRequired: number;
+  expGrowthRate: number;
+  statGrowthRates: {
+    hp: number;
+    mp: number;
+    attack: number;
+    defense: number;
+  };
+  
+  // 戦闘関連
+  criticalRate: number;
+  criticalMultiplier: number;
+  damageVariance: number;  // ダメージのランダム幅
+  
+  // バランス調整
+  levelCapacity: number;
+  maxPartySize: number;
+  dropRateModifier: number;
+}
+
+// デフォルト値
+const defaultParameters: GameParameters = {
+  expCurve: "exponential",
+  baseExpRequired: 100,
+  expGrowthRate: 1.2,
+  statGrowthRates: {
+    hp: 10,
+    mp: 5,
+    attack: 3,
+    defense: 2,
+  },
+  criticalRate: 0.05,
+  criticalMultiplier: 2.0,
+  damageVariance: 0.1,
+  levelCapacity: 99,
+  maxPartySize: 4,
+  dropRateModifier: 1.0,
+};
+
+// Core Engineでパラメータを使用
+class CoreEngine {
+  constructor(private params: GameParameters = defaultParameters) {}
+  
+  calculateExpRequired(level: number): number {
+    if (this.params.expCurve === "linear") {
+      return this.params.baseExpRequired * level;
+    } else if (this.params.expCurve === "exponential") {
+      return Math.floor(this.params.baseExpRequired * Math.pow(level, this.params.expGrowthRate));
+    }
+    // custom curve implementation
+    return 0;
+  }
+  
+  checkCritical(attacker: Character): boolean {
+    const rate = this.params.criticalRate + attacker.stats.luck * 0.001;
+    return Math.random() < rate;
+  }
+  
+  getCriticalMultiplier(): number {
+    return this.params.criticalMultiplier;
+  }
+}
+```
+
+**カスタマイズ例**:
+```typescript
+// ゲームバランスに合わせてパラメータを調整
+const hardcoreParams: GameParameters = {
+  ...defaultParameters,
+  expGrowthRate: 1.5,  // レベルアップが難しい
+  criticalRate: 0.02,   // クリティカルが出にくい
+  dropRateModifier: 0.5, // ドロップ率が低い
+};
+
+const engine = new CoreEngine(hardcoreParams);
+```
+
+#### 4. 完全なカスタマイズ例
+
+すべての拡張ポイントを組み合わせた例：
+
+```typescript
+// カスタム設定でCore Engineを初期化
+const customEngine = new CoreEngine(customDamageFormula);
+
+// パラメータを設定
+customEngine.setParameters(myGameParameters);
+
+// カスタムルールを追加
+customEngine.addRule(new WeaknessSystemRule());
+customEngine.addRule(new CounterAttackRule());
+customEngine.addRule(new LimitBreakRule());
+
+// 使用
+const damage = customEngine.calculateDamage(player, enemy, skill);
+```
+
+この設計により、Core Engineのコアロジックを変更せずに、ゲーム固有の要件に柔軟に対応できます。
 
 ### テスト容易性
 
