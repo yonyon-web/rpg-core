@@ -773,20 +773,58 @@ const customEquipmentConfig: EquipmentSlotConfig = {
 - プリセット構成を提供（シンプル、標準、複雑など）
 - スロットごとの制約条件をサポート
 - UIコントローラーは設定されたスロット構成を使用
+- **Core Engineでデフォルト構成を定義し、全体で共有**
+
+**デフォルト装備スロット構成**:
+```typescript
+/**
+ * Core Engineが提供するデフォルト装備スロット構成
+ * ゲーム設定で上書きされない場合に使用される
+ */
+const DEFAULT_EQUIPMENT_SLOTS: EquipmentType[] = ['weapon', 'armor', 'accessory'];
+
+/**
+ * Core Engineの設定
+ */
+interface CoreEngineConfig {
+  // ... 他の設定
+  
+  // 装備スロット構成（未設定の場合はDEFAULT_EQUIPMENT_SLOTSを使用）
+  equipmentSlots?: EquipmentType[];
+}
+
+/**
+ * Core Engineクラス
+ */
+class CoreEngine {
+  private config: CoreEngineConfig;
+  
+  constructor(config: CoreEngineConfig) {
+    this.config = {
+      ...config,
+      // デフォルト値を適用
+      equipmentSlots: config.equipmentSlots || DEFAULT_EQUIPMENT_SLOTS
+    };
+  }
+  
+  // 装備スロット構成を取得
+  getEquipmentSlots(): EquipmentType[] {
+    return this.config.equipmentSlots!;
+  }
+}
+```
 
 **EquipmentControllerでの使用例**:
 ```typescript
-// ゲーム設定から装備スロット構成を取得
-const gameConfig = {
-  equipmentSlots: ['weapon', 'shield', 'helmet', 'armor', 'boots', 'accessory1', 'accessory2']
-};
+// Core Engineから装備スロット構成を取得（推奨）
+const equipmentSlots = coreEngine.getEquipmentSlots();
+const controller = new EquipmentController(service, equipmentSlots);
 
-// EquipmentControllerに設定を渡す
-const equipmentService = new EquipmentService(coreEngine);
-const equipmentController = new EquipmentController(
-  equipmentService, 
-  gameConfig.equipmentSlots
-);
+// または、旧方式（直接指定、非推奨）
+// const gameConfig = {
+//   equipmentSlots: ['weapon', 'shield', 'helmet', 'armor', 'boots', 'accessory1', 'accessory2']
+// };
+// const controller = new EquipmentController(service, gameConfig.equipmentSlots);
 ```
 
 ---
