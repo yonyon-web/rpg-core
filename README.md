@@ -78,13 +78,18 @@ rpg-core/
 
 詳細な設計ドキュメントは以下をご参照ください：
 
-- [CORE_ENGINE.md](./CORE_ENGINE.md) - Core Engineの役割と責任範囲
-- [CORE_ENGINE_TYPES.md](./CORE_ENGINE_TYPES.md) - 型定義
-- [CORE_ENGINE_FUNCTIONS.md](./CORE_ENGINE_FUNCTIONS.md) - 関数仕様
-- [CORE_ENGINE_EXTENSIBILITY.md](./CORE_ENGINE_EXTENSIBILITY.md) - 拡張性設計
-- [SERVICE_DESIGN.md](./SERVICE_DESIGN.md) - サービス層の設計
-- [HEADLESS_UI_DESIGN.md](./HEADLESS_UI_DESIGN.md) - ヘッドレスUI設計
-- [DATA_PERSISTENCE_DESIGN.md](./DATA_PERSISTENCE_DESIGN.md) - データ永続化設計
+### アーキテクチャ設計
+
+- [docs/core-engine.md](./docs/core-engine.md) - Core Engineの完全ガイド（役割、型定義、関数仕様、拡張性）
+- [docs/service-design.md](./docs/service-design.md) - サービス層の設計
+- [docs/headless-ui-design.md](./docs/headless-ui-design.md) - ヘッドレスUI設計
+- [docs/implementation-elements.md](./docs/implementation-elements.md) - 実装要素
+
+### 機能別ドキュメント
+
+- [docs/features/inventory-system.md](./docs/features/inventory-system.md) - インベントリ（バッグ）システム設計
+- [docs/features/party-formation.md](./docs/features/party-formation.md) - パーティ編成システム
+- [docs/features/data-persistence.md](./docs/features/data-persistence.md) - データ永続化設計
 
 ## ライセンス
 

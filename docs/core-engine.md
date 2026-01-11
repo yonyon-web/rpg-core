@@ -1,0 +1,1351 @@
+# Core Engine
+
+rpg-coreライブラリにおけるCore Engineの完全ガイド
+
+## 目次
+
+1. [Core Engine とは](#core-engine-とは)
+2. [責任範囲](#core-engine-の責任範囲)
+3. [機能別詳細](#機能別詳細)
+4. [型定義](#型定義)
+5. [関数設計](#関数設計)
+6. [拡張性](#拡張性)
+
+---
+
+## Core Engine とは
+
+Core Engineは、JRPGにおける**数値計算とルール判定**を担当する層です。
+
+### 全体アーキテクチャにおける位置づけ
+
+```text
+UI（見た目・入力）
+  ↓
+Headless UI（選択・確認・キャンセル）
+  ↓
+JRPG Services（操作フロー）
+  ↓
+Core Engine（数値・ルール）← ★ この層
+  ↓
+Game State（永続可能な状態）
+```
+
+### 設計思想
+
+Core Engineは以下の原則に従って設計されています：
+
+- **純粋な計算とルール**: UIや操作フローに依存しない
+- **状態を持たない**: Game Stateから必要なデータを受け取り、計算結果を返す
+- **決定論的**: 同じ入力に対して常に同じ出力を返す
+- **テスト容易**: モックや単体テストが容易に書ける
+- **カスタマイズ可能**: ゲーム固有のルールに対応できる拡張性
+
+---
+
+## Core Engine の責任範囲
+
+### ✅ Core Engine が扱うもの
+
+- **数値計算**: ダメージ、回復量、成長値など
+- **確率判定**: クリティカル、状態異常付与、ドロップなど
+- **条件判定**: 装備可否、スキル使用可否、勝敗判定など
+- **ステータス計算**: 基礎値 + 装備補正 + バフ/デバフ
+- **ルール処理**: ゲームメカニクスの具体的な計算式
+
+### ❌ Core Engine が扱わないもの
+
+- **操作フロー**: コマンド選択の流れ（→ Service の責任）
+- **状態管理**: ターン進行、フェーズ管理（→ Service の責任）
+- **UI表現**: 表示、アニメーション（→ UI層の責任）
+- **永続化**: セーブ/ロード処理（→ Save Service の責任）
+
+---
+
+## 機能別詳細
+
+### 🎮 戦闘に関する計算
+
+#### 行動順の計算
+- 素早さに基づく行動順の決定
+- 先制攻撃・不意打ちの判定
+- 行動順補正の適用
+
+#### ダメージ計算
+- 物理攻撃のダメージ
+  - 攻撃力 - 防御力を基準とした計算
+  - 武器の攻撃力補正
+  - クリティカルヒット判定と倍率
+  - 属性相性による補正
+  - ランダム要素の付与
+- 魔法攻撃のダメージ
+  - 魔力ベースの計算
+  - 魔法防御による軽減
+  - 属性相性による補正
+- スキルのダメージ
+  - スキル固有の倍率
+  - コスト（MP、SPなど）の計算
+
+#### 回復量の計算
+- 回復スキルの効果量
+  - 固定値回復
+  - 割合回復
+  - 最大HPに基づく回復
+- アイテムによる回復
+- 継続回復の計算
+
+#### 命中・回避の判定
+- 命中率の計算
+- 回避率の計算
+- 必中スキルの処理
+
+#### 勝利条件・敗北条件の判定
+- 全滅判定
+- 逃走成功率の計算
+- 特殊勝利条件の判定
+
+---
+
+### 📊 ステータスとキャラクターに関する計算
+
+#### ステータス補正の計算
+- 基礎ステータスの取得
+- 装備による補正
+- バフ/デバフによる補正
+- ジョブ・クラスによる補正
+- レベルによる補正
+- 最終ステータスの算出
+
+#### レベルと成長に関する計算
+- 経験値の計算
+  - 戦闘報酬の経験値
+  - パーティへの配分
+  - 経験値ボーナスの適用
+- レベルアップ判定
+  - 必要経験値の計算
+  - レベルアップ可否の判定
+- ステータス成長の計算
+  - レベルアップ時の能力値上昇
+  - 成長率による変動
+  - ジョブ別成長補正
+
+#### スキル習得に関する判定
+- 習得条件の判定
+  - レベル要件
+  - ジョブ要件
+  - 前提スキル要件
+- スキルデータの管理
+  - スキルの効果
+  - 使用コスト
+  - 対象範囲
+
+#### 職業・クラスに関する計算
+- 転職条件の判定
+  - レベル要件
+  - アイテム要件
+  - クエスト完了要件
+- ステータス補正の計算
+  - ジョブボーナス
+  - 装備可能武器・防具の判定
+- 装備可否の判定
+  - ジョブ制限のチェック
+
+---
+
+### 🎒 装備・アイテムに関する計算
+
+#### 装備に関する判定と計算
+- 装備可能条件の判定
+  - レベル制限
+  - ジョブ制限
+  - ステータス要件
+- ステータス補正の計算
+  - 攻撃力・防御力の補正
+  - 属性耐性の付与
+  - 特殊効果の適用
+- 装備効果の適用
+  - セット効果
+  - エンチャント効果
+
+#### アイテムに関する計算
+- アイテムの効果計算
+  - 回復アイテムの効果量
+  - バフアイテムの効果
+  - 戦闘アイテムの効果
+- 使用可能条件の判定
+  - 戦闘中/フィールドでの使用可否
+  - 対象条件の判定
+- インベントリの更新
+  - アイテム数の増減
+  - 所持上限のチェック
+
+---
+
+### 🧠 敵とAIに関する計算
+
+#### 敵のステータス計算
+- 敵の初期ステータス設定
+  - レベルに応じた能力値
+  - 敵種別による補正
+- 使用可能なスキルの列挙
+  - スキルの使用条件チェック
+  - MP/SPコストの確認
+
+#### ドロップとリワードの計算
+- ドロップ判定の計算
+  - アイテムドロップ率
+  - レアドロップ判定
+  - ドロップ個数の決定
+- 対象候補の評価
+  - AI用のターゲット選定
+  - 脅威度の計算
+  - 優先度の算出
+
+---
+
+### 💫 状態異常・バフ・デバフに関する計算
+
+#### 状態異常の付与判定
+- 状態異常の付与判定
+  - 基本成功率
+  - 耐性による軽減
+  - 確率計算
+- 効果の計算
+  - 毒ダメージなどの継続ダメージ
+  - ステータス変動の計算
+  - 行動制限の判定
+- 解除条件の判定
+  - ターン経過による自然解除
+  - アイテム・スキルによる解除
+  - 特定条件での自動解除
+
+#### バフ・デバフの計算
+- 効果量の計算
+  - ステータス上昇/下降の倍率
+  - 重複時の処理
+  - スタック上限
+- 持続時間の管理
+  - 残りターン数の計算
+  - 効果の延長・短縮
+
+---
+
+### 🛠 クラフト・強化に関する計算
+
+#### アイテム合成
+- 素材の所持チェック
+  - 必要素材の確認
+  - 素材の個数チェック
+- 成功率の計算
+  - 基本成功率
+  - スキルによる補正
+  - アイテムによるボーナス
+- 結果アイテムの生成
+  - 通常成功時のアイテム
+  - 大成功時のボーナス
+  - 失敗時の素材返還判定
+- インベントリの更新
+  - 素材の消費
+  - 完成品の追加
+
+#### 装備・キャラクター強化
+- 成功率の計算
+  - 強化レベルに応じた成功率
+  - 安全圏の判定
+  - 失敗時のペナルティ判定
+- 能力値上昇の計算
+  - 強化による上昇値
+  - ランダム要素
+  - 上限値の判定
+- コストの消費処理
+  - 強化素材の消費
+  - お金の消費
+
+---
+
+### 💾 永続化と整合性
+
+#### ゲーム状態の永続化
+- 状態のシリアライズ
+  - Game Stateの永続化形式への変換
+  - データの圧縮
+- データバージョン管理
+  - バージョン番号の管理
+  - 互換性のチェック
+  - マイグレーション処理
+
+---
+
+### 🎯 シミュレーションと分析
+
+#### 戦闘ロジックの実行
+- 自動戦闘のシミュレーション
+- AI行動の決定
+- 戦闘結果の予測
+
+#### 確率計算
+- 各種判定の確率計算
+- 期待値の算出
+- 分散の計算
+
+#### ダメージ期待値の計算
+- 平均ダメージの算出
+- クリティカル込みの期待値
+- 最大/最小ダメージの計算
+
+---
+
+## 型定義
+
+### 共通型定義
+
+#### 基本型
+
+```typescript
+/**
+ * ユニークID型
+ * - すべてのエンティティの識別に使用
+ */
+type UniqueId = string;
+
+/**
+ * タイムスタンプ型
+ * - ミリ秒単位のUNIXタイムスタンプ
+ */
+type Timestamp = number;
+
+/**
+ * 確率型
+ * - 0.0（0%）から1.0（100%）の範囲
+ */
+type Probability = number;
+
+/**
+ * パーセンテージ型
+ * - 0から100の範囲
+ */
+type Percentage = number;
+```
+
+#### 属性型
+
+```typescript
+/**
+ * 属性タイプ
+ * - ゲーム内の各種属性を表現
+ */
+type Element = 
+  | 'none'      // 無属性
+  | 'fire'      // 炎
+  | 'water'     // 水
+  | 'earth'     // 土
+  | 'wind'      // 風
+  | 'lightning' // 雷
+  | 'ice'       // 氷
+  | 'light'     // 光
+  | 'dark';     // 闇
+
+/**
+ * 属性耐性マップ
+ * - 各属性に対する耐性値（0.0〜2.0）
+ * - 1.0 = 通常、0.5 = 半減、2.0 = 2倍ダメージ、0 = 無効
+ */
+interface ElementResistance {
+  fire: number;
+  water: number;
+  earth: number;
+  wind: number;
+  lightning: number;
+  ice: number;
+  light: number;
+  dark: number;
+}
+```
+
+### 戦闘関連の型
+
+#### 戦闘参加者
+
+```typescript
+/**
+ * 戦闘参加者の基本インターフェース
+ * - キャラクターと敵の共通属性
+ */
+interface Combatant {
+  id: UniqueId;              // ユニークID
+  name: string;              // 名前
+  level: number;             // レベル
+  stats: Stats;              // ステータス
+  currentHp: number;         // 現在のHP
+  currentMp: number;         // 現在のMP
+  statusEffects: StatusEffect[]; // 現在の状態異常
+  position: number;          // 隊列位置（0=前列、1=後列）
+}
+
+/**
+ * ステータス構造体
+ * - キャラクターや敵の能力値
+ */
+interface Stats {
+  maxHp: number;            // 最大HP
+  maxMp: number;            // 最大MP
+  attack: number;           // 攻撃力
+  defense: number;          // 防御力
+  magic: number;            // 魔力
+  magicDefense: number;     // 魔法防御
+  speed: number;            // 素早さ
+  luck: number;             // 運
+  accuracy: number;         // 命中率補正
+  evasion: number;          // 回避率補正
+  criticalRate: number;     // クリティカル率補正
+}
+```
+
+#### スキル
+
+```typescript
+/**
+ * スキルタイプ
+ */
+type SkillType = 
+  | 'physical'  // 物理攻撃
+  | 'magic'     // 魔法攻撃
+  | 'heal'      // 回復
+  | 'buff'      // バフ
+  | 'debuff'    // デバフ
+  | 'special';  // 特殊
+
+/**
+ * ターゲットタイプ
+ */
+type TargetType = 
+  | 'single-enemy'    // 敵単体
+  | 'all-enemies'     // 敵全体
+  | 'single-ally'     // 味方単体
+  | 'all-allies'      // 味方全体
+  | 'self'            // 自分
+  | 'random-enemies'  // 敵ランダム
+  | 'random-allies';  // 味方ランダム
+
+/**
+ * スキル定義
+ */
+interface Skill {
+  id: UniqueId;             // スキルID
+  name: string;             // スキル名
+  type: SkillType;          // スキルタイプ
+  targetType: TargetType;   // 対象タイプ
+  element: Element;         // 属性
+  power: number;            // 威力（倍率）
+  mpCost: number;           // 消費MP
+  accuracy: number;         // 命中率（1.0 = 100%）
+  criticalBonus: number;    // クリティカル率ボーナス
+  isGuaranteedHit: boolean; // 必中フラグ
+  statusEffects?: StatusEffectApplication[]; // 付与する状態異常
+  description: string;      // スキル説明
+}
+
+/**
+ * 状態異常付与情報
+ */
+interface StatusEffectApplication {
+  effectType: StatusEffectType; // 状態異常タイプ
+  probability: Probability;     // 付与確率
+  duration: number;             // 持続ターン数
+  power: number;                // 効果の強さ
+}
+```
+
+#### ダメージ計算結果
+
+```typescript
+/**
+ * ダメージ計算結果
+ * - ダメージ計算の詳細情報を含む
+ */
+interface DamageResult {
+  finalDamage: number;          // 最終ダメージ
+  baseDamage: number;           // 基礎ダメージ
+  isCritical: boolean;          // クリティカルヒットフラグ
+  isHit: boolean;               // 命中フラグ
+  elementalModifier: number;    // 属性相性倍率
+  variance: number;             // ダメージ分散値
+  appliedModifiers: DamageModifier[]; // 適用された補正
+}
+
+/**
+ * ダメージ補正情報
+ */
+interface DamageModifier {
+  source: string;   // 補正の出所（例: "クリティカル", "属性相性"）
+  multiplier: number; // 補正倍率
+}
+
+/**
+ * 回復結果
+ */
+interface HealResult {
+  healAmount: number;       // 回復量
+  overheal: number;         // オーバーヒール量
+  isCritical: boolean;      // クリティカル回復フラグ
+}
+```
+
+### キャラクター関連の型
+
+```typescript
+/**
+ * キャラクター
+ * - プレイヤーキャラクターの完全な定義
+ */
+interface Character extends Combatant {
+  experience: number;               // 現在の経験値
+  expToNextLevel: number;           // 次のレベルまでの必要経験値
+  job: Job;                         // 現在のジョブ
+  equipment: EquipmentSet;          // 装備セット
+  skills: Skill[];                  // 習得済みスキル
+  jobHistory: JobHistory[];         // 転職履歴
+  baseStats: Stats;                 // 基礎ステータス（装備なし）
+}
+
+/**
+ * ジョブ定義
+ */
+interface Job {
+  id: UniqueId;                     // ジョブID
+  name: string;                     // ジョブ名
+  description: string;              // ジョブ説明
+  statModifiers: Partial<Stats>;    // ステータス補正
+  statGrowthRates: Partial<Stats>;  // 成長率
+  learnableSkills: SkillLearnCondition[]; // 習得可能スキル
+  equipmentRestrictions: EquipmentType[]; // 装備可能種別
+  icon: string;                     // アイコンURL
+}
+
+/**
+ * レベルアップ結果
+ */
+interface LevelUpResult {
+  levelsGained: number;             // 上がったレベル数
+  newLevel: number;                 // 新しいレベル
+  statsGained: Partial<Stats>;      // 上昇したステータス
+  skillsLearned: Skill[];           // 習得したスキル
+  remainingExp: number;             // 余剰経験値
+}
+```
+
+### アイテム関連の型
+
+```typescript
+/**
+ * アイテムカテゴリ
+ */
+type ItemCategory = 
+  | 'consumable'    // 消耗品
+  | 'equipment'     // 装備
+  | 'material'      // 素材
+  | 'key-item'      // 重要アイテム
+  | 'quest-item';   // クエストアイテム
+
+/**
+ * アイテム基本定義
+ */
+interface Item {
+  id: UniqueId;                     // アイテムID
+  name: string;                     // アイテム名
+  description: string;              // 説明
+  category: ItemCategory;           // カテゴリ
+  rarity: number;                   // レアリティ（1〜5）
+  stackable: boolean;               // スタック可能フラグ
+  maxStack: number;                 // 最大スタック数
+  sellPrice: number;                // 売却価格
+  icon: string;                     // アイコンURL
+}
+
+/**
+ * 装備タイプ
+ */
+type EquipmentType = 
+  | 'weapon'        // 武器
+  | 'head'          // 頭
+  | 'body'          // 体
+  | 'accessory1'    // アクセサリ1
+  | 'accessory2';   // アクセサリ2
+
+/**
+ * 装備アイテム
+ */
+interface Equipment extends Item {
+  category: 'equipment';
+  equipmentType: EquipmentType;     // 装備タイプ
+  weaponType?: WeaponType;          // 武器種別（武器の場合）
+  statBonus: Partial<Stats>;        // ステータスボーナス
+  elementResistance?: Partial<ElementResistance>; // 属性耐性
+  levelRequired: number;            // 必要レベル
+  jobRestrictions: UniqueId[];      // ジョブ制限
+  specialEffects: EquipmentEffect[]; // 特殊効果
+  enhanceLevel: number;             // 強化レベル
+  maxEnhanceLevel: number;          // 最大強化レベル
+}
+
+/**
+ * インベントリスロット
+ */
+interface InventorySlot {
+  item: Item;                       // アイテム
+  quantity: number;                 // 数量
+}
+
+/**
+ * インベントリ
+ */
+interface Inventory {
+  slots: InventorySlot[];           // スロットリスト
+  maxSlots: number;                 // 最大スロット数
+  money: number;                    // 所持金
+}
+```
+
+### 状態異常関連の型
+
+```typescript
+/**
+ * 状態異常タイプ
+ */
+type StatusEffectType = 
+  | 'poison'        // 毒
+  | 'burn'          // 炎上
+  | 'paralysis'     // 麻痺
+  | 'sleep'         // 睡眠
+  | 'confusion'     // 混乱
+  | 'silence'       // 沈黙
+  | 'blind'         // 暗闇
+  | 'stun'          // スタン
+  | 'regeneration'  // リジェネ
+  | 'attack-up'     // 攻撃力アップ
+  | 'attack-down'   // 攻撃力ダウン
+  | 'defense-up'    // 防御力アップ
+  | 'defense-down'  // 防御力ダウン
+  | 'speed-up'      // 素早さアップ
+  | 'speed-down';   // 素早さダウン
+
+/**
+ * 状態異常カテゴリ
+ */
+type StatusEffectCategory = 
+  | 'debuff'        // デバフ
+  | 'buff'          // バフ
+  | 'dot'           // 継続ダメージ
+  | 'hot'           // 継続回復
+  | 'disable';      // 行動制限
+
+/**
+ * 状態異常
+ */
+interface StatusEffect {
+  id: UniqueId;                     // 状態異常ID
+  type: StatusEffectType;           // タイプ
+  category: StatusEffectCategory;   // カテゴリ
+  name: string;                     // 名前
+  description: string;              // 説明
+  power: number;                    // 効果の強さ
+  duration: number;                 // 残り持続ターン数
+  maxDuration: number;              // 最大持続ターン数
+  stackCount: number;               // スタック数
+  maxStack: number;                 // 最大スタック数
+  canBeDispelled: boolean;          // 解除可能フラグ
+  appliedAt: Timestamp;             // 付与時刻
+  source?: UniqueId;                // 付与元ID
+}
+```
+
+### 敵関連の型
+
+```typescript
+/**
+ * 敵タイプ
+ */
+interface EnemyType {
+  id: UniqueId;                     // 敵タイプID
+  name: string;                     // 名前
+  description: string;              // 説明
+  baseStats: Stats;                 // 基礎ステータス
+  statGrowthRate: number;           // ステータス成長率
+  skills: Skill[];                  // 使用可能スキル
+  aiStrategy: AIStrategy;           // AI戦略
+  dropTable: DropTable;             // ドロップテーブル
+  expReward: number;                // 経験値報酬
+  moneyReward: number;              // お金報酬
+  elementResistance: ElementResistance; // 属性耐性
+  sprite: string;                   // スプライトURL
+}
+
+/**
+ * 敵インスタンス
+ */
+interface Enemy extends Combatant {
+  enemyType: EnemyType;             // 敵タイプ
+  aiStrategy: AIStrategy;           // AI戦略
+  threatLevel: number;              // 脅威度
+}
+
+/**
+ * AI戦略
+ */
+interface AIStrategy {
+  id: UniqueId;                     // 戦略ID
+  name: string;                     // 戦略名
+  targetingPriority: TargetPriority; // ターゲット優先度
+  skillSelectionRules: SkillSelectionRule[]; // スキル選択ルール
+  behaviorModifiers: BehaviorModifier[]; // 行動補正
+}
+
+/**
+ * ドロップテーブル
+ */
+interface DropTable {
+  guaranteedDrops: DropItem[];      // 確定ドロップ
+  randomDrops: DropItem[];          // ランダムドロップ
+  rareDrops: DropItem[];            // レアドロップ
+}
+
+/**
+ * ドロップアイテム
+ */
+interface DropItem {
+  item: Item;                       // アイテム
+  quantity: number;                 // 数量
+  dropRate: Probability;            // ドロップ率
+  isRare: boolean;                  // レアフラグ
+}
+```
+
+### クラフト関連の型
+
+```typescript
+/**
+ * レシピ
+ */
+interface Recipe {
+  id: UniqueId;                     // レシピID
+  name: string;                     // レシピ名
+  description: string;              // 説明
+  requiredMaterials: MaterialRequirement[]; // 必要素材
+  resultItem: Item;                 // 生成アイテム
+  resultQuantity: number;           // 生成数量
+  baseSuccessRate: Probability;     // 基本成功率
+  synthesisTime: number;            // 合成時間（秒）
+  requiredLevel?: number;           // 必要レベル
+  requiredSkill?: UniqueId;         // 必要スキル
+  category: CraftCategory;          // カテゴリ
+  unlockCondition?: RecipeUnlockCondition; // 解放条件
+  isUnlockedByDefault?: boolean;    // デフォルトで解放されているか
+}
+
+/**
+ * クラフトカテゴリ
+ */
+type CraftCategory = 
+  | 'alchemy'       // 錬金術
+  | 'blacksmith'    // 鍛冶
+  | 'cooking'       // 料理
+  | 'crafting';     // 工芸
+
+/**
+ * 合成結果
+ */
+interface SynthesisResult {
+  outcome: SynthesisOutcome;        // 結果
+  itemsProduced: InventorySlot[];   // 生成されたアイテム
+  materialsReturned: InventorySlot[]; // 返却された素材
+  bonusItems?: InventorySlot[];     // ボーナスアイテム
+  message: string;                  // 結果メッセージ
+}
+
+/**
+ * 合成結果タイプ
+ */
+type SynthesisOutcome = 
+  | 'great-success' // 大成功
+  | 'success'       // 成功
+  | 'failure';      // 失敗
+```
+
+### ゲーム設定の型
+
+```typescript
+/**
+ * ゲーム設定
+ * - ゲーム全体のパラメータと設定
+ */
+interface GameConfig {
+  // 戦闘パラメータ
+  combat: CombatConfig;
+  
+  // 成長パラメータ
+  growth: GrowthConfig;
+  
+  // バランス調整
+  balance: BalanceConfig;
+  
+  // 状態異常パラメータ
+  status: StatusConfig;
+  
+  // クラフトパラメータ
+  craft: CraftConfig;
+}
+
+/**
+ * 戦闘設定
+ */
+interface CombatConfig {
+  baseCriticalRate: Probability;    // 基本クリティカル率（0.05 = 5%）
+  criticalMultiplier: number;       // クリティカル倍率（2.0 = 2倍）
+  damageVariance: number;           // ダメージ分散（0.1 = ±10%）
+  escapeBaseRate: Probability;      // 基本逃走成功率（0.5 = 50%）
+  escapeRateIncrement: number;      // 逃走試行毎の成功率上昇（0.1 = +10%）
+  preemptiveStrikeThreshold: number; // 先制攻撃の素早さ差閾値
+  speedVariance: number;            // 行動順のランダム幅
+}
+
+/**
+ * 成長設定
+ */
+interface GrowthConfig {
+  expCurve: ExpCurveType;           // 経験値曲線タイプ
+  baseExpRequired: number;          // 基本必要経験値（100）
+  expGrowthRate: number;            // 経験値成長率（1.2）
+  statGrowthRates: StatGrowthRates; // ステータス成長率
+  maxLevel: number;                 // 最大レベル（99）
+}
+
+/**
+ * 経験値曲線タイプ
+ */
+type ExpCurveType = 
+  | 'linear'        // 線形（レベル × 基本値）
+  | 'exponential'   // 指数（基本値 × レベル ^ 成長率）
+  | 'custom';       // カスタム
+```
+
+### ゲーム状態の型
+
+```typescript
+/**
+ * ゲーム状態
+ * - ゲーム全体の進行状態を管理
+ */
+interface GameState {
+  // 基本情報
+  version: string;                  // セーブデータバージョン
+  saveDate: Timestamp;              // 保存日時
+  playTime: number;                 // プレイ時間（秒）
+  
+  // プレイヤー情報
+  player: {
+    name: string;                   // プレイヤー名
+    playerId: string;               // プレイヤーID
+    money: number;                  // 所持金
+  };
+  
+  // パーティ情報
+  party: Character[];               // パーティメンバー
+  
+  // インベントリ
+  inventory: Inventory;             // アイテム管理
+  
+  // ストーリー進行
+  storyProgress: string;            // ストーリー進行度ID
+  completedQuests: UniqueId[];      // 完了クエスト
+  achievements: UniqueId[];         // 取得済み実績
+  flags: Record<string, boolean>;   // ゲームフラグ
+  
+  // レシピ解放状態
+  unlockedRecipes: Set<UniqueId>;   // 解放済みレシピID
+  recipeUnlockStates: Map<UniqueId, RecipeUnlockState>; // 詳細な解放状態
+  craftHistory: Map<UniqueId, number>; // アイテム作成回数
+  
+  // パーティ編成
+  savedFormations: Map<string, PartyFormation>; // 保存済みパーティ編成
+  activeFormationId?: string;       // 現在のアクティブ編成ID
+  
+  // その他拡張可能なデータ
+  customData?: Record<string, any>; // ゲーム固有のデータ
+}
+```
+
+---
+
+## 関数設計
+
+### モジュール構成
+
+Core Engineは関心事ごとに適度にモジュール化された構造を持ちます：
+
+```text
+CoreEngine/
+├── combat/           # 戦闘関連の計算
+│   ├── damage.ts     # ダメージ計算
+│   ├── accuracy.ts   # 命中・クリティカル判定
+│   ├── turnOrder.ts  # 行動順計算
+│   └── victory.ts    # 勝敗判定
+├── character/        # キャラクター関連
+│   ├── stats.ts      # ステータス計算
+│   ├── growth.ts     # 成長・レベルアップ
+│   ├── job.ts        # ジョブ・クラス
+│   └── skill.ts      # スキル習得
+├── item/             # アイテム関連
+│   ├── effects.ts    # アイテム効果
+│   ├── equipment.ts  # 装備判定
+│   └── inventory.ts  # インベントリ管理
+├── status/           # 状態異常・バフ関連
+│   ├── effects.ts    # 状態異常の計算
+│   └── duration.ts   # 持続時間管理
+├── enemy/            # 敵関連
+│   ├── stats.ts      # 敵のステータス
+│   ├── drops.ts      # ドロップ判定
+│   └── ai.ts         # AI判断補助
+├── craft/            # クラフト関連
+│   ├── synthesis.ts  # 合成計算
+│   └── enhance.ts    # 強化計算
+└── config/           # 設定とカスタマイズ
+    ├── formulas.ts   # 計算式の定義
+    └── parameters.ts # パラメータ設定
+```
+
+### 主要な関数
+
+#### combat/damage.ts
+
+```typescript
+/**
+ * 物理攻撃のダメージ計算
+ */
+function calculatePhysicalDamage(
+  attacker: Combatant,
+  target: Combatant,
+  skill: Skill,
+  config: GameConfig
+): DamageResult;
+
+/**
+ * 魔法攻撃のダメージ計算
+ */
+function calculateMagicDamage(
+  attacker: Combatant,
+  target: Combatant,
+  skill: Skill,
+  config: GameConfig
+): DamageResult;
+
+/**
+ * 回復量の計算
+ */
+function calculateHealAmount(
+  caster: Combatant,
+  target: Combatant,
+  skill: Skill,
+  config: GameConfig
+): number;
+
+/**
+ * 属性相性の倍率計算
+ */
+function calculateElementalModifier(
+  attackElement: Element,
+  targetResistance: ElementResistance
+): number;
+```
+
+#### combat/accuracy.ts
+
+```typescript
+/**
+ * 命中率の計算
+ */
+function calculateHitRate(
+  attacker: Combatant,
+  target: Combatant,
+  skill: Skill
+): number;
+
+/**
+ * 命中判定
+ */
+function checkHit(hitRate: number): boolean;
+
+/**
+ * クリティカル率の計算
+ */
+function calculateCriticalRate(
+  attacker: Combatant,
+  skill: Skill,
+  config: GameConfig
+): number;
+
+/**
+ * クリティカル判定
+ */
+function checkCritical(criticalRate: number): boolean;
+```
+
+#### combat/turnOrder.ts
+
+```typescript
+/**
+ * 行動順の計算
+ */
+function calculateTurnOrder(
+  participants: Combatant[],
+  config: GameConfig
+): Combatant[];
+
+/**
+ * 先制攻撃の判定
+ */
+function checkPreemptiveStrike(
+  party: Character[],
+  enemies: Enemy[],
+  config: GameConfig
+): boolean;
+```
+
+#### character/stats.ts
+
+```typescript
+/**
+ * 最終ステータスの計算
+ */
+function calculateFinalStats(
+  character: Character,
+  equipment: Equipment[],
+  statusEffects: StatusEffect[],
+  job: Job
+): Stats;
+
+/**
+ * 基礎ステータスの取得
+ */
+function getBaseStats(
+  character: Character,
+  level: number
+): Stats;
+
+/**
+ * 装備によるステータス補正
+ */
+function applyEquipmentBonus(
+  baseStats: Stats,
+  equipment: Equipment[]
+): Stats;
+```
+
+#### character/growth.ts
+
+```typescript
+/**
+ * 次のレベルに必要な経験値の計算
+ */
+function calculateExpRequired(
+  level: number,
+  config: GameConfig
+): number;
+
+/**
+ * レベルアップ判定
+ */
+function checkLevelUp(
+  currentExp: number,
+  currentLevel: number,
+  config: GameConfig
+): LevelUpResult;
+
+/**
+ * レベルアップ時の能力値上昇の計算
+ */
+function calculateStatGrowth(
+  character: Character,
+  fromLevel: number,
+  toLevel: number,
+  job: Job,
+  config: GameConfig
+): Stats;
+
+/**
+ * パーティへの経験値配分
+ */
+function distributeExpToParty(
+  totalExp: number,
+  party: Character[],
+  config: GameConfig
+): Map<string, number>;
+```
+
+---
+
+## 拡張性
+
+Core Engineは以下のような拡張ポイントを提供します：
+
+### 1. 計算式のカスタマイズ
+
+**実装方法**: Strategy パターンまたは関数注入による計算式の差し替え
+
+```typescript
+// デフォルトのダメージ計算式
+type DamageFormula = (attacker: Combatant, target: Combatant, skill: Skill) => number;
+
+// 計算式の例1: シンプルな引き算式
+const simpleDamageFormula: DamageFormula = (attacker, target, skill) => {
+  const attack = attacker.stats.attack * skill.power;
+  const defense = target.stats.defense;
+  return Math.max(1, attack - defense);
+};
+
+// 計算式の例2: 複雑な乗算式（ファイナルファンタジー風）
+const complexDamageFormula: DamageFormula = (attacker, target, skill) => {
+  const attack = attacker.stats.attack;
+  const defense = Math.max(1, target.stats.defense); // 0除算防止
+  const power = skill.power;
+  return Math.floor((attack * attack) / defense * power / 16);
+};
+
+// Core Engineに計算式を注入
+class CoreEngine {
+  constructor(private damageFormula: DamageFormula = simpleDamageFormula) {}
+  
+  calculateDamage(attacker: Combatant, target: Combatant, skill: Skill): number {
+    const baseDamage = this.damageFormula(attacker, target, skill);
+    const critical = this.checkCritical(attacker) ? 2.0 : 1.0;
+    const elementBonus = this.getElementBonus(skill.element, target.resistance);
+    return Math.floor(baseDamage * critical * elementBonus);
+  }
+}
+
+// カスタマイズ例
+const myCustomFormula: DamageFormula = (attacker, target, skill) => {
+  // 独自のロジック
+  return attacker.level * skill.power - target.defense / 2;
+};
+
+const engine = new CoreEngine(myCustomFormula);
+```
+
+### 2. ルールの追加
+
+**実装方法**: プラグインシステムまたは拡張インターフェース
+
+```typescript
+// 基本インターフェース
+interface CombatRule {
+  name: string;
+  apply(context: CombatContext): void;
+}
+
+// カスタムルールの例: 連撃システム
+class ComboAttackRule implements CombatRule {
+  name = "combo-attack";
+  
+  apply(context: CombatContext): void {
+    // コンボ状態をチェックしてダメージを増幅
+    if (context.attacker?.hasStatus?.("combo-ready")) {
+      context.damageMultiplier *= 1.5;
+      context.addEffect("combo-hit");
+    }
+  }
+}
+
+// ルールを登録
+class CoreEngine {
+  private rules: CombatRule[] = [];
+  
+  addRule(rule: CombatRule): void {
+    this.rules.push(rule);
+  }
+  
+  calculateDamage(attacker: Combatant, target: Combatant, skill: Skill): number {
+    const context = new CombatContext(attacker, target, skill);
+    
+    // すべてのルールを適用
+    for (const rule of this.rules) {
+      rule.apply(context);
+    }
+    
+    return context.getFinalDamage();
+  }
+}
+
+// カスタマイズ例
+const engine = new CoreEngine();
+engine.addRule(new ComboAttackRule());
+engine.addRule(new WeatherEffectRule());
+engine.addRule(new TeamworkBonusRule());
+```
+
+### 3. パラメータの調整
+
+**実装方法**: 設定オブジェクトによるパラメータの外部化
+
+```typescript
+// パラメータの定義
+interface GameParameters {
+  // 成長関連
+  expCurve: "linear" | "exponential" | "custom";
+  baseExpRequired: number;
+  expGrowthRate: number;
+  statGrowthRates: {
+    hp: number;
+    mp: number;
+    attack: number;
+    defense: number;
+  };
+  
+  // 戦闘関連
+  criticalRate: number;
+  criticalMultiplier: number;
+  damageVariance: number;  // ダメージのランダム幅
+  
+  // バランス調整
+  levelCapacity: number;
+  maxPartySize: number;
+  dropRateModifier: number;
+}
+
+// デフォルト値
+const defaultParameters: GameParameters = {
+  expCurve: "exponential",
+  baseExpRequired: 100,
+  expGrowthRate: 1.2,
+  statGrowthRates: {
+    hp: 10,
+    mp: 5,
+    attack: 3,
+    defense: 2,
+  },
+  criticalRate: 0.05,
+  criticalMultiplier: 2.0,
+  damageVariance: 0.1,
+  levelCapacity: 99,
+  maxPartySize: 4,
+  dropRateModifier: 1.0,
+};
+
+// Core Engineでパラメータを使用
+class CoreEngine {
+  constructor(private params: GameParameters = defaultParameters) {}
+  
+  calculateExpRequired(level: number): number {
+    const clampedLevel = Math.min(level, this.params.levelCapacity);
+    
+    if (this.params.expCurve === "linear") {
+      return this.params.baseExpRequired * clampedLevel;
+    } else if (this.params.expCurve === "exponential") {
+      const exp = this.params.baseExpRequired * Math.pow(clampedLevel, this.params.expGrowthRate);
+      return Math.floor(Math.min(exp, Number.MAX_SAFE_INTEGER / 2));
+    }
+    // custom curve implementation
+    return this.calculateExpRequired(level);
+  }
+  
+  checkCritical(attacker: Character): boolean {
+    const rate = this.params.criticalRate + attacker.stats.luck * 0.001;
+    return Math.random() < rate;
+  }
+}
+
+// カスタマイズ例
+const hardcoreParams: GameParameters = {
+  ...defaultParameters,
+  expGrowthRate: 1.5,  // レベルアップが難しい
+  criticalRate: 0.02,   // クリティカルが出にくい
+  dropRateModifier: 0.5, // ドロップ率が低い
+};
+
+const engine = new CoreEngine(hardcoreParams);
+```
+
+### 4. 完全なカスタマイズ例
+
+すべての拡張ポイントを組み合わせた例：
+
+```typescript
+// カスタム設定でCore Engineを初期化
+const customEngine = new CoreEngine(customDamageFormula);
+
+// パラメータを設定
+customEngine.setParameters(myGameParameters);
+
+// カスタムルールを追加
+customEngine.addRule(new WeaknessSystemRule());
+customEngine.addRule(new CounterAttackRule());
+customEngine.addRule(new LimitBreakRule());
+
+// 使用
+const damage = customEngine.calculateDamage(player, enemy, skill);
+```
+
+---
+
+## Service との関係
+
+### 分離の原則
+
+| 責任 | Service | Core Engine |
+|------|---------|-------------|
+| いつ | ✓ | |
+| 何を | ✓ | |
+| どの順で | ✓ | |
+| どのように計算するか | | ✓ |
+| どんな結果になるか | | ✓ |
+
+### 呼び出しの流れ
+
+```text
+1. Service が操作フローを管理
+   ↓
+2. 必要なタイミングで Core Engine を呼び出し
+   ↓
+3. Core Engine が計算・判定を実行
+   ↓
+4. 結果を Service が受け取り
+   ↓
+5. Service が次の状態へ遷移
+```
+
+### 具体例：戦闘でのダメージ処理
+
+```text
+【Service の責任】
+- プレイヤーが攻撃コマンドを選択
+- 対象の敵を選択
+- コマンドの実行タイミングを管理
+- 結果をUIに通知
+
+【Core Engine の責任】
+- 攻撃力と防御力からダメージを計算
+- クリティカル判定
+- 属性相性の補正
+- 最終ダメージ値の算出
+```
+
+---
+
+## まとめ
+
+Core Engineは、rpg-coreライブラリにおける**計算とルールの中核**を担う層です。
+
+### 核心的な役割
+
+1. **純粋な計算**: 数値計算とルール判定に特化
+2. **UIフリー**: 表示や操作フローから完全に独立
+3. **決定論的**: テストとデバッグが容易
+4. **拡張可能**: ゲーム固有のルールに対応
+
+### 利用のメリット
+
+- **開発効率**: 複雑な計算ロジックを再利用可能
+- **テスト容易性**: 単体テストで品質を担保
+- **バランス調整**: 計算式を一箇所で管理・調整
+- **移植性**: 異なるプラットフォームでも同じロジックを利用
+
+Core Engineを適切に設計することで、JRPGのゲームメカニクスを堅牢かつ保守性の高い形で実装できます。
