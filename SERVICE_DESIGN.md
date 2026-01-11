@@ -1110,11 +1110,20 @@ class EquipmentService {
 ## 11. PartyService - パーティ編成管理
 
 ### 概要
-パーティの編成、メンバー入れ替え、隊列変更を管理。
+パーティの編成、メンバー入れ替え、隊列変更を管理。複数のパーティ編成をプリセットとして保存・切り替え可能。
 
 ### 公開インターフェース
 
 ```typescript
+interface PartyFormation {
+  id: string;
+  name: string;
+  members: Character[];
+  formationPositions: number[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 class PartyService {
   // メンバー追加
   addMember(party: Character[], character: Character): PartyResult;
@@ -1127,8 +1136,23 @@ class PartyService {
   
   // 隊列変更
   changeFormation(party: Character[], formation: number[]): PartyResult;
+  
+  // 複数パーティ編成管理
+  saveFormation(id: string, name: string, party: Character[], formationPositions: number[]): FormationResult;
+  loadFormation(id: string): FormationLoadResult;
+  deleteFormation(id: string): FormationResult;
+  getAllFormations(): PartyFormation[];
+  switchToFormation(id: string): FormationSwitchResult;
 }
 ```
+
+### Core Engine 委譲
+
+- `party/formation.validatePartyComposition()` - パーティ構成の検証
+- `party/formation.saveFormation()` - パーティ編成の保存
+- `party/formation.loadFormation()` - パーティ編成の読み込み
+- `party/formation.deleteFormation()` - パーティ編成の削除
+- `party/formation.getAllFormations()` - 全パーティ編成の取得
 
 ---
 

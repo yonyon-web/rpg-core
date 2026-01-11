@@ -2265,7 +2265,7 @@ interface PartyUIState {
   currentParty: Character[];
   
   // 編成段階
-  stage: 'selecting-member' | 'reordering' | 'confirming' | 'completed';
+  stage: 'selecting-member' | 'reordering' | 'confirming' | 'managing-formations' | 'completed';
   
   // 選択
   selectedCharacter: Character | null;
@@ -2280,6 +2280,11 @@ interface PartyUIState {
   // 例: [0, 1, 2, 3] = 通常配置, [3, 2, 1, 0] = 逆順, [1, 0, 3, 2] = カスタム配置
   formationPositions: number[];
   
+  // 複数パーティ編成管理
+  savedFormations: PartyFormation[];
+  currentFormationId: string | null;
+  isFormationMenuOpen: boolean;
+  
   // ドラッグ&ドロップ状態
   isDragging: boolean;
   draggedCharacter: Character | null;
@@ -2291,6 +2296,15 @@ interface PartyUIState {
   // プレビュー
   previewParty: Character[] | null;
   partyStats: PartyStats | null;
+}
+
+interface PartyFormation {
+  id: string;
+  name: string;
+  members: Character[];
+  formationPositions: number[];
+  createdAt: number;
+  updatedAt: number;
 }
 
 interface PartyStats {
@@ -2313,6 +2327,10 @@ type PartyEvents = {
   'member-removed': { character: Character; position: number };
   'members-swapped': { position1: number; position2: number };
   'formation-changed': { formation: number[] };
+  'formation-saved': { formation: PartyFormation };
+  'formation-loaded': { formation: PartyFormation };
+  'formation-deleted': { formationId: string };
+  'formation-switched': { formation: PartyFormation };
   'party-confirmed': { party: Character[] };
   'cancelled': {};
 };
@@ -2333,6 +2351,9 @@ class PartyController {
       maxPartySize: 4,
       minPartySize: 1,
       formationPositions: [0, 1, 2, 3],
+      savedFormations: [],
+      currentFormationId: null,
+      isFormationMenuOpen: false,
       isDragging: false,
       draggedCharacter: null,
       draggedFromPosition: null,
@@ -2509,6 +2530,107 @@ class PartyController {
     }
   }
   
+  // パーティ編成管理メニューを開く
+  openFormationMenu(): void {
+    const formations = this.service.getAllFormations();
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'managing-formations',
+      isFormationMenuOpen: true,
+      savedFormations: formations
+    }));
+  }
+  
+  // パーティ編成管理メニューを閉じる
+  closeFormationMenu(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'selecting-member',
+      isFormationMenuOpen: false
+    }));
+  }
+  
+  // 現在のパーティ編成を保存
+  saveCurrentFormation(id: string, name: string): void {
+    const currentState = this.state.getState();
+    
+    const result = this.service.saveFormation(
+      id,
+      name,
+      currentState.currentParty,
+      currentState.formationPositions
+    );
+    
+    if (result.success) {
+      const formations = this.service.getAllFormations();
+      
+      this.state.setState(prev => ({
+        ...prev,
+        savedFormations: formations,
+        currentFormationId: id
+      }));
+      
+      this.events.emit('formation-saved', { formation: result.formation! });
+    }
+  }
+  
+  // 保存済みパーティ編成を読み込み
+  loadFormation(id: string): void {
+    const result = this.service.loadFormation(id);
+    
+    if (result.success && result.formation) {
+      this.state.setState(prev => ({
+        ...prev,
+        currentParty: result.formation!.members,
+        formationPositions: result.formation!.formationPositions,
+        currentFormationId: id,
+        partyStats: this.calculatePartyStats(result.formation!.members),
+        isFormationMenuOpen: false,
+        stage: 'selecting-member'
+      }));
+      
+      this.events.emit('formation-loaded', { formation: result.formation });
+    }
+  }
+  
+  // パーティ編成を削除
+  deleteFormation(id: string): void {
+    const result = this.service.deleteFormation(id);
+    
+    if (result.success) {
+      const formations = this.service.getAllFormations();
+      const currentState = this.state.getState();
+      
+      this.state.setState(prev => ({
+        ...prev,
+        savedFormations: formations,
+        currentFormationId: currentState.currentFormationId === id ? null : currentState.currentFormationId
+      }));
+      
+      this.events.emit('formation-deleted', { formationId: id });
+    }
+  }
+  
+  // パーティ編成を切り替え
+  switchToFormation(id: string): void {
+    const result = this.service.switchToFormation(id);
+    
+    if (result.success && result.formation) {
+      this.state.setState(prev => ({
+        ...prev,
+        currentParty: result.formation!.members,
+        formationPositions: result.formation!.formationPositions,
+        currentFormationId: id,
+        partyStats: this.calculatePartyStats(result.formation!.members),
+        isFormationMenuOpen: false,
+        stage: 'selecting-member'
+      }));
+      
+      this.events.emit('formation-switched', { formation: result.formation });
+    }
+  }
+  
   // 確認
   confirm(): void {
     const currentState = this.state.getState();
@@ -2590,6 +2712,23 @@ function PartyFormationScreen() {
     <div className="party-formation">
       <PartyStats stats={state.partyStats} />
       
+      {/* 編成管理ボタン */}
+      <button onClick={() => controllerRef.current?.openFormationMenu()}>
+        編成管理
+      </button>
+      
+      {/* 編成管理メニュー */}
+      {state.isFormationMenuOpen && (
+        <FormationMenu
+          formations={state.savedFormations}
+          currentFormationId={state.currentFormationId}
+          onLoad={(id) => controllerRef.current?.loadFormation(id)}
+          onDelete={(id) => controllerRef.current?.deleteFormation(id)}
+          onSwitch={(id) => controllerRef.current?.switchToFormation(id)}
+          onClose={() => controllerRef.current?.closeFormationMenu()}
+        />
+      )}
+      
       <div className="party-slots">
         {Array.from({ length: state.maxPartySize }).map((_, i) => (
           <PartySlot
@@ -2609,9 +2748,49 @@ function PartyFormationScreen() {
         onDragStart={(char, pos) => controllerRef.current?.startDrag(char, pos)}
       />
       
+      {/* 現在の編成を保存 */}
+      <button onClick={() => {
+        const name = prompt('編成名を入力してください');
+        if (name) {
+          const id = `formation_${Date.now()}`;
+          controllerRef.current?.saveCurrentFormation(id, name);
+        }
+      }}>
+        現在の編成を保存
+      </button>
+      
       <button onClick={() => controllerRef.current?.confirm()}>
         確定
       </button>
+    </div>
+  );
+}
+
+// 編成管理メニューコンポーネント
+function FormationMenu({ formations, currentFormationId, onLoad, onDelete, onSwitch, onClose }) {
+  return (
+    <div className="formation-menu">
+      <h3>保存済みパーティ編成</h3>
+      <button onClick={onClose}>閉じる</button>
+      
+      <div className="formation-list">
+        {formations.map(formation => (
+          <div 
+            key={formation.id} 
+            className={`formation-item ${formation.id === currentFormationId ? 'active' : ''}`}
+          >
+            <h4>{formation.name}</h4>
+            <p>メンバー: {formation.members.length}人</p>
+            <p>更新: {new Date(formation.updatedAt).toLocaleString()}</p>
+            
+            <div className="formation-actions">
+              <button onClick={() => onLoad(formation.id)}>読み込み</button>
+              <button onClick={() => onSwitch(formation.id)}>切り替え</button>
+              <button onClick={() => onDelete(formation.id)}>削除</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
