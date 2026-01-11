@@ -16,7 +16,7 @@
 | 8 | SkillLearnController | 未レビュー | - | - | スキル習得、条件チェック、コスト管理 |
 | 9 | RewardController | 未レビュー | - | - | 戦闘報酬配分、レベルアップ演出 |
 | 10 | EnhanceController | 未レビュー | - | - | 装備・キャラ強化、成功判定 |
-| 11 | SaveLoadController | 未レビュー | - | - | セーブ/ロード、スロット管理 |
+| 11 | SaveLoadController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | セーブ/ロード、スロット管理 |
 | 12 | JobChangeController | 未レビュー | - | - | 職業変更、条件チェック、ステータス変化プレビュー |
 | 13 | StatusEffectController | 未レビュー | - | - | 状態異常の表示、フィルタ、解除 |
 
@@ -109,16 +109,26 @@
   - PARTY_FORMATION_SYSTEM.md に詳細設計を記載
 - **状態**: 承認
 
+### SaveLoadController
+- **日付**: 2026-01-11
+- **レビュアー**: @yonyon-web
+- **主な変更**:
+  - SaveLoadService実装例を追加（シリアライズ、ストレージアダプタ、バージョン管理）
+  - ミュータブル設計アプローチを採用
+  - スロット管理、自動セーブ、エラーハンドリング
+  - SimulationServiceの実装例も追加（戦闘シミュレーション、勝率計算）
+- **状態**: 承認
+
 ## 次のレビュー優先度
 
-1. **高**: CraftController - アイテム合成機能
+1. **高**: CraftController - アイテム合成機能（レシピ解放システム実装済み）
 2. **中**: SkillLearnController, RewardController
-3. **低**: その他のコントローラー（EnhanceController, SaveLoadController, JobChangeController, StatusEffectController）
+3. **低**: その他のコントローラー（EnhanceController, JobChangeController, StatusEffectController）
 
 ## 進捗状況
 
-- **レビュー済み**: 6/13 コントローラー (46%)
-- **未レビュー**: 7/13 コントローラー (54%)
+- **レビュー済み**: 7/13 コントローラー (54%)
+- **未レビュー**: 6/13 コントローラー (46%)
 
 ## メモ
 
