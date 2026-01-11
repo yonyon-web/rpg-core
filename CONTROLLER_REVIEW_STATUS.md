@@ -11,7 +11,7 @@
 | 3 | ItemController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | アイテム使用、敵/味方ターゲット対応済み |
 | 4 | InventoryController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | インベントリ管理、フィルタ、ソート、ページネーション |
 | 5 | EquipmentController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 装備変更、スロット構成のカスタマイズ対応済み |
-| 6 | PartyController | 未レビュー | - | - | パーティ編成、メンバー入れ替え、隊列変更 |
+| 6 | PartyController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | パーティ編成、メンバー入れ替え、隊列変更、複数編成対応 |
 | 7 | CraftController | 未レビュー | - | - | アイテム合成、材料チェック、成功率表示 |
 | 8 | SkillLearnController | 未レビュー | - | - | スキル習得、条件チェック、コスト管理 |
 | 9 | RewardController | 未レビュー | - | - | 戦闘報酬配分、レベルアップ演出 |
@@ -97,16 +97,28 @@
   - INVENTORY_SYSTEM_DESIGN.md に詳細設計を記載
 - **状態**: 承認
 
+### PartyController
+- **日付**: 2026-01-11
+- **レビュアー**: @yonyon-web
+- **主な変更**:
+  - formationPositionsの使い方に例を追加（前衛・中衛・後衛の配置）
+  - 複数パーティ編成システムの追加（save/load/delete/switch）
+  - Core Engine、Service、Headless UIの3層で編成管理機能を実装
+  - PartyFormation型定義（id, name, members, formationPositions, createdAt, updatedAt）
+  - 編成メニューUI状態とイベントシステムの追加
+  - PARTY_FORMATION_SYSTEM.md に詳細設計を記載
+- **状態**: 承認
+
 ## 次のレビュー優先度
 
-1. **高**: PartyController - よく使われる機能
-2. **中**: CraftController, SkillLearnController
-3. **低**: その他のコントローラー（RewardController, EnhanceController, SaveLoadController, JobChangeController, StatusEffectController）
+1. **高**: CraftController - アイテム合成機能
+2. **中**: SkillLearnController, RewardController
+3. **低**: その他のコントローラー（EnhanceController, SaveLoadController, JobChangeController, StatusEffectController）
 
 ## 進捗状況
 
-- **レビュー済み**: 5/13 コントローラー (38%)
-- **未レビュー**: 8/13 コントローラー (62%)
+- **レビュー済み**: 6/13 コントローラー (46%)
+- **未レビュー**: 7/13 コントローラー (54%)
 
 ## メモ
 
