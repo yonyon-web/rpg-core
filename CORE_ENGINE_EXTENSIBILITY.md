@@ -664,7 +664,134 @@ const criticalCalculators = {
 
 ### 💡 優先度：低（拡張性があると便利）
 
-#### 9. ステータス計算式
+#### 9. 装備スロット構成
+
+**変わりうる理由**: ゲームによって装備システムが大きく異なる
+
+**拡張方法**: 装備スロットの種類を設定可能に
+
+```typescript
+/**
+ * 装備スロットのタイプ定義
+ * ゲームごとに自由に定義可能
+ */
+type EquipmentType = string; // 'weapon' | 'armor' | 'accessory' | 'shield' | 'helmet' | ...
+
+/**
+ * 装備スロット構成の定義
+ */
+interface EquipmentSlotConfig {
+  // スロットの種類一覧
+  slots: EquipmentType[];
+  
+  // スロットごとの表示名（多言語対応）
+  slotNames?: Record<EquipmentType, string>;
+  
+  // スロットごとの制約（オプション）
+  slotConstraints?: {
+    [key in EquipmentType]?: {
+      maxCount?: number;        // 同時装備可能数（例：アクセサリー×2）
+      requiredJob?: string[];   // 装備可能な職業
+      mutuallyExclusive?: EquipmentType[]; // 排他的なスロット
+    };
+  };
+}
+
+/**
+ * 一般的な装備構成の例
+ */
+const equipmentConfigPresets = {
+  // シンプルなRPG（DQ風）
+  'simple': {
+    slots: ['weapon', 'armor', 'shield', 'accessory']
+  },
+  
+  // 多スロットRPG（FF風）
+  'advanced': {
+    slots: ['weapon', 'offhand', 'head', 'body', 'arms', 'accessory1', 'accessory2']
+  },
+  
+  // アクションRPG風
+  'action-rpg': {
+    slots: ['mainWeapon', 'subWeapon', 'armor', 'charm']
+  },
+  
+  // 最小構成
+  'minimal': {
+    slots: ['weapon', 'armor', 'accessory']
+  },
+  
+  // 職業別装備
+  'job-based': {
+    slots: ['weapon', 'armor', 'helmet', 'boots', 'gloves', 'accessory1', 'accessory2'],
+    slotConstraints: {
+      weapon: {
+        requiredJob: ['warrior', 'knight', 'thief']
+      },
+      helmet: {
+        requiredJob: ['warrior', 'knight']
+      }
+    }
+  }
+};
+
+/**
+ * キャラクターの装備データ構造
+ * スロット構成に応じて動的に扱う
+ */
+interface CharacterEquipment {
+  [slotType: string]: Equipment | null;
+}
+
+/**
+ * 使用例：カスタム装備構成
+ */
+const customEquipmentConfig: EquipmentSlotConfig = {
+  slots: ['rightHand', 'leftHand', 'head', 'body', 'feet', 'ring1', 'ring2', 'necklace'],
+  slotNames: {
+    rightHand: '右手',
+    leftHand: '左手',
+    head: '頭',
+    body: '身体',
+    feet: '足',
+    ring1: '指輪1',
+    ring2: '指輪2',
+    necklace: '首飾り'
+  },
+  slotConstraints: {
+    ring1: { maxCount: 1 },
+    ring2: { maxCount: 1 },
+    rightHand: {
+      mutuallyExclusive: ['leftHand'] // 両手武器の場合
+    }
+  }
+};
+```
+
+**推奨実装**:
+- 装備スロットの種類をゲーム設定として定義可能に
+- プリセット構成を提供（シンプル、標準、複雑など）
+- スロットごとの制約条件をサポート
+- UIコントローラーは設定されたスロット構成を使用
+
+**EquipmentControllerでの使用例**:
+```typescript
+// ゲーム設定から装備スロット構成を取得
+const gameConfig = {
+  equipmentSlots: ['weapon', 'shield', 'helmet', 'armor', 'boots', 'accessory1', 'accessory2']
+};
+
+// EquipmentControllerに設定を渡す
+const equipmentService = new EquipmentService(coreEngine);
+const equipmentController = new EquipmentController(
+  equipmentService, 
+  gameConfig.equipmentSlots
+);
+```
+
+---
+
+#### 10. ステータス計算式
 
 **変わりうる理由**: 装備やバフの計算方法がゲームにより異なる
 
@@ -697,7 +824,7 @@ interface StatCalculationRules {
 
 ---
 
-#### 10. ターン順の決定方法
+#### 11. ターン順の決定方法
 
 **変わりうる理由**: ゲームシステムの多様性（ATB、CTBなど）
 
@@ -815,6 +942,7 @@ interface ExtensibleConfig {
   definitions: {
     statusEffects?: StatusEffectDefinition[];
     aiStrategies?: AIStrategy[];
+    equipmentSlots?: EquipmentType[]; // 装備スロット構成
     // ...
   };
 }
@@ -842,8 +970,9 @@ const engine = new CoreEngine(extensibleConfig);
 
 ### フェーズ3: あると便利な拡張ポイント
 
-9. **ステータス計算式** - 細かいバランス調整
-10. **ターンシステム** - ゲームシステムの根本変更
+9. **装備スロット構成** - ゲームごとの装備システムの違い
+10. **ステータス計算式** - 細かいバランス調整
+11. **ターンシステム** - ゲームシステムの根本変更
 
 ---
 

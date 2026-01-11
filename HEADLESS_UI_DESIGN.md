@@ -1465,6 +1465,7 @@ class EquipmentController {
   constructor(service: EquipmentService, equipmentSlotConfig?: EquipmentType[]) {
     this.service = service;
     // デフォルトのスロット構成。使用者が独自の構成を渡すことも可能
+    // 装備スロット構成の詳細は CORE_ENGINE_EXTENSIBILITY.md の「装備スロット構成」を参照
     this.equipmentSlotConfig = equipmentSlotConfig || ['weapon', 'armor', 'accessory'] as EquipmentType[];
     
     this.state = new ObservableState<EquipmentUIState>({
@@ -1718,10 +1719,10 @@ function EquipmentScreen({ character }: { character: Character }) {
   );
 }
 
-// 複数のスロット構成を持つゲームの例
-function EquipmentScreenAdvanced({ character, gameConfig }: { 
+// ExtensibleConfigから装備スロット構成を取得する例
+function EquipmentScreenWithConfig({ character, coreEngine }: { 
   character: Character; 
-  gameConfig: GameConfig;
+  coreEngine: ExtensibleCoreEngine;
 }) {
   const [state, setState] = useState<EquipmentUIState>();
   const controllerRef = useRef<EquipmentController>();
@@ -1729,8 +1730,9 @@ function EquipmentScreenAdvanced({ character, gameConfig }: {
   useEffect(() => {
     const service = new EquipmentService(coreEngine);
     
-    // ゲーム設定から装備スロットを取得
-    const equipmentSlots = gameConfig.equipmentSlots || ['weapon', 'armor', 'accessory'];
+    // Core Engineの拡張設定から装備スロットを取得
+    // CORE_ENGINE_EXTENSIBILITY.mdで定義された構成を使用
+    const equipmentSlots = coreEngine.config.definitions.equipmentSlots || ['weapon', 'armor', 'accessory'];
     const controller = new EquipmentController(service, equipmentSlots);
     
     controllerRef.current = controller;
@@ -1738,11 +1740,48 @@ function EquipmentScreenAdvanced({ character, gameConfig }: {
     controller.startEquipmentChange(character);
     
     return unsubscribe;
-  }, [character, gameConfig]);
+  }, [character, coreEngine]);
+  
+  // ... rest of the component
+}
+
+// プリセット構成を使用する例
+function EquipmentScreenWithPreset({ character, presetName }: { 
+  character: Character; 
+  presetName: 'simple' | 'advanced' | 'action-rpg' | 'minimal';
+}) {
+  const [state, setState] = useState<EquipmentUIState>();
+  const controllerRef = useRef<EquipmentController>();
+  
+  useEffect(() => {
+    const service = new EquipmentService(coreEngine);
+    
+    // CORE_ENGINE_EXTENSIBILITY.mdで定義されたプリセットを使用
+    const equipmentConfigPresets = {
+      'simple': ['weapon', 'armor', 'shield', 'accessory'],
+      'advanced': ['weapon', 'offhand', 'head', 'body', 'arms', 'accessory1', 'accessory2'],
+      'action-rpg': ['mainWeapon', 'subWeapon', 'armor', 'charm'],
+      'minimal': ['weapon', 'armor', 'accessory']
+    };
+    
+    const equipmentSlots = equipmentConfigPresets[presetName];
+    const controller = new EquipmentController(service, equipmentSlots);
+    
+    controllerRef.current = controller;
+    const unsubscribe = controller.subscribe(setState);
+    controller.startEquipmentChange(character);
+    
+    return unsubscribe;
+  }, [character, presetName]);
   
   // ... rest of the component
 }
 ```
+
+**装備スロット構成について**:
+- 装備スロットの定義方法については `CORE_ENGINE_EXTENSIBILITY.md` の「装備スロット構成」セクションを参照
+- ゲームごとに自由にスロット構成を定義可能
+- プリセット構成（simple, advanced, action-rpg, minimal）を利用可能
 
 ---
 
