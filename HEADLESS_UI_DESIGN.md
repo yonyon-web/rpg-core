@@ -160,7 +160,6 @@ interface BattleUIState {
   
   // メッセージ
   messages: BattleMessage[];
-  currentMessage: string | null;
   
   // 結果
   result: 'victory' | 'defeat' | 'escaped' | null;
@@ -180,9 +179,28 @@ interface BattleAnimation {
   duration: number;
 }
 
+type BattleMessageType = 
+  | 'battle-start'
+  | 'action-execute'
+  | 'damage'
+  | 'heal'
+  | 'battle-end'
+  | 'turn-start';
+
+interface BattleMessageData {
+  actorName?: string;
+  actionName?: string;
+  damage?: number;
+  heal?: number;
+  result?: 'victory' | 'defeat' | 'escaped';
+  turnNumber?: number;
+  [key: string]: any; // 拡張可能
+}
+
 interface BattleMessage {
   id: string;
-  text: string;
+  type: BattleMessageType;
+  data: BattleMessageData;
   timestamp: number;
 }
 ```
@@ -217,7 +235,6 @@ class BattleController {
       currentAnimation: null,
       animationQueue: [],
       messages: [],
-      currentMessage: null,
       result: null,
       rewards: null,
       isWaitingForInput: false,
@@ -253,7 +270,7 @@ class BattleController {
     });
     
     this.events.emit('battle-started', { party, enemies });
-    this.addMessage('戦闘開始！');
+    this.addMessage('battle-start', {});
     
     await this.advanceTurn();
   }
@@ -324,7 +341,10 @@ class BattleController {
     }));
     
     // アクションメッセージ
-    this.addMessage(`${action.actor.name}の${this.getActionName(action)}！`);
+    this.addMessage('action-execute', {
+      actorName: action.actor.name,
+      actionName: this.getActionName(action)
+    });
     
     // Service経由で実行
     const result = await this.service.executeAction(action.actor, action);
@@ -341,10 +361,10 @@ class BattleController {
     
     // 結果メッセージ
     if (result.damage) {
-      this.addMessage(`${result.damage}のダメージ！`);
+      this.addMessage('damage', { damage: result.damage });
     }
     if (result.heal) {
-      this.addMessage(`${result.heal}回復！`);
+      this.addMessage('heal', { heal: result.heal });
     }
     
     this.events.emit('action-executed', { action, result });
@@ -392,17 +412,17 @@ class BattleController {
   }
   
   // メッセージ追加
-  private addMessage(text: string): void {
+  private addMessage(type: BattleMessageType, data: BattleMessageData): void {
     const message: BattleMessage = {
       id: `msg-${Date.now()}`,
-      text,
+      type,
+      data,
       timestamp: Date.now()
     };
     
     this.state.setState(prev => ({
       ...prev,
-      messages: [...prev.messages, message],
-      currentMessage: text
+      messages: [...prev.messages, message]
     }));
     
     this.events.emit('message-added', message);
@@ -422,13 +442,7 @@ class BattleController {
     
     this.events.emit('battle-ended', { result, rewards });
     
-    if (result === 'victory') {
-      this.addMessage('勝利！');
-    } else if (result === 'defeat') {
-      this.addMessage('全滅...');
-    } else {
-      this.addMessage('逃げ出した！');
-    }
+    this.addMessage('battle-end', { result });
   }
   
   // コマンド決定時のハンドラー
@@ -463,6 +477,29 @@ class BattleController {
 ### 使用例（React）
 
 ```typescript
+// メッセージフォーマット関数（ゲームごとにカスタマイズ可能）
+function formatBattleMessage(message: BattleMessage): string {
+  switch (message.type) {
+    case 'battle-start':
+      return '戦闘開始！';
+    case 'action-execute':
+      return `${message.data.actorName}の${message.data.actionName}！`;
+    case 'damage':
+      return `${message.data.damage}のダメージ！`;
+    case 'heal':
+      return `${message.data.heal}回復！`;
+    case 'battle-end':
+      if (message.data.result === 'victory') return '勝利！';
+      if (message.data.result === 'defeat') return '全滅...';
+      if (message.data.result === 'escaped') return '逃げ出した！';
+      return '戦闘終了';
+    case 'turn-start':
+      return `ターン${message.data.turnNumber}`;
+    default:
+      return '';
+  }
+}
+
 function BattleScreen() {
   const [state, setState] = useState<BattleUIState>();
   const controllerRef = useRef<BattleController>();
@@ -478,7 +515,7 @@ function BattleScreen() {
     
     // イベント購読
     const unsubscribeMessage = controller.on('message-added', (msg) => {
-      console.log('New message:', msg.text);
+      console.log('New message:', formatBattleMessage(msg));
     });
     
     // 戦闘開始
@@ -492,6 +529,11 @@ function BattleScreen() {
   
   if (!state) return <div>Loading...</div>;
   
+  // 最新のメッセージを取得してフォーマット
+  const currentMessage = state.messages.length > 0 
+    ? formatBattleMessage(state.messages[state.messages.length - 1])
+    : null;
+  
   return (
     <div className="battle-screen">
       <BattleField 
@@ -500,7 +542,7 @@ function BattleScreen() {
         currentAnimation={state.currentAnimation}
       />
       
-      <MessageBox message={state.currentMessage} />
+      <MessageBox message={currentMessage} />
       
       {state.phase === 'selecting-command' && state.isWaitingForInput && (
         <CommandMenu
@@ -514,6 +556,54 @@ function BattleScreen() {
       )}
     </div>
   );
+}
+```
+
+### メッセージのカスタマイズ
+
+新しい`BattleMessage`構造では、メッセージタイプとデータを分離することで、各ゲームが独自のメッセージフォーマットを実装できます。
+
+**利点：**
+
+1. **多言語対応**: メッセージタイプとデータから各言語のテキストを生成可能
+2. **表現の自由度**: 同じデータから異なるスタイルのメッセージを作成可能
+3. **拡張性**: 新しいメッセージタイプを追加しやすい
+4. **ログ分析**: メッセージタイプで戦闘ログを分析可能
+
+**使用例：異なるスタイル**
+
+```typescript
+// カジュアルなスタイル
+function formatCasual(message: BattleMessage): string {
+  switch (message.type) {
+    case 'action-execute':
+      return `${message.data.actorName}が${message.data.actionName}を使った！`;
+    case 'damage':
+      return `${message.data.damage}ダメージ！`;
+    // ...
+  }
+}
+
+// フォーマルなスタイル
+function formatFormal(message: BattleMessage): string {
+  switch (message.type) {
+    case 'action-execute':
+      return `${message.data.actorName}は${message.data.actionName}を実行しました。`;
+    case 'damage':
+      return `${message.data.damage}ポイントのダメージを与えました。`;
+    // ...
+  }
+}
+
+// 英語版
+function formatEnglish(message: BattleMessage): string {
+  switch (message.type) {
+    case 'action-execute':
+      return `${message.data.actorName} used ${message.data.actionName}!`;
+    case 'damage':
+      return `${message.data.damage} damage!`;
+    // ...
+  }
 }
 ```
 
