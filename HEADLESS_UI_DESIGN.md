@@ -951,7 +951,8 @@ interface ItemUIState {
   currentCategory: ItemCategory | null;
   
   // ターゲット候補（コンテキストに応じて設定）
-  availableTargets: Combatant[];
+  allTargets: Combatant[]; // 元のターゲットリスト（フィルタリング前）
+  availableTargets: Combatant[]; // 現在利用可能なターゲット（フィルタリング後）
   
   // 選択
   selectedItem: Item | null;
@@ -1014,6 +1015,7 @@ class ItemController {
       availableItems: [],
       itemCategories: [],
       currentCategory: null,
+      allTargets: [],
       availableTargets: [],
       selectedItem: null,
       selectedTargets: [],
@@ -1048,7 +1050,7 @@ class ItemController {
     
     // コンテキストに応じてターゲット候補を設定
     // フィールドではパーティメンバーのみ、戦闘では味方と敵の両方
-    const availableTargets: Combatant[] = context === 'battle' && enemies
+    const allTargets: Combatant[] = context === 'battle' && enemies
       ? [...party, ...enemies]
       : party;
     
@@ -1058,7 +1060,8 @@ class ItemController {
       availableItems,
       itemCategories: categories,
       currentCategory: categories[0] || null,
-      availableTargets,
+      allTargets, // 元のリストを保持
+      availableTargets: allTargets, // 初期状態では全ターゲット
       selectedItem: null,
       selectedTargets: [],
       cursorIndex: 0,
@@ -1103,14 +1106,14 @@ class ItemController {
   
   // ターゲット選択へ移動
   private moveToTargetSelection(item: Item): void {
-    // アイテムのターゲットタイプに応じて利用可能なターゲットをフィルタ
-    const allTargets = this.state.getState().availableTargets;
+    // allTargetsから元のターゲットリストを取得
+    const allTargets = this.state.getState().allTargets;
     const filteredTargets = this.filterTargetsByItemType(item, allTargets);
     
     this.state.setState(prev => ({
       ...prev,
       stage: 'selecting-target',
-      availableTargets: filteredTargets,
+      availableTargets: filteredTargets, // フィルタリング後のリストのみ更新
       cursorIndex: 0
     }));
   }
@@ -1252,11 +1255,13 @@ class ItemController {
     
     if (currentState.stage === 'selecting-target') {
       // アイテム選択に戻る
+      // allTargetsを保持しているので、availableTargetsをリセット
       this.state.setState(prev => ({
         ...prev,
         stage: 'selecting-item',
         selectedItem: null,
         selectedTargets: [],
+        availableTargets: prev.allTargets, // 元のリストに戻す
         effectPreview: null,
         cursorIndex: 0
       }));
