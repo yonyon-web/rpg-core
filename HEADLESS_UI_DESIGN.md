@@ -3236,6 +3236,545 @@ class SaveLoadController {
 
 ---
 
+## 11. JobChangeController - 職業変更UI制御
+
+### 状態定義
+
+```typescript
+interface JobChangeUIState {
+  // 対象キャラクター
+  character: Character | null;
+  
+  // 選択段階
+  stage: 'selecting-job' | 'confirming' | 'completed';
+  
+  // ジョブ
+  currentJob: Job | null;
+  availableJobs: Job[];
+  selectedJob: Job | null;
+  
+  // 条件
+  jobChangeCondition: JobChangeConditionCheck | null;
+  
+  // プレビュー
+  previewStats: Stats | null;
+  statChanges: StatChanges | null;
+  newSkills: Skill[];
+  lostSkills: Skill[];
+  
+  // カーソル
+  cursorIndex: number;
+  
+  // 結果
+  result: JobChangeResult | null;
+}
+
+interface JobChangeConditionCheck {
+  job: Job;
+  canChange: boolean;
+  conditions: {
+    type: 'level' | 'prerequisite-job' | 'item' | 'quest';
+    met: boolean;
+    requirement: string;
+    current: string;
+  }[];
+}
+
+interface StatChanges {
+  hp: number;
+  mp: number;
+  attack: number;
+  defense: number;
+  magic: number;
+  speed: number;
+}
+
+interface JobChangeResult {
+  success: boolean;
+  character: Character;
+  oldJob: Job;
+  newJob: Job;
+  statChanges: StatChanges;
+  gainedSkills: Skill[];
+  lostSkills: Skill[];
+  message: string;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type JobChangeEvents = {
+  'job-selected': { job: Job };
+  'job-changed': { result: JobChangeResult };
+  'cancelled': {};
+};
+
+class JobChangeController {
+  private state: ObservableState<JobChangeUIState>;
+  private events: EventEmitter<JobChangeEvents>;
+  private service: JobChangeService;
+  
+  constructor(service: JobChangeService) {
+    this.service = service;
+    this.state = new ObservableState<JobChangeUIState>({
+      character: null,
+      stage: 'selecting-job',
+      currentJob: null,
+      availableJobs: [],
+      selectedJob: null,
+      jobChangeCondition: null,
+      previewStats: null,
+      statChanges: null,
+      newSkills: [],
+      lostSkills: [],
+      cursorIndex: 0,
+      result: null
+    });
+    this.events = new EventEmitter<JobChangeEvents>();
+  }
+  
+  subscribe(listener: (state: JobChangeUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof JobChangeEvents>(
+    event: K,
+    listener: (data: JobChangeEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // 職業変更開始
+  startJobChange(character: Character): void {
+    const availableJobs = this.service.getAvailableJobs(character);
+    
+    this.state.setState({
+      character,
+      stage: 'selecting-job',
+      currentJob: character.job,
+      availableJobs,
+      selectedJob: null,
+      jobChangeCondition: null,
+      previewStats: null,
+      statChanges: null,
+      newSkills: [],
+      lostSkills: [],
+      cursorIndex: 0,
+      result: null
+    });
+  }
+  
+  // ジョブ選択
+  selectJob(job: Job): void {
+    const character = this.state.getState().character!;
+    
+    // 変更条件チェック
+    const condition = this.service.checkJobChangeCondition(character, job);
+    
+    // ステータスプレビュー
+    const previewStats = this.calculatePreviewStats(character, job);
+    const statChanges = this.calculateStatChanges(character, job);
+    
+    // スキル変更予測
+    const newSkills = this.getNewSkills(character, job);
+    const lostSkills = this.getLostSkills(character, job);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      selectedJob: job,
+      jobChangeCondition: condition as JobChangeConditionCheck,
+      previewStats,
+      statChanges,
+      newSkills,
+      lostSkills
+    }));
+    
+    this.events.emit('job-selected', { job });
+  }
+  
+  // 確認画面へ
+  moveToConfirming(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'confirming'
+    }));
+  }
+  
+  // ジョブ変更実行
+  async changeJob(): Promise<void> {
+    const character = this.state.getState().character!;
+    const job = this.state.getState().selectedJob!;
+    
+    const result = this.service.changeJob(character, job);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'completed',
+      result: result as JobChangeResult,
+      currentJob: job
+    }));
+    
+    this.events.emit('job-changed', { result: result as JobChangeResult });
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const maxIndex = this.state.getState().availableJobs.length - 1;
+    const currentIndex = this.state.getState().cursorIndex;
+    const newIndex = Math.max(0, Math.min(maxIndex, currentIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // キャンセル
+  cancel(): void {
+    const currentState = this.state.getState();
+    
+    if (currentState.stage === 'confirming') {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-job'
+      }));
+    } else {
+      this.events.emit('cancelled', {});
+    }
+  }
+  
+  // ユーティリティ
+  private calculatePreviewStats(character: Character, job: Job): Stats {
+    // Serviceを通じて新しいステータスを計算
+    const baseStats = character.stats;
+    const jobModifier = job.statModifiers;
+    
+    return {
+      maxHp: baseStats.maxHp + jobModifier.hp,
+      maxMp: baseStats.maxMp + jobModifier.mp,
+      attack: baseStats.attack + jobModifier.attack,
+      defense: baseStats.defense + jobModifier.defense,
+      magic: baseStats.magic + jobModifier.magic,
+      speed: baseStats.speed + jobModifier.speed
+    };
+  }
+  
+  private calculateStatChanges(character: Character, job: Job): StatChanges {
+    const currentStats = character.stats;
+    const previewStats = this.calculatePreviewStats(character, job);
+    
+    return {
+      hp: previewStats.maxHp - currentStats.maxHp,
+      mp: previewStats.maxMp - currentStats.maxMp,
+      attack: previewStats.attack - currentStats.attack,
+      defense: previewStats.defense - currentStats.defense,
+      magic: previewStats.magic - currentStats.magic,
+      speed: previewStats.speed - currentStats.speed
+    };
+  }
+  
+  private getNewSkills(character: Character, job: Job): Skill[] {
+    // ジョブ固有スキルから、まだ持っていないものを取得
+    return job.skills.filter(skill => 
+      !character.skills.some(s => s.id === skill.id)
+    );
+  }
+  
+  private getLostSkills(character: Character, job: Job): Skill[] {
+    // 現在のジョブ固有スキルで、新ジョブでは使えなくなるものを取得
+    const currentJobSkills = character.job.skills;
+    return currentJobSkills.filter(skill => 
+      !job.skills.some(s => s.id === skill.id)
+    );
+  }
+}
+```
+
+### 使用例（React）
+
+```typescript
+function JobChangeScreen({ character }: { character: Character }) {
+  const [state, setState] = useState<JobChangeUIState>();
+  const controllerRef = useRef<JobChangeController>();
+  
+  useEffect(() => {
+    const service = new JobChangeService(coreEngine);
+    const controller = new JobChangeController(service);
+    controllerRef.current = controller;
+    
+    const unsubscribe = controller.subscribe(setState);
+    
+    controller.startJobChange(character);
+    
+    return unsubscribe;
+  }, [character]);
+  
+  if (!state) return <div>Loading...</div>;
+  
+  return (
+    <div className="job-change-screen">
+      <CharacterInfo character={state.character!} currentJob={state.currentJob} />
+      
+      {state.stage === 'selecting-job' && (
+        <>
+          <JobList
+            jobs={state.availableJobs}
+            cursorIndex={state.cursorIndex}
+            onSelectJob={(job) => controllerRef.current?.selectJob(job)}
+          />
+          
+          {state.selectedJob && (
+            <JobPreview
+              job={state.selectedJob}
+              condition={state.jobChangeCondition}
+              statChanges={state.statChanges}
+              newSkills={state.newSkills}
+              lostSkills={state.lostSkills}
+              onConfirm={() => controllerRef.current?.moveToConfirming()}
+            />
+          )}
+        </>
+      )}
+      
+      {state.stage === 'confirming' && (
+        <ConfirmDialog
+          message={`${state.selectedJob?.name}に転職しますか？`}
+          onConfirm={() => controllerRef.current?.changeJob()}
+          onCancel={() => controllerRef.current?.cancel()}
+        />
+      )}
+      
+      {state.stage === 'completed' && state.result && (
+        <JobChangeResult result={state.result} />
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## 12. StatusEffectController - 状態異常表示UI制御
+
+### 状態定義
+
+```typescript
+interface StatusEffectUIState {
+  // 対象
+  target: Combatant | null;
+  
+  // 状態異常一覧
+  activeEffects: ActiveStatusEffect[];
+  
+  // 詳細表示
+  selectedEffect: ActiveStatusEffect | null;
+  
+  // フィルタ
+  filterType: 'all' | 'buff' | 'debuff' | 'ailment' | null;
+  
+  // ソート
+  sortBy: 'duration' | 'severity' | 'name';
+  
+  // カーソル
+  cursorIndex: number;
+}
+
+interface ActiveStatusEffect {
+  id: string;
+  effect: StatusEffect;
+  target: Combatant;
+  source: Combatant | null;
+  appliedAt: number;
+  duration: number;
+  remainingTurns: number;
+  stackCount: number;
+  category: 'buff' | 'debuff' | 'ailment';
+  canDispel: boolean;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type StatusEffectEvents = {
+  'effect-selected': { effect: ActiveStatusEffect };
+  'effect-expired': { effect: ActiveStatusEffect };
+  'effect-dispelled': { effect: ActiveStatusEffect };
+};
+
+class StatusEffectController {
+  private state: ObservableState<StatusEffectUIState>;
+  private events: EventEmitter<StatusEffectEvents>;
+  private service: StatusEffectService;
+  
+  constructor(service: StatusEffectService) {
+    this.service = service;
+    this.state = new ObservableState<StatusEffectUIState>({
+      target: null,
+      activeEffects: [],
+      selectedEffect: null,
+      filterType: 'all',
+      sortBy: 'duration',
+      cursorIndex: 0
+    });
+    this.events = new EventEmitter<StatusEffectEvents>();
+  }
+  
+  subscribe(listener: (state: StatusEffectUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof StatusEffectEvents>(
+    event: K,
+    listener: (data: StatusEffectEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // 状態異常表示開始
+  showStatusEffects(target: Combatant): void {
+    const activeEffects = this.getActiveEffects(target);
+    
+    this.state.setState({
+      target,
+      activeEffects,
+      selectedEffect: null,
+      filterType: 'all',
+      sortBy: 'duration',
+      cursorIndex: 0
+    });
+  }
+  
+  // エフェクト選択
+  selectEffect(effect: ActiveStatusEffect): void {
+    this.state.setState(prev => ({
+      ...prev,
+      selectedEffect: effect
+    }));
+    
+    this.events.emit('effect-selected', { effect });
+  }
+  
+  // フィルタ変更
+  setFilter(filterType: 'all' | 'buff' | 'debuff' | 'ailment'): void {
+    this.state.setState(prev => ({
+      ...prev,
+      filterType,
+      cursorIndex: 0
+    }));
+  }
+  
+  // ソート変更
+  setSortBy(sortBy: 'duration' | 'severity' | 'name'): void {
+    this.state.setState(prev => ({
+      ...prev,
+      sortBy
+    }));
+  }
+  
+  // フィルタ・ソート済みエフェクト取得
+  getFilteredEffects(): ActiveStatusEffect[] {
+    const currentState = this.state.getState();
+    let effects = currentState.activeEffects;
+    
+    // フィルタ適用
+    if (currentState.filterType !== 'all') {
+      effects = effects.filter(e => e.category === currentState.filterType);
+    }
+    
+    // ソート適用
+    effects = [...effects].sort((a, b) => {
+      switch (currentState.sortBy) {
+        case 'duration':
+          return a.remainingTurns - b.remainingTurns;
+        case 'name':
+          return a.effect.name.localeCompare(b.effect.name);
+        case 'severity':
+          return (b.effect.severity || 0) - (a.effect.severity || 0);
+        default:
+          return 0;
+      }
+    });
+    
+    return effects;
+  }
+  
+  // 解除試行
+  async tryDispel(effect: ActiveStatusEffect): Promise<void> {
+    if (!effect.canDispel) {
+      return;
+    }
+    
+    const result = this.service.removeStatusEffect(
+      effect.target,
+      effect.effect.type
+    );
+    
+    if (result.success) {
+      // 状態を更新
+      this.refreshEffects();
+      this.events.emit('effect-dispelled', { effect });
+    }
+  }
+  
+  // エフェクト更新
+  refreshEffects(): void {
+    const target = this.state.getState().target;
+    if (target) {
+      const activeEffects = this.getActiveEffects(target);
+      this.state.setState(prev => ({
+        ...prev,
+        activeEffects
+      }));
+    }
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const filteredEffects = this.getFilteredEffects();
+    const maxIndex = filteredEffects.length - 1;
+    const currentIndex = this.state.getState().cursorIndex;
+    const newIndex = Math.max(0, Math.min(maxIndex, currentIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // アクティブエフェクト取得
+  private getActiveEffects(target: Combatant): ActiveStatusEffect[] {
+    return target.statusEffects.map(effect => ({
+      id: `${target.id}-${effect.type}`,
+      effect,
+      target,
+      source: null, // 付与者情報があれば設定
+      appliedAt: Date.now(), // 実際の適用時刻
+      duration: effect.duration,
+      remainingTurns: effect.remainingTurns || 0,
+      stackCount: effect.stackCount || 1,
+      category: this.categorizeEffect(effect),
+      canDispel: effect.canDispel !== false
+    }));
+  }
+  
+  private categorizeEffect(effect: StatusEffect): 'buff' | 'debuff' | 'ailment' {
+    // エフェクトの種類に基づいて分類
+    if (effect.type.includes('poison') || effect.type.includes('paralyze')) {
+      return 'ailment';
+    }
+    if (effect.statModifiers) {
+      const hasPositive = Object.values(effect.statModifiers).some(v => v > 0);
+      return hasPositive ? 'buff' : 'debuff';
+    }
+    return 'buff';
+  }
+}
+```
+
+---
+
 ## UI Framework統合
 
 ### React統合
@@ -3425,7 +3964,7 @@ describe('BattleController', () => {
 **フェーズ1: 戦闘UI**
 1. BattleController - 戦闘全体の進行管理
 2. CommandController - コマンド選択UI
-3. EnemyAIController - 敵AI（自動実行、UIは不要）
+3. StatusEffectController - 状態異常表示（戦闘中に使用）
 
 **フェーズ2: 管理UI**
 4. PartyController - パーティ編成
@@ -3435,17 +3974,12 @@ describe('BattleController', () => {
 **フェーズ3: 成長・報酬UI**
 7. RewardController - 戦闘報酬とレベルアップ
 8. SkillLearnController - スキル習得
-9. JobChangeController - 職業変更（必要に応じて）
+9. JobChangeController - 職業変更
 
 **フェーズ4: 発展UI**
 10. CraftController - アイテム合成
 11. EnhanceController - 装備・キャラ強化
 12. SaveLoadController - セーブ/ロード
-
-**その他のController**
-- StatusEffectController - 状態異常管理（主にBattleController内で使用）
-- EnemyGroupController - 敵グループ管理（主にBattleController内で使用）
-- SimulationController - 戦闘シミュレーション（高度な機能）
 
 ### 推奨パターン
 
@@ -3455,7 +3989,7 @@ describe('BattleController', () => {
 
 ### コントローラー一覧
 
-本ドキュメントでは、以下の10のコントローラーの詳細設計を記載しました：
+本ドキュメントでは、以下の12のコントローラーの詳細設計を記載しました：
 
 | # | Controller | 対応Service | 概要 |
 |---|-----------|------------|------|
@@ -3469,5 +4003,15 @@ describe('BattleController', () => {
 | 8 | RewardController | RewardService | 戦闘報酬配分、レベルアップ演出 |
 | 9 | EnhanceController | EnhanceService | 装備・キャラ強化、成功判定 |
 | 10 | SaveLoadController | SaveLoadService | セーブ/ロード、スロット管理 |
+| 11 | JobChangeController | JobChangeService | 職業変更、条件チェック、ステータス変化プレビュー |
+| 12 | StatusEffectController | StatusEffectService | 状態異常の表示、フィルタ、解除 |
+
+### UI不要または内部的に使用されるService
+
+以下のServiceは独立したコントローラーを持たず、他のコントローラー内で使用されます：
+
+- **EnemyAIService**: BattleController内で敵ターン時に自動的に使用
+- **EnemyGroupService**: BattleController開始時に敵グループ生成に使用
+- **SimulationService**: 高度な機能として、必要に応じて専用UIを実装
 
 このヘッドレスUI設計により、rpg-coreのServiceを任意のUIフレームワークで簡単に利用できるようになります。
