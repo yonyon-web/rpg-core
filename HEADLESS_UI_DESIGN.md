@@ -933,76 +933,2304 @@ class CommandController {
 
 ---
 
-## 3. その他のコントローラー（概要）
+## 3. ItemController - アイテム使用UI制御
 
-### ItemController
+### 状態定義
 
 ```typescript
 interface ItemUIState {
+  // 使用段階
+  stage: 'selecting-item' | 'selecting-target' | 'confirming' | 'applying' | 'completed';
+  
+  // コンテキスト
   context: 'battle' | 'field';
-  stage: 'selecting-item' | 'selecting-target' | 'confirming';
+  
+  // アイテム一覧
   availableItems: Item[];
+  itemCategories: ItemCategory[];
+  currentCategory: ItemCategory | null;
+  
+  // 選択
   selectedItem: Item | null;
   selectedTargets: Character[];
+  
+  // カーソル
+  cursorIndex: number;
+  
+  // 効果プレビュー
+  effectPreview: ItemEffectPreview | null;
+  
+  // 結果
   result: ItemUseResult | null;
-}
-
-class ItemController {
-  // アイテム使用の全フローを管理
-  // ItemServiceと連携
-}
-```
-
-### EquipmentController
-
-```typescript
-interface EquipmentUIState {
-  character: Character | null;
-  slot: EquipmentType | null;
-  availableEquipment: Equipment[];
-  selectedEquipment: Equipment | null;
-  comparison: EquipmentComparison | null;
-  previewStats: Stats | null;
-}
-
-class EquipmentController {
-  // 装備変更UIを制御
-  // 装備比較とステータスプレビューを提供
-}
-```
-
-### PartyController
-
-```typescript
-interface PartyUIState {
-  allCharacters: Character[];
-  currentParty: Character[];
-  selectedCharacter: Character | null;
-  maxPartySize: number;
-  formationPositions: number[];
-}
-
-class PartyController {
-  // パーティ編成UIを制御
-  // ドラッグ&ドロップなどの操作をサポート
-}
-```
-
-### CraftController
-
-```typescript
-interface CraftUIState {
-  availableRecipes: Recipe[];
-  selectedRecipe: Recipe | null;
-  materialCheck: RecipeCheckResult | null;
-  successRate: number;
-  result: SynthesisResult | null;
   isProcessing: boolean;
 }
 
+interface ItemEffectPreview {
+  item: Item;
+  target: Character;
+  expectedHeal?: number;
+  expectedDamage?: number;
+  statusEffects?: StatusEffect[];
+}
+
+interface ItemUseResult {
+  success: boolean;
+  item: Item;
+  targets: Character[];
+  effects: {
+    target: Character;
+    heal?: number;
+    damage?: number;
+    statusEffectsApplied?: StatusEffect[];
+    statusEffectsRemoved?: StatusEffectType[];
+  }[];
+  message: string;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type ItemEvents = {
+  'item-selected': { item: Item };
+  'target-selected': { target: Character };
+  'item-used': { result: ItemUseResult };
+  'item-cancelled': {};
+};
+
+class ItemController {
+  private state: ObservableState<ItemUIState>;
+  private events: EventEmitter<ItemEvents>;
+  private service: ItemService;
+  
+  constructor(service: ItemService) {
+    this.service = service;
+    this.state = new ObservableState<ItemUIState>({
+      stage: 'selecting-item',
+      context: 'field',
+      availableItems: [],
+      itemCategories: [],
+      currentCategory: null,
+      selectedItem: null,
+      selectedTargets: [],
+      cursorIndex: 0,
+      effectPreview: null,
+      result: null,
+      isProcessing: false
+    });
+    this.events = new EventEmitter<ItemEvents>();
+  }
+  
+  subscribe(listener: (state: ItemUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof ItemEvents>(
+    event: K,
+    listener: (data: ItemEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // アイテム使用開始
+  startItemUse(context: 'battle' | 'field', party: Character[]): void {
+    this.service.startItemUse(context);
+    
+    const availableItems = this.service.getUsableItems(context);
+    const categories = this.categorizeItems(availableItems);
+    
+    this.state.setState({
+      stage: 'selecting-item',
+      context,
+      availableItems,
+      itemCategories: categories,
+      currentCategory: categories[0] || null,
+      selectedItem: null,
+      selectedTargets: [],
+      cursorIndex: 0,
+      effectPreview: null,
+      result: null,
+      isProcessing: false
+    });
+  }
+  
+  // カテゴリー変更
+  selectCategory(category: ItemCategory): void {
+    const filteredItems = this.state.getState().availableItems.filter(
+      item => item.category === category
+    );
+    
+    this.state.setState(prev => ({
+      ...prev,
+      currentCategory: category,
+      cursorIndex: 0
+    }));
+  }
+  
+  // アイテム選択
+  selectItem(item: Item): void {
+    this.service.selectItem(item);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      selectedItem: item
+    }));
+    
+    this.events.emit('item-selected', { item });
+    
+    // ターゲット選択が必要か判定
+    if (this.requiresTargetSelection(item)) {
+      this.moveToTargetSelection();
+    } else {
+      // ターゲット不要（全体効果など）
+      this.confirm();
+    }
+  }
+  
+  // ターゲット選択へ移動
+  private moveToTargetSelection(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'selecting-target',
+      cursorIndex: 0
+    }));
+  }
+  
+  // ターゲット選択
+  selectTarget(target: Character): void {
+    const item = this.state.getState().selectedItem!;
+    
+    this.service.selectTargets([target]);
+    
+    // 効果プレビュー更新
+    const preview = this.createEffectPreview(item, target);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      selectedTargets: [target],
+      effectPreview: preview
+    }));
+    
+    this.events.emit('target-selected', { target });
+  }
+  
+  // 効果プレビュー作成
+  private createEffectPreview(item: Item, target: Character): ItemEffectPreview {
+    // Serviceを通じて効果を計算
+    const expectedHeal = item.healAmount ? item.healAmount : undefined;
+    const expectedDamage = item.damageAmount ? item.damageAmount : undefined;
+    const statusEffects = item.statusEffects || [];
+    
+    return {
+      item,
+      target,
+      expectedHeal,
+      expectedDamage,
+      statusEffects
+    };
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const currentState = this.state.getState();
+    let maxIndex = 0;
+    
+    if (currentState.stage === 'selecting-item') {
+      const filteredItems = currentState.currentCategory
+        ? currentState.availableItems.filter(i => i.category === currentState.currentCategory)
+        : currentState.availableItems;
+      maxIndex = filteredItems.length - 1;
+    } else if (currentState.stage === 'selecting-target') {
+      // パーティメンバー数
+      maxIndex = 3; // 仮の値、実際はパーティサイズに依存
+    }
+    
+    const newIndex = Math.max(0, Math.min(maxIndex, currentState.cursorIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // 確認・使用実行
+  async confirm(): Promise<void> {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'applying',
+      isProcessing: true
+    }));
+    
+    try {
+      const result = await this.service.useItem();
+      
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'completed',
+        result: result as ItemUseResult,
+        isProcessing: false
+      }));
+      
+      this.events.emit('item-used', { result: result as ItemUseResult });
+    } catch (error) {
+      // エラー処理
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-item',
+        isProcessing: false
+      }));
+    }
+  }
+  
+  // キャンセル
+  cancel(): void {
+    this.service.cancel();
+    
+    const currentState = this.state.getState();
+    
+    if (currentState.stage === 'selecting-target') {
+      // アイテム選択に戻る
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-item',
+        selectedItem: null,
+        selectedTargets: [],
+        effectPreview: null,
+        cursorIndex: 0
+      }));
+    } else {
+      // 完全にキャンセル
+      this.events.emit('item-cancelled', {});
+    }
+  }
+  
+  // ユーティリティ
+  private requiresTargetSelection(item: Item): boolean {
+    return item.targetType === 'single' || item.targetType === 'ally';
+  }
+  
+  private categorizeItems(items: Item[]): ItemCategory[] {
+    const categories = new Set(items.map(item => item.category));
+    return Array.from(categories);
+  }
+}
+```
+
+### 使用例（React）
+
+```typescript
+function ItemMenu() {
+  const [state, setState] = useState<ItemUIState>();
+  const controllerRef = useRef<ItemController>();
+  
+  useEffect(() => {
+    const service = new ItemService(coreEngine);
+    const controller = new ItemController(service);
+    controllerRef.current = controller;
+    
+    const unsubscribe = controller.subscribe(setState);
+    
+    controller.startItemUse('field', party);
+    
+    return unsubscribe;
+  }, []);
+  
+  if (!state) return <div>Loading...</div>;
+  
+  return (
+    <div className="item-menu">
+      {state.stage === 'selecting-item' && (
+        <ItemList
+          items={state.availableItems}
+          categories={state.itemCategories}
+          currentCategory={state.currentCategory}
+          cursorIndex={state.cursorIndex}
+          onSelectItem={(item) => controllerRef.current?.selectItem(item)}
+          onSelectCategory={(cat) => controllerRef.current?.selectCategory(cat)}
+        />
+      )}
+      
+      {state.stage === 'selecting-target' && (
+        <TargetSelection
+          targets={party}
+          selectedTargets={state.selectedTargets}
+          preview={state.effectPreview}
+          onSelectTarget={(target) => controllerRef.current?.selectTarget(target)}
+        />
+      )}
+      
+      {state.stage === 'completed' && state.result && (
+        <ItemUseResult result={state.result} />
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## 4. EquipmentController - 装備変更UI制御
+
+### 状態定義
+
+```typescript
+interface EquipmentUIState {
+  // 対象キャラクター
+  character: Character | null;
+  
+  // 選択段階
+  stage: 'selecting-slot' | 'selecting-equipment' | 'confirming' | 'completed';
+  
+  // スロット
+  selectedSlot: EquipmentType | null;
+  availableSlots: EquipmentType[];
+  currentEquipment: Map<EquipmentType, Equipment | null>;
+  
+  // 装備一覧
+  availableEquipment: Equipment[];
+  selectedEquipment: Equipment | null;
+  
+  // 比較・プレビュー
+  comparison: EquipmentComparison | null;
+  previewStats: Stats | null;
+  
+  // カーソル
+  cursorIndex: number;
+  
+  // 結果
+  result: EquipResult | null;
+}
+
+interface EquipmentComparison {
+  slot: EquipmentType;
+  current: Equipment | null;
+  new: Equipment;
+  statDifferences: {
+    [key: string]: number; // 'attack': +10, 'defense': -5, etc.
+  };
+  betterStats: string[];
+  worseStats: string[];
+}
+
+interface EquipResult {
+  success: boolean;
+  character: Character;
+  slot: EquipmentType;
+  equipped: Equipment | null;
+  unequipped: Equipment | null;
+  newStats: Stats;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type EquipmentEvents = {
+  'slot-selected': { slot: EquipmentType };
+  'equipment-selected': { equipment: Equipment };
+  'equipment-equipped': { result: EquipResult };
+  'equipment-unequipped': { slot: EquipmentType };
+  'cancelled': {};
+};
+
+class EquipmentController {
+  private state: ObservableState<EquipmentUIState>;
+  private events: EventEmitter<EquipmentEvents>;
+  private service: EquipmentService;
+  
+  constructor(service: EquipmentService) {
+    this.service = service;
+    this.state = new ObservableState<EquipmentUIState>({
+      character: null,
+      stage: 'selecting-slot',
+      selectedSlot: null,
+      availableSlots: [],
+      currentEquipment: new Map(),
+      availableEquipment: [],
+      selectedEquipment: null,
+      comparison: null,
+      previewStats: null,
+      cursorIndex: 0,
+      result: null
+    });
+    this.events = new EventEmitter<EquipmentEvents>();
+  }
+  
+  subscribe(listener: (state: EquipmentUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof EquipmentEvents>(
+    event: K,
+    listener: (data: EquipmentEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // 装備変更開始
+  startEquipmentChange(character: Character): void {
+    const availableSlots = this.getAvailableSlots(character);
+    const currentEquipment = this.getCurrentEquipment(character);
+    
+    this.state.setState({
+      character,
+      stage: 'selecting-slot',
+      selectedSlot: null,
+      availableSlots,
+      currentEquipment,
+      availableEquipment: [],
+      selectedEquipment: null,
+      comparison: null,
+      previewStats: null,
+      cursorIndex: 0,
+      result: null
+    });
+  }
+  
+  // スロット選択
+  selectSlot(slot: EquipmentType): void {
+    const character = this.state.getState().character!;
+    
+    // そのスロットに装備可能な装備を取得
+    const availableEquipment = this.service.getEquipableItems(character, slot);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'selecting-equipment',
+      selectedSlot: slot,
+      availableEquipment,
+      cursorIndex: 0
+    }));
+    
+    this.events.emit('slot-selected', { slot });
+  }
+  
+  // 装備選択
+  selectEquipment(equipment: Equipment): void {
+    const character = this.state.getState().character!;
+    const slot = this.state.getState().selectedSlot!;
+    const currentEquip = this.state.getState().currentEquipment.get(slot);
+    
+    // 装備比較を作成
+    const comparison = this.service.compareEquipment(character, currentEquip || null, equipment);
+    
+    // ステータスプレビューを作成
+    const previewStats = this.calculatePreviewStats(character, slot, equipment);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      selectedEquipment: equipment,
+      comparison: comparison as EquipmentComparison,
+      previewStats
+    }));
+    
+    this.events.emit('equipment-selected', { equipment });
+  }
+  
+  // 装備確定
+  async equipItem(): Promise<void> {
+    const character = this.state.getState().character!;
+    const slot = this.state.getState().selectedSlot!;
+    const equipment = this.state.getState().selectedEquipment!;
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'confirming'
+    }));
+    
+    const result = this.service.equipItem(character, equipment, slot);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'completed',
+      result: result as EquipResult,
+      currentEquipment: this.getCurrentEquipment(character)
+    }));
+    
+    this.events.emit('equipment-equipped', { result: result as EquipResult });
+  }
+  
+  // 装備解除
+  async unequipItem(slot: EquipmentType): Promise<void> {
+    const character = this.state.getState().character!;
+    
+    this.service.unequipItem(character, slot);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      currentEquipment: this.getCurrentEquipment(character),
+      stage: 'selecting-slot'
+    }));
+    
+    this.events.emit('equipment-unequipped', { slot });
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const currentState = this.state.getState();
+    let maxIndex = 0;
+    
+    if (currentState.stage === 'selecting-slot') {
+      maxIndex = currentState.availableSlots.length - 1;
+    } else if (currentState.stage === 'selecting-equipment') {
+      maxIndex = currentState.availableEquipment.length - 1;
+    }
+    
+    const newIndex = Math.max(0, Math.min(maxIndex, currentState.cursorIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // キャンセル
+  cancel(): void {
+    const currentState = this.state.getState();
+    
+    if (currentState.stage === 'selecting-equipment') {
+      // スロット選択に戻る
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-slot',
+        selectedSlot: null,
+        selectedEquipment: null,
+        comparison: null,
+        previewStats: null,
+        cursorIndex: 0
+      }));
+    } else {
+      // 完全にキャンセル
+      this.events.emit('cancelled', {});
+    }
+  }
+  
+  // ユーティリティ
+  private getAvailableSlots(character: Character): EquipmentType[] {
+    return ['weapon', 'armor', 'accessory1', 'accessory2'] as EquipmentType[];
+  }
+  
+  private getCurrentEquipment(character: Character): Map<EquipmentType, Equipment | null> {
+    const equipmentMap = new Map<EquipmentType, Equipment | null>();
+    equipmentMap.set('weapon', character.equipment.weapon || null);
+    equipmentMap.set('armor', character.equipment.armor || null);
+    equipmentMap.set('accessory1', character.equipment.accessory1 || null);
+    equipmentMap.set('accessory2', character.equipment.accessory2 || null);
+    return equipmentMap;
+  }
+  
+  private calculatePreviewStats(character: Character, slot: EquipmentType, newEquipment: Equipment): Stats {
+    // Serviceを通じて新しいステータスを計算
+    return this.service.calculateStatsWithEquipment(character, slot, newEquipment);
+  }
+}
+```
+
+### 使用例（React）
+
+```typescript
+function EquipmentScreen({ character }: { character: Character }) {
+  const [state, setState] = useState<EquipmentUIState>();
+  const controllerRef = useRef<EquipmentController>();
+  
+  useEffect(() => {
+    const service = new EquipmentService(coreEngine);
+    const controller = new EquipmentController(service);
+    controllerRef.current = controller;
+    
+    const unsubscribe = controller.subscribe(setState);
+    
+    controller.startEquipmentChange(character);
+    
+    return unsubscribe;
+  }, [character]);
+  
+  if (!state) return <div>Loading...</div>;
+  
+  return (
+    <div className="equipment-screen">
+      <CharacterStats character={state.character!} previewStats={state.previewStats} />
+      
+      {state.stage === 'selecting-slot' && (
+        <EquipmentSlotList
+          slots={state.availableSlots}
+          currentEquipment={state.currentEquipment}
+          cursorIndex={state.cursorIndex}
+          onSelectSlot={(slot) => controllerRef.current?.selectSlot(slot)}
+          onUnequip={(slot) => controllerRef.current?.unequipItem(slot)}
+        />
+      )}
+      
+      {state.stage === 'selecting-equipment' && (
+        <>
+          <EquipmentList
+            equipment={state.availableEquipment}
+            cursorIndex={state.cursorIndex}
+            onSelectEquipment={(eq) => controllerRef.current?.selectEquipment(eq)}
+          />
+          
+          {state.comparison && (
+            <EquipmentComparison comparison={state.comparison} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## 5. PartyController - パーティ編成UI制御
+
+### 状態定義
+
+```typescript
+interface PartyUIState {
+  // 全キャラクター
+  allCharacters: Character[];
+  
+  // 現在のパーティ
+  currentParty: Character[];
+  
+  // 編成段階
+  stage: 'selecting-member' | 'reordering' | 'confirming' | 'completed';
+  
+  // 選択
+  selectedCharacter: Character | null;
+  selectedPosition: number | null;
+  
+  // パーティ制約
+  maxPartySize: number;
+  minPartySize: number;
+  
+  // 隊列
+  formationPositions: number[];
+  
+  // ドラッグ&ドロップ状態
+  isDragging: boolean;
+  draggedCharacter: Character | null;
+  draggedFromPosition: number | null;
+  
+  // カーソル
+  cursorIndex: number;
+  
+  // プレビュー
+  previewParty: Character[] | null;
+  partyStats: PartyStats | null;
+}
+
+interface PartyStats {
+  totalLevel: number;
+  averageLevel: number;
+  totalHp: number;
+  totalMp: number;
+  physicalAttackers: number;
+  magicalAttackers: number;
+  healers: number;
+  tanks: number;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type PartyEvents = {
+  'member-added': { character: Character; position: number };
+  'member-removed': { character: Character; position: number };
+  'members-swapped': { position1: number; position2: number };
+  'formation-changed': { formation: number[] };
+  'party-confirmed': { party: Character[] };
+  'cancelled': {};
+};
+
+class PartyController {
+  private state: ObservableState<PartyUIState>;
+  private events: EventEmitter<PartyEvents>;
+  private service: PartyService;
+  
+  constructor(service: PartyService) {
+    this.service = service;
+    this.state = new ObservableState<PartyUIState>({
+      allCharacters: [],
+      currentParty: [],
+      stage: 'selecting-member',
+      selectedCharacter: null,
+      selectedPosition: null,
+      maxPartySize: 4,
+      minPartySize: 1,
+      formationPositions: [0, 1, 2, 3],
+      isDragging: false,
+      draggedCharacter: null,
+      draggedFromPosition: null,
+      cursorIndex: 0,
+      previewParty: null,
+      partyStats: null
+    });
+    this.events = new EventEmitter<PartyEvents>();
+  }
+  
+  subscribe(listener: (state: PartyUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof PartyEvents>(
+    event: K,
+    listener: (data: PartyEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // パーティ編成開始
+  startPartyFormation(allCharacters: Character[], currentParty: Character[]): void {
+    const partyStats = this.calculatePartyStats(currentParty);
+    
+    this.state.setState({
+      allCharacters,
+      currentParty: [...currentParty],
+      stage: 'selecting-member',
+      selectedCharacter: null,
+      selectedPosition: null,
+      maxPartySize: 4,
+      minPartySize: 1,
+      formationPositions: currentParty.map((_, i) => i),
+      isDragging: false,
+      draggedCharacter: null,
+      draggedFromPosition: null,
+      cursorIndex: 0,
+      previewParty: null,
+      partyStats
+    });
+  }
+  
+  // メンバー追加
+  addMember(character: Character, position?: number): void {
+    const currentState = this.state.getState();
+    
+    if (currentState.currentParty.length >= currentState.maxPartySize) {
+      // パーティが満員
+      return;
+    }
+    
+    const targetPosition = position !== undefined 
+      ? position 
+      : currentState.currentParty.length;
+    
+    const result = this.service.addMember(currentState.currentParty, character);
+    
+    if (result.success) {
+      const newParty = [...currentState.currentParty];
+      newParty.splice(targetPosition, 0, character);
+      
+      this.state.setState(prev => ({
+        ...prev,
+        currentParty: newParty,
+        partyStats: this.calculatePartyStats(newParty)
+      }));
+      
+      this.events.emit('member-added', { character, position: targetPosition });
+    }
+  }
+  
+  // メンバー削除
+  removeMember(position: number): void {
+    const currentState = this.state.getState();
+    const character = currentState.currentParty[position];
+    
+    if (!character) return;
+    
+    if (currentState.currentParty.length <= currentState.minPartySize) {
+      // 最小人数を下回る
+      return;
+    }
+    
+    const result = this.service.removeMember(currentState.currentParty, character);
+    
+    if (result.success) {
+      const newParty = currentState.currentParty.filter((_, i) => i !== position);
+      
+      this.state.setState(prev => ({
+        ...prev,
+        currentParty: newParty,
+        partyStats: this.calculatePartyStats(newParty)
+      }));
+      
+      this.events.emit('member-removed', { character, position });
+    }
+  }
+  
+  // メンバー入れ替え
+  swapMembers(position1: number, position2: number): void {
+    const currentState = this.state.getState();
+    
+    const result = this.service.swapMembers(currentState.currentParty, position1, position2);
+    
+    if (result.success) {
+      const newParty = [...currentState.currentParty];
+      [newParty[position1], newParty[position2]] = [newParty[position2], newParty[position1]];
+      
+      this.state.setState(prev => ({
+        ...prev,
+        currentParty: newParty
+      }));
+      
+      this.events.emit('members-swapped', { position1, position2 });
+    }
+  }
+  
+  // ドラッグ開始
+  startDrag(character: Character, position: number): void {
+    this.state.setState(prev => ({
+      ...prev,
+      isDragging: true,
+      draggedCharacter: character,
+      draggedFromPosition: position
+    }));
+  }
+  
+  // ドロップ
+  drop(targetPosition: number): void {
+    const currentState = this.state.getState();
+    
+    if (!currentState.isDragging || currentState.draggedFromPosition === null) {
+      return;
+    }
+    
+    // パーティ内での移動か、外からの追加かを判定
+    if (currentState.draggedFromPosition >= 0) {
+      // パーティ内での入れ替え
+      this.swapMembers(currentState.draggedFromPosition, targetPosition);
+    } else {
+      // 新規追加
+      if (currentState.draggedCharacter) {
+        this.addMember(currentState.draggedCharacter, targetPosition);
+      }
+    }
+    
+    this.endDrag();
+  }
+  
+  // ドラッグ終了
+  endDrag(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      isDragging: false,
+      draggedCharacter: null,
+      draggedFromPosition: null
+    }));
+  }
+  
+  // 隊列変更
+  changeFormation(formation: number[]): void {
+    const currentState = this.state.getState();
+    
+    const result = this.service.changeFormation(currentState.currentParty, formation);
+    
+    if (result.success) {
+      this.state.setState(prev => ({
+        ...prev,
+        formationPositions: formation
+      }));
+      
+      this.events.emit('formation-changed', { formation });
+    }
+  }
+  
+  // 確認
+  confirm(): void {
+    const currentState = this.state.getState();
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'completed'
+    }));
+    
+    this.events.emit('party-confirmed', { party: currentState.currentParty });
+  }
+  
+  // キャンセル
+  cancel(): void {
+    this.events.emit('cancelled', {});
+  }
+  
+  // パーティ統計計算
+  private calculatePartyStats(party: Character[]): PartyStats {
+    if (party.length === 0) {
+      return {
+        totalLevel: 0,
+        averageLevel: 0,
+        totalHp: 0,
+        totalMp: 0,
+        physicalAttackers: 0,
+        magicalAttackers: 0,
+        healers: 0,
+        tanks: 0
+      };
+    }
+    
+    const totalLevel = party.reduce((sum, c) => sum + c.level, 0);
+    const totalHp = party.reduce((sum, c) => sum + c.currentHp, 0);
+    const totalMp = party.reduce((sum, c) => sum + c.currentMp, 0);
+    
+    // 役割の判定（簡易版）
+    const physicalAttackers = party.filter(c => c.stats.attack > c.stats.magic).length;
+    const magicalAttackers = party.filter(c => c.stats.magic > c.stats.attack).length;
+    const healers = party.filter(c => c.skills.some(s => s.type === 'heal')).length;
+    const tanks = party.filter(c => c.stats.defense > 50).length;
+    
+    return {
+      totalLevel,
+      averageLevel: totalLevel / party.length,
+      totalHp,
+      totalMp,
+      physicalAttackers,
+      magicalAttackers,
+      healers,
+      tanks
+    };
+  }
+}
+```
+
+### 使用例（React）
+
+```typescript
+function PartyFormationScreen() {
+  const [state, setState] = useState<PartyUIState>();
+  const controllerRef = useRef<PartyController>();
+  
+  useEffect(() => {
+    const service = new PartyService(coreEngine);
+    const controller = new PartyController(service);
+    controllerRef.current = controller;
+    
+    const unsubscribe = controller.subscribe(setState);
+    
+    controller.startPartyFormation(allCharacters, currentParty);
+    
+    return unsubscribe;
+  }, []);
+  
+  if (!state) return <div>Loading...</div>;
+  
+  return (
+    <div className="party-formation">
+      <PartyStats stats={state.partyStats} />
+      
+      <div className="party-slots">
+        {Array.from({ length: state.maxPartySize }).map((_, i) => (
+          <PartySlot
+            key={i}
+            position={i}
+            character={state.currentParty[i]}
+            onDrop={(pos) => controllerRef.current?.drop(pos)}
+            onRemove={() => controllerRef.current?.removeMember(i)}
+          />
+        ))}
+      </div>
+      
+      <CharacterList
+        characters={state.allCharacters.filter(
+          c => !state.currentParty.includes(c)
+        )}
+        onDragStart={(char, pos) => controllerRef.current?.startDrag(char, pos)}
+      />
+      
+      <button onClick={() => controllerRef.current?.confirm()}>
+        確定
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
+## 6. CraftController - アイテム合成UI制御
+
+### 状態定義
+
+```typescript
+interface CraftUIState {
+  // 選択段階
+  stage: 'selecting-recipe' | 'confirming' | 'synthesizing' | 'completed';
+  
+  // レシピ
+  availableRecipes: Recipe[];
+  selectedRecipe: Recipe | null;
+  
+  // 材料チェック
+  materialCheck: RecipeCheckResult | null;
+  
+  // 合成
+  successRate: number;
+  isProcessing: boolean;
+  
+  // 結果
+  result: SynthesisResult | null;
+  
+  // カーソル
+  cursorIndex: number;
+  
+  // フィルタ
+  categoryFilter: CraftCategory | null;
+  availableOnlyFilter: boolean;
+}
+
+interface RecipeCheckResult {
+  recipe: Recipe;
+  canCraft: boolean;
+  missingMaterials: {
+    item: Item;
+    required: number;
+    current: number;
+  }[];
+  availableMaterials: {
+    item: Item;
+    required: number;
+    current: number;
+  }[];
+}
+
+interface SynthesisResult {
+  success: boolean;
+  recipe: Recipe;
+  resultItem: Item | null;
+  bonusItems: Item[];
+  materialsConsumed: Item[];
+  materialsReturned: Item[];
+  message: string;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type CraftEvents = {
+  'recipe-selected': { recipe: Recipe };
+  'synthesis-started': { recipe: Recipe };
+  'synthesis-completed': { result: SynthesisResult };
+  'cancelled': {};
+};
+
 class CraftController {
-  // クラフトUIを制御
-  // 材料チェックと成功率表示
+  private state: ObservableState<CraftUIState>;
+  private events: EventEmitter<CraftEvents>;
+  private service: CraftService;
+  
+  constructor(service: CraftService, private inventory: Inventory) {
+    this.service = service;
+    this.state = new ObservableState<CraftUIState>({
+      stage: 'selecting-recipe',
+      availableRecipes: [],
+      selectedRecipe: null,
+      materialCheck: null,
+      successRate: 0,
+      isProcessing: false,
+      result: null,
+      cursorIndex: 0,
+      categoryFilter: null,
+      availableOnlyFilter: false
+    });
+    this.events = new EventEmitter<CraftEvents>();
+  }
+  
+  subscribe(listener: (state: CraftUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof CraftEvents>(
+    event: K,
+    listener: (data: CraftEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // クラフト開始
+  startCrafting(): void {
+    const availableRecipes = this.service.getAvailableRecipes();
+    
+    this.state.setState({
+      stage: 'selecting-recipe',
+      availableRecipes,
+      selectedRecipe: null,
+      materialCheck: null,
+      successRate: 0,
+      isProcessing: false,
+      result: null,
+      cursorIndex: 0,
+      categoryFilter: null,
+      availableOnlyFilter: false
+    });
+  }
+  
+  // レシピ選択
+  selectRecipe(recipe: Recipe): void {
+    // 材料チェック
+    const materialCheck = this.service.checkMaterials(recipe, this.inventory);
+    
+    // 成功率取得
+    const successRate = this.calculateSuccessRate(recipe);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      selectedRecipe: recipe,
+      materialCheck: materialCheck as RecipeCheckResult,
+      successRate
+    }));
+    
+    this.events.emit('recipe-selected', { recipe });
+  }
+  
+  // フィルタ設定
+  setFilter(category: CraftCategory | null, availableOnly: boolean): void {
+    this.state.setState(prev => ({
+      ...prev,
+      categoryFilter: category,
+      availableOnlyFilter: availableOnly,
+      cursorIndex: 0
+    }));
+  }
+  
+  // フィルタリングされたレシピを取得
+  getFilteredRecipes(): Recipe[] {
+    const currentState = this.state.getState();
+    let recipes = currentState.availableRecipes;
+    
+    // カテゴリフィルタ
+    if (currentState.categoryFilter) {
+      recipes = recipes.filter(r => r.category === currentState.categoryFilter);
+    }
+    
+    // 作成可能フィルタ
+    if (currentState.availableOnlyFilter) {
+      recipes = recipes.filter(r => {
+        const check = this.service.checkMaterials(r, this.inventory);
+        return check.canCraft;
+      });
+    }
+    
+    return recipes;
+  }
+  
+  // 確認画面へ
+  moveToConfirming(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'confirming'
+    }));
+  }
+  
+  // 合成実行
+  async synthesize(): Promise<void> {
+    const recipe = this.state.getState().selectedRecipe!;
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'synthesizing',
+      isProcessing: true
+    }));
+    
+    this.events.emit('synthesis-started', { recipe });
+    
+    try {
+      // 合成実行
+      const result = this.service.synthesize(recipe, this.inventory);
+      
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'completed',
+        result: result as SynthesisResult,
+        isProcessing: false
+      }));
+      
+      this.events.emit('synthesis-completed', { result: result as SynthesisResult });
+    } catch (error) {
+      // エラー処理
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-recipe',
+        isProcessing: false
+      }));
+    }
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const filteredRecipes = this.getFilteredRecipes();
+    const maxIndex = filteredRecipes.length - 1;
+    const currentIndex = this.state.getState().cursorIndex;
+    
+    const newIndex = Math.max(0, Math.min(maxIndex, currentIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // キャンセル
+  cancel(): void {
+    const currentState = this.state.getState();
+    
+    if (currentState.stage === 'confirming') {
+      // レシピ選択に戻る
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-recipe'
+      }));
+    } else {
+      // 完全にキャンセル
+      this.events.emit('cancelled', {});
+    }
+  }
+  
+  // 成功率計算
+  private calculateSuccessRate(recipe: Recipe): number {
+    // Serviceを通じて成功率を計算
+    return recipe.baseSuccessRate || 100;
+  }
+}
+```
+
+### 使用例（React）
+
+```typescript
+function CraftScreen() {
+  const [state, setState] = useState<CraftUIState>();
+  const controllerRef = useRef<CraftController>();
+  
+  useEffect(() => {
+    const service = new CraftService(coreEngine);
+    const controller = new CraftController(service, inventory);
+    controllerRef.current = controller;
+    
+    const unsubscribe = controller.subscribe(setState);
+    
+    controller.startCrafting();
+    
+    return unsubscribe;
+  }, []);
+  
+  if (!state) return <div>Loading...</div>;
+  
+  return (
+    <div className="craft-screen">
+      {state.stage === 'selecting-recipe' && (
+        <>
+          <RecipeFilters
+            categoryFilter={state.categoryFilter}
+            availableOnlyFilter={state.availableOnlyFilter}
+            onFilterChange={(cat, avail) => 
+              controllerRef.current?.setFilter(cat, avail)
+            }
+          />
+          
+          <RecipeList
+            recipes={controllerRef.current?.getFilteredRecipes() || []}
+            cursorIndex={state.cursorIndex}
+            onSelectRecipe={(recipe) => controllerRef.current?.selectRecipe(recipe)}
+          />
+          
+          {state.selectedRecipe && state.materialCheck && (
+            <RecipeDetail
+              recipe={state.selectedRecipe}
+              materialCheck={state.materialCheck}
+              successRate={state.successRate}
+              onConfirm={() => controllerRef.current?.moveToConfirming()}
+            />
+          )}
+        </>
+      )}
+      
+      {state.stage === 'confirming' && (
+        <ConfirmDialog
+          recipe={state.selectedRecipe!}
+          onConfirm={() => controllerRef.current?.synthesize()}
+          onCancel={() => controllerRef.current?.cancel()}
+        />
+      )}
+      
+      {state.stage === 'synthesizing' && (
+        <SynthesisAnimation isProcessing={state.isProcessing} />
+      )}
+      
+      {state.stage === 'completed' && state.result && (
+        <SynthesisResult result={state.result} />
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## 7. SkillLearnController - スキル習得UI制御
+
+### 状態定義
+
+```typescript
+interface SkillLearnUIState {
+  // 対象キャラクター
+  character: Character | null;
+  
+  // 選択段階
+  stage: 'selecting-skill' | 'confirming' | 'completed';
+  
+  // スキル
+  learnableSkills: Skill[];
+  selectedSkill: Skill | null;
+  
+  // 条件
+  learnCondition: LearnConditionCheck | null;
+  
+  // コスト
+  cost: SkillLearnCost | null;
+  
+  // カーソル
+  cursorIndex: number;
+  
+  // 結果
+  result: LearnResult | null;
+}
+
+interface LearnConditionCheck {
+  skill: Skill;
+  canLearn: boolean;
+  conditions: {
+    type: 'level' | 'job' | 'prerequisite' | 'cost';
+    met: boolean;
+    requirement: string;
+    current: string;
+  }[];
+}
+
+interface SkillLearnCost {
+  skillPoints?: number;
+  money?: number;
+  items?: { item: Item; quantity: number }[];
+}
+
+interface LearnResult {
+  success: boolean;
+  character: Character;
+  skill: Skill;
+  message: string;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type SkillLearnEvents = {
+  'skill-selected': { skill: Skill };
+  'skill-learned': { result: LearnResult };
+  'cancelled': {};
+};
+
+class SkillLearnController {
+  private state: ObservableState<SkillLearnUIState>;
+  private events: EventEmitter<SkillLearnEvents>;
+  private service: SkillLearnService;
+  
+  constructor(service: SkillLearnService) {
+    this.service = service;
+    this.state = new ObservableState<SkillLearnUIState>({
+      character: null,
+      stage: 'selecting-skill',
+      learnableSkills: [],
+      selectedSkill: null,
+      learnCondition: null,
+      cost: null,
+      cursorIndex: 0,
+      result: null
+    });
+    this.events = new EventEmitter<SkillLearnEvents>();
+  }
+  
+  subscribe(listener: (state: SkillLearnUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof SkillLearnEvents>(
+    event: K,
+    listener: (data: SkillLearnEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // スキル習得開始
+  startSkillLearn(character: Character): void {
+    const learnableSkills = this.service.getLearnableSkills(character);
+    
+    this.state.setState({
+      character,
+      stage: 'selecting-skill',
+      learnableSkills,
+      selectedSkill: null,
+      learnCondition: null,
+      cost: null,
+      cursorIndex: 0,
+      result: null
+    });
+  }
+  
+  // スキル選択
+  selectSkill(skill: Skill): void {
+    const character = this.state.getState().character!;
+    
+    // 習得条件チェック
+    const condition = this.service.checkLearnCondition(character, skill);
+    
+    // コスト計算
+    const cost = this.calculateCost(skill);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      selectedSkill: skill,
+      learnCondition: condition as LearnConditionCheck,
+      cost
+    }));
+    
+    this.events.emit('skill-selected', { skill });
+  }
+  
+  // 確認画面へ
+  moveToConfirming(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'confirming'
+    }));
+  }
+  
+  // スキル習得実行
+  async learnSkill(): Promise<void> {
+    const character = this.state.getState().character!;
+    const skill = this.state.getState().selectedSkill!;
+    
+    const result = this.service.learnSkill(character, skill);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'completed',
+      result: result as LearnResult
+    }));
+    
+    this.events.emit('skill-learned', { result: result as LearnResult });
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const maxIndex = this.state.getState().learnableSkills.length - 1;
+    const currentIndex = this.state.getState().cursorIndex;
+    const newIndex = Math.max(0, Math.min(maxIndex, currentIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // キャンセル
+  cancel(): void {
+    const currentState = this.state.getState();
+    
+    if (currentState.stage === 'confirming') {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-skill'
+      }));
+    } else {
+      this.events.emit('cancelled', {});
+    }
+  }
+  
+  // コスト計算
+  private calculateCost(skill: Skill): SkillLearnCost {
+    return {
+      skillPoints: skill.learnCost?.skillPoints || 0,
+      money: skill.learnCost?.money || 0,
+      items: skill.learnCost?.items || []
+    };
+  }
+}
+```
+
+---
+
+## 8. RewardController - 報酬受取UI制御
+
+### 状態定義
+
+```typescript
+interface RewardUIState {
+  // 報酬内容
+  rewards: BattleRewards | null;
+  
+  // 段階
+  stage: 'displaying-rewards' | 'distributing-exp' | 'level-ups' | 'completed';
+  
+  // 経験値配分
+  expDistribution: Map<Character, number>;
+  
+  // レベルアップ
+  levelUpQueue: LevelUpResult[];
+  currentLevelUp: LevelUpResult | null;
+  
+  // アニメーション
+  isAnimating: boolean;
+  animationProgress: number;
+  
+  // 結果
+  finalPartyState: Character[];
+}
+
+interface LevelUpResult {
+  character: Character;
+  oldLevel: number;
+  newLevel: number;
+  statGains: {
+    hp: number;
+    mp: number;
+    attack: number;
+    defense: number;
+    magic: number;
+    speed: number;
+  };
+  newSkills: Skill[];
+}
+```
+
+### コントローラー実装
+
+```typescript
+type RewardEvents = {
+  'rewards-displayed': { rewards: BattleRewards };
+  'exp-distributed': { distribution: Map<Character, number> };
+  'level-up': { result: LevelUpResult };
+  'all-complete': { party: Character[] };
+};
+
+class RewardController {
+  private state: ObservableState<RewardUIState>;
+  private events: EventEmitter<RewardEvents>;
+  private service: RewardService;
+  
+  constructor(service: RewardService) {
+    this.service = service;
+    this.state = new ObservableState<RewardUIState>({
+      rewards: null,
+      stage: 'displaying-rewards',
+      expDistribution: new Map(),
+      levelUpQueue: [],
+      currentLevelUp: null,
+      isAnimating: false,
+      animationProgress: 0,
+      finalPartyState: []
+    });
+    this.events = new EventEmitter<RewardEvents>();
+  }
+  
+  subscribe(listener: (state: RewardUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof RewardEvents>(
+    event: K,
+    listener: (data: RewardEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // 報酬処理開始
+  async processRewards(party: Character[], rewards: BattleRewards): Promise<void> {
+    this.state.setState(prev => ({
+      ...prev,
+      rewards,
+      stage: 'displaying-rewards',
+      finalPartyState: [...party]
+    }));
+    
+    this.events.emit('rewards-displayed', { rewards });
+    
+    // 少し待機
+    await this.wait(1000);
+    
+    // 経験値配分
+    await this.distributeExp(party, rewards.exp);
+  }
+  
+  // 経験値配分
+  private async distributeExp(party: Character[], totalExp: number): Promise<void> {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'distributing-exp',
+      isAnimating: true
+    }));
+    
+    const distribution = this.service.distributeExp(party, totalExp);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      expDistribution: distribution
+    }));
+    
+    this.events.emit('exp-distributed', { distribution });
+    
+    // アニメーション
+    await this.animateExpGain();
+    
+    // レベルアップチェック
+    await this.checkLevelUps(party, distribution);
+  }
+  
+  // 経験値獲得アニメーション
+  private async animateExpGain(): Promise<void> {
+    for (let i = 0; i <= 100; i += 10) {
+      this.state.setState(prev => ({
+        ...prev,
+        animationProgress: i
+      }));
+      await this.wait(50);
+    }
+    
+    this.state.setState(prev => ({
+      ...prev,
+      isAnimating: false,
+      animationProgress: 0
+    }));
+  }
+  
+  // レベルアップチェック
+  private async checkLevelUps(
+    party: Character[],
+    expDistribution: Map<Character, number>
+  ): Promise<void> {
+    const levelUpQueue: LevelUpResult[] = [];
+    
+    for (const [character, exp] of expDistribution.entries()) {
+      const levelUps = this.service.processLevelUps(character, exp);
+      levelUpQueue.push(...(levelUps as LevelUpResult[]));
+    }
+    
+    if (levelUpQueue.length > 0) {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'level-ups',
+        levelUpQueue
+      }));
+      
+      await this.displayLevelUps(levelUpQueue);
+    } else {
+      this.complete();
+    }
+  }
+  
+  // レベルアップ表示
+  private async displayLevelUps(levelUps: LevelUpResult[]): Promise<void> {
+    for (const levelUp of levelUps) {
+      this.state.setState(prev => ({
+        ...prev,
+        currentLevelUp: levelUp
+      }));
+      
+      this.events.emit('level-up', { result: levelUp });
+      
+      // レベルアップ演出待機
+      await this.wait(2000);
+    }
+    
+    this.complete();
+  }
+  
+  // 完了
+  private complete(): void {
+    const finalParty = this.state.getState().finalPartyState;
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'completed',
+      currentLevelUp: null
+    }));
+    
+    this.events.emit('all-complete', { party: finalParty });
+  }
+  
+  // スキップ
+  skipAnimations(): void {
+    this.complete();
+  }
+  
+  private wait(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+```
+
+---
+
+## 9. EnhanceController - 強化UI制御
+
+### 状態定義
+
+```typescript
+interface EnhanceUIState {
+  // 段階
+  stage: 'selecting-target' | 'selecting-materials' | 'confirming' | 'enhancing' | 'completed';
+  
+  // 強化対象
+  enhanceTarget: EnhanceTarget | null;
+  targetType: 'equipment' | 'character';
+  
+  // 材料
+  availableMaterials: Item[];
+  selectedMaterials: Item[];
+  
+  // 強化情報
+  currentLevel: number;
+  maxLevel: number;
+  cost: EnhanceCost | null;
+  successRate: number;
+  
+  // プレビュー
+  previewStats: any | null;
+  
+  // 結果
+  result: EnhanceResult | null;
+  isProcessing: boolean;
+  
+  // カーソル
+  cursorIndex: number;
+}
+
+interface EnhanceTarget {
+  id: string;
+  name: string;
+  type: 'equipment' | 'character';
+  currentLevel: number;
+}
+
+interface EnhanceCost {
+  money: number;
+  materials: { item: Item; quantity: number }[];
+}
+
+interface EnhanceResult {
+  success: boolean;
+  target: EnhanceTarget;
+  oldLevel: number;
+  newLevel: number;
+  bonusApplied?: any;
+  message: string;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type EnhanceEvents = {
+  'target-selected': { target: EnhanceTarget };
+  'materials-selected': { materials: Item[] };
+  'enhance-started': { target: EnhanceTarget };
+  'enhance-completed': { result: EnhanceResult };
+  'cancelled': {};
+};
+
+class EnhanceController {
+  private state: ObservableState<EnhanceUIState>;
+  private events: EventEmitter<EnhanceEvents>;
+  private service: EnhanceService;
+  
+  constructor(service: EnhanceService) {
+    this.service = service;
+    this.state = new ObservableState<EnhanceUIState>({
+      stage: 'selecting-target',
+      enhanceTarget: null,
+      targetType: 'equipment',
+      availableMaterials: [],
+      selectedMaterials: [],
+      currentLevel: 0,
+      maxLevel: 10,
+      cost: null,
+      successRate: 0,
+      previewStats: null,
+      result: null,
+      isProcessing: false,
+      cursorIndex: 0
+    });
+    this.events = new EventEmitter<EnhanceEvents>();
+  }
+  
+  subscribe(listener: (state: EnhanceUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof EnhanceEvents>(
+    event: K,
+    listener: (data: EnhanceEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // 強化開始
+  startEnhance(targetType: 'equipment' | 'character'): void {
+    this.state.setState({
+      stage: 'selecting-target',
+      enhanceTarget: null,
+      targetType,
+      availableMaterials: [],
+      selectedMaterials: [],
+      currentLevel: 0,
+      maxLevel: 10,
+      cost: null,
+      successRate: 0,
+      previewStats: null,
+      result: null,
+      isProcessing: false,
+      cursorIndex: 0
+    });
+  }
+  
+  // 対象選択
+  selectTarget(target: EnhanceTarget): void {
+    // コスト計算
+    const cost = this.service.calculateCost(target, target.currentLevel);
+    
+    // 成功率取得
+    const successRate = this.service.getSuccessRate(target, target.currentLevel);
+    
+    // 利用可能な材料取得
+    const availableMaterials = this.getAvailableMaterials();
+    
+    this.state.setState(prev => ({
+      ...prev,
+      enhanceTarget: target,
+      currentLevel: target.currentLevel,
+      cost: cost as EnhanceCost,
+      successRate,
+      availableMaterials,
+      stage: 'selecting-materials'
+    }));
+    
+    this.events.emit('target-selected', { target });
+  }
+  
+  // 材料選択
+  selectMaterial(material: Item): void {
+    const currentMaterials = this.state.getState().selectedMaterials;
+    
+    // 材料を追加
+    this.state.setState(prev => ({
+      ...prev,
+      selectedMaterials: [...currentMaterials, material]
+    }));
+    
+    // 成功率再計算（材料によってボーナスがある場合）
+    this.updateSuccessRate();
+  }
+  
+  // 材料削除
+  removeMaterial(index: number): void {
+    const currentMaterials = this.state.getState().selectedMaterials;
+    const newMaterials = currentMaterials.filter((_, i) => i !== index);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      selectedMaterials: newMaterials
+    }));
+    
+    this.updateSuccessRate();
+  }
+  
+  // 成功率更新
+  private updateSuccessRate(): void {
+    const target = this.state.getState().enhanceTarget!;
+    const materials = this.state.getState().selectedMaterials;
+    
+    // 基本成功率
+    let successRate = this.service.getSuccessRate(target, target.currentLevel);
+    
+    // 材料ボーナス計算
+    const materialBonus = materials.reduce((bonus, mat) => {
+      return bonus + (mat.enhanceBonus || 0);
+    }, 0);
+    
+    successRate = Math.min(100, successRate + materialBonus);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      successRate
+    }));
+  }
+  
+  // 確認画面へ
+  moveToConfirming(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'confirming'
+    }));
+  }
+  
+  // 強化実行
+  async enhance(): Promise<void> {
+    const target = this.state.getState().enhanceTarget!;
+    const materials = this.state.getState().selectedMaterials;
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'enhancing',
+      isProcessing: true
+    }));
+    
+    this.events.emit('enhance-started', { target });
+    
+    // 強化演出待機
+    await this.wait(2000);
+    
+    const result = this.service.enhance(target, materials);
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'completed',
+      result: result as EnhanceResult,
+      isProcessing: false
+    }));
+    
+    this.events.emit('enhance-completed', { result: result as EnhanceResult });
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const currentState = this.state.getState();
+    let maxIndex = 0;
+    
+    if (currentState.stage === 'selecting-materials') {
+      maxIndex = currentState.availableMaterials.length - 1;
+    }
+    
+    const newIndex = Math.max(0, Math.min(maxIndex, currentState.cursorIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // キャンセル
+  cancel(): void {
+    const currentState = this.state.getState();
+    
+    if (currentState.stage === 'selecting-materials') {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-target'
+      }));
+    } else if (currentState.stage === 'confirming') {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-materials'
+      }));
+    } else {
+      this.events.emit('cancelled', {});
+    }
+  }
+  
+  private getAvailableMaterials(): Item[] {
+    // インベントリから強化材料を取得
+    return [];
+  }
+  
+  private wait(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+```
+
+---
+
+## 10. SaveLoadController - セーブ/ロードUI制御
+
+### 状態定義
+
+```typescript
+interface SaveLoadUIState {
+  // モード
+  mode: 'save' | 'load';
+  
+  // 段階
+  stage: 'selecting-slot' | 'confirming' | 'processing' | 'completed';
+  
+  // セーブスロット
+  saveSlots: SaveSlotInfo[];
+  selectedSlot: number | null;
+  
+  // ゲーム状態
+  currentGameState: GameState | null;
+  
+  // 結果
+  result: SaveLoadResult | null;
+  isProcessing: boolean;
+  
+  // エラー
+  error: string | null;
+  
+  // カーソル
+  cursorIndex: number;
+}
+
+interface SaveSlotInfo {
+  slot: number;
+  exists: boolean;
+  saveData?: {
+    timestamp: number;
+    playTime: number;
+    location: string;
+    partyLevel: number;
+    characters: { name: string; level: number }[];
+  };
+}
+
+interface SaveLoadResult {
+  success: boolean;
+  slot: number;
+  message: string;
+}
+```
+
+### コントローラー実装
+
+```typescript
+type SaveLoadEvents = {
+  'slot-selected': { slot: number };
+  'save-completed': { result: SaveLoadResult };
+  'load-completed': { result: SaveLoadResult; gameState: GameState };
+  'cancelled': {};
+};
+
+class SaveLoadController {
+  private state: ObservableState<SaveLoadUIState>;
+  private events: EventEmitter<SaveLoadEvents>;
+  private service: SaveLoadService;
+  
+  constructor(service: SaveLoadService) {
+    this.service = service;
+    this.state = new ObservableState<SaveLoadUIState>({
+      mode: 'save',
+      stage: 'selecting-slot',
+      saveSlots: [],
+      selectedSlot: null,
+      currentGameState: null,
+      result: null,
+      isProcessing: false,
+      error: null,
+      cursorIndex: 0
+    });
+    this.events = new EventEmitter<SaveLoadEvents>();
+  }
+  
+  subscribe(listener: (state: SaveLoadUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof SaveLoadEvents>(
+    event: K,
+    listener: (data: SaveLoadEvents[K]) => void
+  ): () => void {
+    return this.events.on(event, listener);
+  }
+  
+  // セーブモード開始
+  startSave(gameState: GameState): void {
+    const saveSlots = this.loadSaveSlots();
+    
+    this.state.setState({
+      mode: 'save',
+      stage: 'selecting-slot',
+      saveSlots,
+      selectedSlot: null,
+      currentGameState: gameState,
+      result: null,
+      isProcessing: false,
+      error: null,
+      cursorIndex: 0
+    });
+  }
+  
+  // ロードモード開始
+  startLoad(): void {
+    const saveSlots = this.loadSaveSlots();
+    
+    this.state.setState({
+      mode: 'load',
+      stage: 'selecting-slot',
+      saveSlots,
+      selectedSlot: null,
+      currentGameState: null,
+      result: null,
+      isProcessing: false,
+      error: null,
+      cursorIndex: 0
+    });
+  }
+  
+  // スロット選択
+  selectSlot(slot: number): void {
+    this.state.setState(prev => ({
+      ...prev,
+      selectedSlot: slot
+    }));
+    
+    this.events.emit('slot-selected', { slot });
+  }
+  
+  // 確認画面へ
+  moveToConfirming(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'confirming'
+    }));
+  }
+  
+  // セーブ実行
+  async save(): Promise<void> {
+    const slot = this.state.getState().selectedSlot!;
+    const gameState = this.state.getState().currentGameState!;
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'processing',
+      isProcessing: true,
+      error: null
+    }));
+    
+    try {
+      const result = await this.service.save(slot, gameState);
+      
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'completed',
+        result: result as SaveLoadResult,
+        isProcessing: false,
+        saveSlots: this.loadSaveSlots() // リロード
+      }));
+      
+      this.events.emit('save-completed', { result: result as SaveLoadResult });
+    } catch (error) {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-slot',
+        isProcessing: false,
+        error: (error as Error).message
+      }));
+    }
+  }
+  
+  // ロード実行
+  async load(): Promise<void> {
+    const slot = this.state.getState().selectedSlot!;
+    
+    this.state.setState(prev => ({
+      ...prev,
+      stage: 'processing',
+      isProcessing: true,
+      error: null
+    }));
+    
+    try {
+      const gameState = await this.service.load(slot);
+      
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'completed',
+        currentGameState: gameState,
+        isProcessing: false,
+        result: {
+          success: true,
+          slot,
+          message: 'ロードしました'
+        }
+      }));
+      
+      this.events.emit('load-completed', {
+        result: { success: true, slot, message: 'ロードしました' },
+        gameState
+      });
+    } catch (error) {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-slot',
+        isProcessing: false,
+        error: (error as Error).message
+      }));
+    }
+  }
+  
+  // セーブ削除
+  async deleteSave(slot: number): Promise<void> {
+    try {
+      await this.service.deleteSave(slot);
+      
+      // スロット情報リロード
+      this.state.setState(prev => ({
+        ...prev,
+        saveSlots: this.loadSaveSlots()
+      }));
+    } catch (error) {
+      this.state.setState(prev => ({
+        ...prev,
+        error: (error as Error).message
+      }));
+    }
+  }
+  
+  // カーソル移動
+  moveCursor(delta: number): void {
+    const maxIndex = this.state.getState().saveSlots.length - 1;
+    const currentIndex = this.state.getState().cursorIndex;
+    const newIndex = Math.max(0, Math.min(maxIndex, currentIndex + delta));
+    
+    this.state.setState(prev => ({
+      ...prev,
+      cursorIndex: newIndex
+    }));
+  }
+  
+  // キャンセル
+  cancel(): void {
+    const currentState = this.state.getState();
+    
+    if (currentState.stage === 'confirming') {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'selecting-slot'
+      }));
+    } else {
+      this.events.emit('cancelled', {});
+    }
+  }
+  
+  // セーブスロット情報読み込み
+  private loadSaveSlots(): SaveSlotInfo[] {
+    const saves = this.service.listSaves();
+    const slots: SaveSlotInfo[] = [];
+    
+    for (let i = 0; i < 10; i++) {
+      const saveData = saves.find(s => s.slot === i);
+      slots.push({
+        slot: i,
+        exists: !!saveData,
+        saveData: saveData ? {
+          timestamp: saveData.timestamp,
+          playTime: saveData.playTime,
+          location: saveData.location,
+          partyLevel: saveData.partyLevel,
+          characters: saveData.characters
+        } : undefined
+      });
+    }
+    
+    return slots;
+  }
 }
 ```
 
@@ -1195,24 +3423,51 @@ describe('BattleController', () => {
 ### 実装優先度
 
 **フェーズ1: 戦闘UI**
-1. BattleController
-2. CommandController
-3. EnemyAIController（自動実行、UIは不要）
+1. BattleController - 戦闘全体の進行管理
+2. CommandController - コマンド選択UI
+3. EnemyAIController - 敵AI（自動実行、UIは不要）
 
 **フェーズ2: 管理UI**
-4. PartyController
-5. EquipmentController
-6. ItemController
+4. PartyController - パーティ編成
+5. EquipmentController - 装備変更
+6. ItemController - アイテム使用
 
-**フェーズ3: 発展UI**
-7. CraftController
-8. EnhanceController
-9. SaveLoadController
+**フェーズ3: 成長・報酬UI**
+7. RewardController - 戦闘報酬とレベルアップ
+8. SkillLearnController - スキル習得
+9. JobChangeController - 職業変更（必要に応じて）
+
+**フェーズ4: 発展UI**
+10. CraftController - アイテム合成
+11. EnhanceController - 装備・キャラ強化
+12. SaveLoadController - セーブ/ロード
+
+**その他のController**
+- StatusEffectController - 状態異常管理（主にBattleController内で使用）
+- EnemyGroupController - 敵グループ管理（主にBattleController内で使用）
+- SimulationController - 戦闘シミュレーション（高度な機能）
 
 ### 推奨パターン
 
 - **小規模プロジェクト**: 単純なObservableStateで十分
 - **中規模プロジェクト**: 状態マシンを追加
 - **大規模プロジェクト**: Redux/Vuex/Zustandなどの状態管理ライブラリと統合
+
+### コントローラー一覧
+
+本ドキュメントでは、以下の10のコントローラーの詳細設計を記載しました：
+
+| # | Controller | 対応Service | 概要 |
+|---|-----------|------------|------|
+| 1 | BattleController | BattleService | 戦闘全体の進行、ターン管理、アニメーション制御 |
+| 2 | CommandController | CommandService | 戦闘中のコマンド選択フロー |
+| 3 | ItemController | ItemService | アイテム使用の全フロー（戦闘/フィールド） |
+| 4 | EquipmentController | EquipmentService | 装備変更、比較、ステータスプレビュー |
+| 5 | PartyController | PartyService | パーティ編成、メンバー入れ替え、隊列変更 |
+| 6 | CraftController | CraftService | アイテム合成、材料チェック、成功率表示 |
+| 7 | SkillLearnController | SkillLearnService | スキル習得、条件チェック、コスト管理 |
+| 8 | RewardController | RewardService | 戦闘報酬配分、レベルアップ演出 |
+| 9 | EnhanceController | EnhanceService | 装備・キャラ強化、成功判定 |
+| 10 | SaveLoadController | SaveLoadService | セーブ/ロード、スロット管理 |
 
 このヘッドレスUI設計により、rpg-coreのServiceを任意のUIフレームワークで簡単に利用できるようになります。
