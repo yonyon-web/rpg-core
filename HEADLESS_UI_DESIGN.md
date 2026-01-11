@@ -1462,12 +1462,11 @@ class EquipmentController {
   private service: EquipmentService;
   private equipmentSlotConfig: EquipmentType[];
   
-  constructor(service: EquipmentService, equipmentSlotConfig?: EquipmentType[]) {
+  constructor(service: EquipmentService, equipmentSlotConfig: EquipmentType[]) {
     this.service = service;
-    // 装備スロット構成は Core Engine から取得することを推奨
+    // 装備スロット構成は Core Engine から取得すること（必須）
     // 装備スロット構成の詳細は CORE_ENGINE_EXTENSIBILITY.md の「装備スロット構成」を参照
-    // デフォルト値は互換性のために提供（本来は Core Engine で定義すべき）
-    this.equipmentSlotConfig = equipmentSlotConfig || ['weapon', 'armor', 'accessory'] as EquipmentType[];
+    this.equipmentSlotConfig = equipmentSlotConfig;
     
     this.state = new ObservableState<EquipmentUIState>({
       character: null,
