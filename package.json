@@ -1,0 +1,30 @@
+{
+  "name": "rpg-core",
+  "version": "1.0.0",
+  "description": "ターン制RPGゲームを作る仕組みを提供するTypeScriptのライブラリ",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "rpg",
+    "game",
+    "turn-based",
+    "typescript",
+    "jrpg"
+  ],
+  "author": "",
+  "license": "ISC",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.0.6",
+    "typescript": "^5.9.3"
+  }
+}
