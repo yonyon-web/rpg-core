@@ -41,17 +41,18 @@ rpg-coreライブラリの15のServiceについて、詳細な設計仕様をま
 8. [RewardService - 戦闘報酬処理](#8-rewardservice---戦闘報酬処理)
 
 ### 🎒 管理・編成に関するService
-9. [EquipmentService - 装備変更管理](#9-equipmentservice---装備変更管理)
-10. [PartyService - パーティ編成管理](#10-partyservice---パーティ編成管理)
-11. [StatusEffectService - 状態異常・バフ管理](#11-statuseffectservice---状態異常バフ管理)
+9. [InventoryService - インベントリ/バッグ管理](#9-inventoryservice---インベントリバッグ管理)
+10. [EquipmentService - 装備変更管理](#10-equipmentservice---装備変更管理)
+11. [PartyService - パーティ編成管理](#11-partyservice---パーティ編成管理)
+12. [StatusEffectService - 状態異常・バフ管理](#12-statuseffectservice---状態異常バフ管理)
 
 ### 🛠 クラフト・育成に関するService
-12. [CraftService - アイテム合成管理](#12-craftservice---アイテム合成管理)
-13. [EnhanceService - 装備・キャラ強化](#13-enhanceservice---装備キャラ強化)
+13. [CraftService - アイテム合成管理](#13-craftservice---アイテム合成管理)
+14. [EnhanceService - 装備・キャラ強化](#14-enhanceservice---装備キャラ強化)
 
 ### 💾 システム・支援に関するService
-14. [SaveLoadService - セーブ/ロード管理](#14-saveloadservice---セーブロード管理)
-15. [SimulationService - 戦闘シミュレーション](#15-simulationservice---戦闘シミュレーション)
+15. [SaveLoadService - セーブ/ロード管理](#15-saveloadservice---セーブロード管理)
+16. [SimulationService - 戦闘シミュレーション](#16-simulationservice---戦闘シミュレーション)
 
 ---
 
@@ -810,7 +811,271 @@ class RewardService {
 
 ---
 
-## 9. EquipmentService - 装備変更管理
+## 9. InventoryService - インベントリ/バッグ管理
+
+### 概要
+アイテムと装備のインベントリ（バッグ）を管理。アイテムの追加・削除、検索、フィルタリング、ソートなどの機能を提供。詳細な設計は `INVENTORY_SYSTEM_DESIGN.md` を参照。
+
+### 状態管理
+
+```typescript
+interface InventoryServiceState {
+  // インベントリデータ
+  inventory: Inventory;
+  
+  // 最後の操作結果
+  lastOperation?: {
+    type: 'add' | 'remove' | 'use' | 'stack';
+    success: boolean;
+    message?: string;
+  };
+}
+```
+
+### 公開インターフェース
+
+```typescript
+class InventoryService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventory: Inventory
+  ) {}
+  
+  // === アイテム操作 ===
+  
+  // アイテム追加
+  addItem(item: Item, quantity: number): InventoryResult;
+  
+  // アイテム削除
+  removeItem(item: Item, quantity: number): InventoryResult;
+  
+  // アイテム使用（ItemServiceに委譲）
+  useItem(item: Item, context: 'battle' | 'field', targets: Combatant[]): Promise<ItemUseResult>;
+  
+  // === フィルタリング ===
+  
+  // カテゴリ別取得
+  getItemsByCategory(category: ItemCategory): InventorySlot[];
+  
+  // 使用可能アイテム取得
+  getUsableItems(context: 'battle' | 'field'): InventorySlot[];
+  
+  // 装備可能アイテム取得
+  getEquippableItems(character: Character): InventorySlot[];
+  
+  // 装備中アイテム取得
+  getEquippedItems(): InventorySlot[];
+  
+  // カスタム検索
+  searchItems(criteria: InventorySearchCriteria): InventorySlot[];
+  
+  // === ソート・整理 ===
+  
+  // ソート
+  sortInventory(sortBy: InventorySortBy, order: SortOrder): void;
+  
+  // スタック整理
+  stackItems(): StackResult;
+  
+  // === 統計・情報 ===
+  
+  // 統計情報取得
+  getStats(): InventoryStats;
+  
+  // 空きスロット取得
+  getAvailableSlots(): number;
+  
+  // アイテム所持チェック
+  hasItem(itemId: UniqueId, quantity: number): boolean;
+}
+```
+
+### Core Engine 委譲
+
+- `item/inventory.addItemToInventory()` - アイテム追加
+- `item/inventory.removeItemFromInventory()` - アイテム削除
+- `item/inventory.searchItems()` - アイテム検索
+- `item/inventory.sortInventory()` - アイテムソート
+- `item/inventory.stackItems()` - スタック整理
+- `item/inventory.getInventoryStats()` - 統計情報取得
+- `item/effects.checkItemUsable()` - アイテム使用可否判定（ItemServiceと連携）
+- `item/equipment.checkEquipmentEligibility()` - 装備可否判定（EquipmentServiceと連携）
+
+### 他のServiceとの連携
+
+#### ItemService との連携
+```typescript
+// ItemService内でInventoryServiceを参照
+class ItemService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  getUsableItems(context: 'battle' | 'field'): Item[] {
+    // InventoryServiceから使用可能アイテムを取得
+    return this.inventoryService.getUsableItems(context)
+      .map(slot => slot.item);
+  }
+  
+  async useItem(item: Item, targets: Combatant[], context: 'battle' | 'field'): Promise<ItemUseResult> {
+    // アイテム効果適用
+    const result = await this.applyItemEffects(item, targets, context);
+    
+    // 成功したらインベントリから削除
+    if (result.success) {
+      this.inventoryService.removeItem(item, 1);
+    }
+    
+    return result;
+  }
+}
+```
+
+#### EquipmentService との連携
+```typescript
+// EquipmentService内でInventoryServiceを参照
+class EquipmentService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  getEquippableItems(character: Character): Equipment[] {
+    // InventoryServiceから装備可能アイテムを取得
+    return this.inventoryService.getEquippableItems(character)
+      .map(slot => slot.item as Equipment);
+  }
+  
+  equipItem(character: Character, equipment: Equipment, slot: EquipmentType): EquipResult {
+    // 装備処理
+    const result = this.performEquip(character, equipment, slot);
+    
+    // インベントリの装備フラグを更新
+    if (result.success) {
+      // Core Engineを通じてインベントリ内の装備フラグを更新
+      this.coreEngine.updateEquippedFlag(this.inventoryService.inventory, equipment.id, true);
+    }
+    
+    return result;
+  }
+}
+```
+
+#### RewardService との連携
+```typescript
+// RewardService内でInventoryServiceを参照
+class RewardService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  async distributeRewards(rewards: BattleRewards): Promise<RewardResult> {
+    // 経験値・お金を配分
+    const expResult = this.distributeExp(rewards.exp);
+    const moneyResult = this.addMoney(rewards.money);
+    
+    // アイテムをインベントリに追加
+    const itemResults: InventoryResult[] = [];
+    for (const item of rewards.items) {
+      const result = this.inventoryService.addItem(item, 1);
+      itemResults.push(result);
+    }
+    
+    return {
+      exp: expResult,
+      money: moneyResult,
+      items: itemResults
+    };
+  }
+}
+```
+
+#### CraftService との連携
+```typescript
+// CraftService内でInventoryServiceを参照
+class CraftService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  checkMaterials(recipe: Recipe): RecipeCheckResult {
+    // インベントリから材料の所持数をチェック
+    const materialsAvailable = recipe.materials.every(material =>
+      this.inventoryService.hasItem(material.itemId, material.quantity)
+    );
+    
+    return {
+      canCraft: materialsAvailable,
+      missingMaterials: this.getMissingMaterials(recipe)
+    };
+  }
+  
+  synthesize(recipe: Recipe): SynthesisResult {
+    // 材料をインベントリから削除
+    for (const material of recipe.materials) {
+      this.inventoryService.removeItem(material.item, material.quantity);
+    }
+    
+    // 合成処理
+    const result = this.performSynthesis(recipe);
+    
+    // 成功したら結果アイテムをインベントリに追加
+    if (result.success) {
+      this.inventoryService.addItem(result.resultItem, 1);
+    }
+    
+    return result;
+  }
+}
+```
+
+### 実装例
+
+```typescript
+class InventoryService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventory: Inventory
+  ) {}
+  
+  addItem(item: Item, quantity: number): InventoryResult {
+    // Core Engineに委譲
+    return this.coreEngine.addItemToInventory(this.inventory, item, quantity);
+  }
+  
+  getUsableItems(context: 'battle' | 'field'): InventorySlot[] {
+    // インベントリから全アイテムを取得
+    const allItems = this.inventory.slots;
+    
+    // 使用可能なアイテムのみフィルタ
+    return allItems.filter(slot => 
+      this.coreEngine.checkItemUsable(slot.item, context)
+    );
+  }
+  
+  searchItems(criteria: InventorySearchCriteria): InventorySlot[] {
+    // Core Engineに委譲
+    return this.coreEngine.searchItems(this.inventory, criteria);
+  }
+  
+  sortInventory(sortBy: InventorySortBy, order: SortOrder): void {
+    // Core Engineに委譲してソート実行
+    this.coreEngine.sortInventory(this.inventory, sortBy, order);
+  }
+  
+  getStats(): InventoryStats {
+    // Core Engineに委譲
+    return this.coreEngine.getInventoryStats(this.inventory);
+  }
+}
+```
+
+---
+
+## 10. EquipmentService - 装備変更管理
 
 ### 概要
 キャラクターの装備変更を管理。装備可否判定、装備変更、比較機能を提供。
@@ -842,7 +1107,7 @@ class EquipmentService {
 
 ---
 
-## 10. PartyService - パーティ編成管理
+## 11. PartyService - パーティ編成管理
 
 ### 概要
 パーティの編成、メンバー入れ替え、隊列変更を管理。
@@ -867,7 +1132,7 @@ class PartyService {
 
 ---
 
-## 11. StatusEffectService - 状態異常・バフ管理
+## 12. StatusEffectService - 状態異常・バフ管理
 
 ### 概要
 キャラクターの状態異常とバフ/デバフを管理。付与、解除、効果適用、持続時間管理を行う。
@@ -900,7 +1165,7 @@ class StatusEffectService {
 
 ---
 
-## 12. CraftService - アイテム合成管理
+## 13. CraftService - アイテム合成管理
 
 ### 概要
 アイテム合成の流れを管理。レシピ確認、材料チェック、合成実行を行う。
@@ -929,7 +1194,7 @@ class CraftService {
 
 ---
 
-## 13. EnhanceService - 装備・キャラ強化
+## 14. EnhanceService - 装備・キャラ強化
 
 ### 概要
 装備やキャラクターの強化を管理。強化実行、成功判定を行う。
@@ -958,7 +1223,7 @@ class EnhanceService {
 
 ---
 
-## 14. SaveLoadService - セーブ/ロード管理
+## 15. SaveLoadService - セーブ/ロード管理
 
 ### 概要
 ゲームの状態をセーブ・ロードする。シリアライズ、デシリアライズ、バージョン管理を行う。
@@ -983,7 +1248,7 @@ class SaveLoadService {
 
 ---
 
-## 15. SimulationService - 戦闘シミュレーション
+## 16. SimulationService - 戦闘シミュレーション
 
 ### 概要
 戦闘結果をシミュレーションし、勝率や期待ダメージを計算。

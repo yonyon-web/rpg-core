@@ -1392,7 +1392,473 @@ function ItemMenuBattle({ party, enemies }: { party: Character[]; enemies: Enemy
 
 ---
 
-## 4. EquipmentController - 装備変更UI制御
+## 4. InventoryController - インベントリUI制御
+
+### 状態定義
+
+```typescript
+interface InventoryUIState {
+  // 表示モード
+  mode: 'view' | 'use' | 'equip' | 'discard' | 'sort';
+  
+  // 表示中のアイテム一覧（フィルタ・ソート適用後）
+  displayedItems: InventorySlot[];
+  
+  // フィルタ状態
+  filter: {
+    category?: ItemCategory;
+    searchText?: string;
+    equippedOnly?: boolean;
+    usableOnly?: boolean;
+    customCriteria?: InventorySearchCriteria;
+  };
+  
+  // ソート状態
+  sort: {
+    by: InventorySortBy;
+    order: SortOrder;
+  };
+  
+  // 選択状態
+  selectedItem?: InventorySlot;
+  selectedItems: InventorySlot[];  // 複数選択（一括破棄など）
+  
+  // カーソル位置
+  cursorIndex: number;
+  
+  // ページネーション
+  page: number;
+  itemsPerPage: number;
+  totalPages: number;
+  
+  // 統計情報
+  stats: InventoryStats;
+  
+  // ローディング状態
+  isLoading: boolean;
+}
+```
+
+### コントローラー実装
+
+```typescript
+class InventoryController {
+  private state: ObservableState<InventoryUIState>;
+  private events: EventEmitter<InventoryEvents>;
+  private inventoryService: InventoryService;
+  
+  constructor(inventoryService: InventoryService) {
+    this.inventoryService = inventoryService;
+    
+    // 初期状態
+    this.state = new ObservableState<InventoryUIState>({
+      mode: 'view',
+      displayedItems: [],
+      filter: {},
+      sort: { by: 'name', order: 'asc' },
+      selectedItems: [],
+      cursorIndex: 0,
+      page: 1,
+      itemsPerPage: 20,
+      totalPages: 1,
+      stats: inventoryService.getStats(),
+      isLoading: false
+    });
+    
+    this.events = new EventEmitter<InventoryEvents>();
+    
+    // 初回ロード
+    this.refreshInventory();
+  }
+  
+  // === 状態購読 ===
+  
+  subscribe(listener: (state: InventoryUIState) => void): () => void {
+    return this.state.subscribe(listener);
+  }
+  
+  on<K extends keyof InventoryEvents>(
+    event: K,
+    handler: InventoryEvents[K]
+  ): () => void {
+    return this.events.on(event, handler);
+  }
+  
+  // === インベントリ更新 ===
+  
+  refreshInventory(): void {
+    const { filter, sort, page, itemsPerPage } = this.state.getState();
+    
+    // フィルタ適用
+    let items = this.applyFilters(filter);
+    
+    // ソート適用
+    this.inventoryService.sortInventory(sort.by, sort.order);
+    items = this.inventoryService.inventory.slots;
+    
+    // ページネーション計算
+    const totalPages = Math.ceil(items.length / itemsPerPage);
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const displayedItems = items.slice(startIndex, endIndex);
+    
+    // 統計情報更新
+    const stats = this.inventoryService.getStats();
+    
+    this.state.setState(prev => ({
+      ...prev,
+      displayedItems,
+      totalPages,
+      stats
+    }));
+    
+    this.events.emit('inventory-updated', { items: displayedItems });
+  }
+  
+  // === フィルタ操作 ===
+  
+  setFilter(filter: Partial<InventoryUIState['filter']>): void {
+    this.state.setState(prev => ({
+      ...prev,
+      filter: { ...prev.filter, ...filter },
+      page: 1,  // フィルタ変更時はページリセット
+      cursorIndex: 0
+    }));
+    
+    this.refreshInventory();
+    this.events.emit('filter-changed', { filter: this.state.getState().filter });
+  }
+  
+  clearFilter(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      filter: {},
+      page: 1,
+      cursorIndex: 0
+    }));
+    
+    this.refreshInventory();
+  }
+  
+  // === ソート操作 ===
+  
+  setSort(by: InventorySortBy, order?: SortOrder): void {
+    const currentSort = this.state.getState().sort;
+    const newOrder = order || (currentSort.by === by && currentSort.order === 'asc' ? 'desc' : 'asc');
+    
+    this.state.setState(prev => ({
+      ...prev,
+      sort: { by, order: newOrder },
+      cursorIndex: 0
+    }));
+    
+    this.refreshInventory();
+    this.events.emit('sort-changed', { by, order: newOrder });
+  }
+  
+  // === アイテム選択 ===
+  
+  selectItem(item: InventorySlot): void {
+    this.state.setState(prev => ({
+      ...prev,
+      selectedItem: item
+    }));
+    
+    this.events.emit('item-selected', { item });
+  }
+  
+  selectItemAt(index: number): void {
+    const { displayedItems } = this.state.getState();
+    if (index >= 0 && index < displayedItems.length) {
+      this.selectItem(displayedItems[index]);
+      this.state.setState(prev => ({ ...prev, cursorIndex: index }));
+    }
+  }
+  
+  // === モード切り替え ===
+  
+  setMode(mode: InventoryUIState['mode']): void {
+    this.state.setState(prev => ({
+      ...prev,
+      mode,
+      selectedItems: []  // モード変更時は複数選択をクリア
+    }));
+  }
+  
+  // === アイテム操作 ===
+  
+  async useItem(item: InventorySlot, context: 'battle' | 'field', targets: Combatant[]): Promise<void> {
+    this.state.setState(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const result = await this.inventoryService.useItem(item.item, context, targets);
+      
+      if (result.success) {
+        this.refreshInventory();
+        this.events.emit('item-used', { item: item.item, result });
+      }
+    } finally {
+      this.state.setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }
+  
+  discardItem(item: InventorySlot, quantity: number): void {
+    const result = this.inventoryService.removeItem(item.item, quantity);
+    
+    if (result.success) {
+      this.refreshInventory();
+      this.events.emit('item-discarded', { item: item.item, quantity });
+    }
+  }
+  
+  stackItems(): void {
+    const result = this.inventoryService.stackItems();
+    
+    if (result.success) {
+      this.refreshInventory();
+      this.events.emit('items-stacked', { stackedCount: result.stackedCount });
+    }
+  }
+  
+  // === ページネーション ===
+  
+  nextPage(): void {
+    const { page, totalPages } = this.state.getState();
+    if (page < totalPages) {
+      this.state.setState(prev => ({
+        ...prev,
+        page: page + 1,
+        cursorIndex: 0
+      }));
+      this.refreshInventory();
+    }
+  }
+  
+  previousPage(): void {
+    const { page } = this.state.getState();
+    if (page > 1) {
+      this.state.setState(prev => ({
+        ...prev,
+        page: page - 1,
+        cursorIndex: 0
+      }));
+      this.refreshInventory();
+    }
+  }
+  
+  goToPage(page: number): void {
+    const { totalPages } = this.state.getState();
+    if (page >= 1 && page <= totalPages) {
+      this.state.setState(prev => ({
+        ...prev,
+        page,
+        cursorIndex: 0
+      }));
+      this.refreshInventory();
+    }
+  }
+  
+  // === カーソル移動 ===
+  
+  moveCursor(direction: 'up' | 'down' | 'left' | 'right'): void {
+    const { cursorIndex, displayedItems } = this.state.getState();
+    let newIndex = cursorIndex;
+    
+    switch (direction) {
+      case 'up':
+        newIndex = Math.max(0, cursorIndex - 1);
+        break;
+      case 'down':
+        newIndex = Math.min(displayedItems.length - 1, cursorIndex + 1);
+        break;
+      // left/rightは列表示の場合に使用
+    }
+    
+    if (newIndex !== cursorIndex) {
+      this.selectItemAt(newIndex);
+    }
+  }
+  
+  // === ヘルパー ===
+  
+  private applyFilters(filter: InventoryUIState['filter']): InventorySlot[] {
+    const criteria: InventorySearchCriteria = {
+      category: filter.category,
+      name: filter.searchText,
+      isEquipped: filter.equippedOnly,
+      ...filter.customCriteria
+    };
+    
+    let items = this.inventoryService.searchItems(criteria);
+    
+    // 使用可能フィルタ（context依存のため、ここでは簡易的に）
+    if (filter.usableOnly) {
+      // 実際のcontextは外部から渡す必要がある
+      items = items.filter(slot => {
+        // 簡易判定（実際は context を考慮）
+        return slot.item.category === 'consumable' || slot.item.category === 'key-item';
+      });
+    }
+    
+    return items;
+  }
+}
+
+// イベント定義
+interface InventoryEvents {
+  'item-selected': (data: { item: InventorySlot }) => void;
+  'item-used': (data: { item: Item; result: ItemUseResult }) => void;
+  'item-discarded': (data: { item: Item; quantity: number }) => void;
+  'items-stacked': (data: { stackedCount: number }) => void;
+  'filter-changed': (data: { filter: InventoryUIState['filter'] }) => void;
+  'sort-changed': (data: { by: InventorySortBy; order: SortOrder }) => void;
+  'inventory-updated': (data: { items: InventorySlot[] }) => void;
+}
+```
+
+### React使用例
+
+```typescript
+function InventoryScreen() {
+  const [state, setState] = useState<InventoryUIState | null>(null);
+  const controllerRef = useRef<InventoryController>();
+  
+  useEffect(() => {
+    // InventoryServiceを初期化
+    const inventoryService = new InventoryService(coreEngine, gameState.inventory);
+    
+    // Controllerを初期化
+    const controller = new InventoryController(inventoryService);
+    controllerRef.current = controller;
+    
+    // 状態購読
+    const unsubscribe = controller.subscribe(setState);
+    
+    // イベント購読
+    const unsubEvents = [
+      controller.on('item-used', ({ item, result }) => {
+        console.log(`${item.name} を使用しました`);
+      }),
+      controller.on('item-discarded', ({ item, quantity }) => {
+        console.log(`${item.name} を${quantity}個 破棄しました`);
+      })
+    ];
+    
+    return () => {
+      unsubscribe();
+      unsubEvents.forEach(unsub => unsub());
+    };
+  }, []);
+  
+  if (!state) return <div>Loading...</div>;
+  
+  return (
+    <div className="inventory">
+      {/* ヘッダー */}
+      <div className="inventory-header">
+        <h2>インベントリ</h2>
+        <div className="stats">
+          <span>アイテム数: {state.stats.totalItems}/{state.stats.maxSlots}</span>
+          <span>所持金: {state.stats.money}G</span>
+        </div>
+      </div>
+      
+      {/* フィルタ */}
+      <div className="filters">
+        <select 
+          value={state.filter.category || ''}
+          onChange={(e) => controllerRef.current?.setFilter({ 
+            category: e.target.value as ItemCategory || undefined 
+          })}
+        >
+          <option value="">全カテゴリ</option>
+          <option value="consumable">消耗品</option>
+          <option value="equipment">装備</option>
+          <option value="key-item">重要アイテム</option>
+          <option value="material">素材</option>
+        </select>
+        
+        <input
+          type="text"
+          placeholder="検索..."
+          value={state.filter.searchText || ''}
+          onChange={(e) => controllerRef.current?.setFilter({ searchText: e.target.value })}
+        />
+        
+        <button onClick={() => controllerRef.current?.setSort('name')}>
+          名前順
+        </button>
+        <button onClick={() => controllerRef.current?.setSort('quantity')}>
+          数量順
+        </button>
+      </div>
+      
+      {/* アイテムリスト */}
+      <div className="item-list">
+        {state.displayedItems.map((slot, index) => (
+          <div 
+            key={index}
+            className={`item ${index === state.cursorIndex ? 'selected' : ''}`}
+            onClick={() => controllerRef.current?.selectItemAt(index)}
+          >
+            <img src={slot.item.icon} alt={slot.item.name} />
+            <div className="item-info">
+              <span className="name">{slot.item.name}</span>
+              <span className="quantity">×{slot.quantity}</span>
+              {slot.isEquipped && <span className="equipped-badge">E</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* ページネーション */}
+      <div className="pagination">
+        <button 
+          onClick={() => controllerRef.current?.previousPage()}
+          disabled={state.page === 1}
+        >
+          前へ
+        </button>
+        <span>ページ {state.page} / {state.totalPages}</span>
+        <button 
+          onClick={() => controllerRef.current?.nextPage()}
+          disabled={state.page === state.totalPages}
+        >
+          次へ
+        </button>
+      </div>
+      
+      {/* アクション */}
+      {state.selectedItem && (
+        <div className="actions">
+          <button onClick={() => {
+            if (state.selectedItem) {
+              controllerRef.current?.setMode('use');
+              // 使用画面に遷移
+            }
+          }}>
+            使う
+          </button>
+          <button onClick={() => {
+            if (state.selectedItem) {
+              controllerRef.current?.discardItem(state.selectedItem, 1);
+            }
+          }}>
+            捨てる
+          </button>
+          <button onClick={() => controllerRef.current?.stackItems()}>
+            整理
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## 5. EquipmentController - 装備変更UI制御
 
 ### 状態定義
 
@@ -1786,7 +2252,7 @@ function EquipmentScreenWithPreset({ character, presetName }: {
 
 ---
 
-## 5. PartyController - パーティ編成UI制御
+## 6. PartyController - パーティ編成UI制御
 
 ### 状態定義
 
@@ -2151,7 +2617,7 @@ function PartyFormationScreen() {
 
 ---
 
-## 6. CraftController - アイテム合成UI制御
+## 7. CraftController - アイテム合成UI制御
 
 ### 状態定義
 
@@ -2470,7 +2936,7 @@ function CraftScreen() {
 
 ---
 
-## 7. SkillLearnController - スキル習得UI制御
+## 8. SkillLearnController - スキル習得UI制御
 
 ### 状態定義
 
@@ -2663,7 +3129,7 @@ class SkillLearnController {
 
 ---
 
-## 8. RewardController - 報酬受取UI制御
+## 9. RewardController - 報酬受取UI制御
 
 ### 状態定義
 
@@ -2874,7 +3340,7 @@ class RewardController {
 
 ---
 
-## 9. EnhanceController - 強化UI制御
+## 10. EnhanceController - 強化UI制御
 
 ### 状態定義
 
@@ -3153,7 +3619,7 @@ class EnhanceController {
 
 ---
 
-## 10. SaveLoadController - セーブ/ロードUI制御
+## 11. SaveLoadController - セーブ/ロードUI制御
 
 ### 状態定義
 
@@ -3441,7 +3907,7 @@ class SaveLoadController {
 
 ---
 
-## 11. JobChangeController - 職業変更UI制御
+## 12. JobChangeController - 職業変更UI制御
 
 ### 状態定義
 
@@ -3760,7 +4226,7 @@ function JobChangeScreen({ character }: { character: Character }) {
 
 ---
 
-## 12. StatusEffectController - 状態異常表示UI制御
+## 13. StatusEffectController - 状態異常表示UI制御
 
 ### 状態定義
 
@@ -4194,22 +4660,23 @@ describe('BattleController', () => {
 
 ### コントローラー一覧
 
-本ドキュメントでは、以下の12のコントローラーの詳細設計を記載しました：
+本ドキュメントでは、以下の13のコントローラーの詳細設計を記載しました：
 
 | # | Controller | 対応Service | 概要 |
 |---|-----------|------------|------|
 | 1 | BattleController | BattleService | 戦闘全体の進行、ターン管理、アニメーション制御 |
 | 2 | CommandController | CommandService | 戦闘中のコマンド選択フロー |
 | 3 | ItemController | ItemService | アイテム使用の全フロー（戦闘/フィールド） |
-| 4 | EquipmentController | EquipmentService | 装備変更、比較、ステータスプレビュー |
-| 5 | PartyController | PartyService | パーティ編成、メンバー入れ替え、隊列変更 |
-| 6 | CraftController | CraftService | アイテム合成、材料チェック、成功率表示 |
-| 7 | SkillLearnController | SkillLearnService | スキル習得、条件チェック、コスト管理 |
-| 8 | RewardController | RewardService | 戦闘報酬配分、レベルアップ演出 |
-| 9 | EnhanceController | EnhanceService | 装備・キャラ強化、成功判定 |
-| 10 | SaveLoadController | SaveLoadService | セーブ/ロード、スロット管理 |
-| 11 | JobChangeController | JobChangeService | 職業変更、条件チェック、ステータス変化プレビュー |
-| 12 | StatusEffectController | StatusEffectService | 状態異常の表示、フィルタ、解除 |
+| 4 | InventoryController | InventoryService | インベントリ管理、フィルタ、ソート、ページネーション |
+| 5 | EquipmentController | EquipmentService | 装備変更、比較、ステータスプレビュー |
+| 6 | PartyController | PartyService | パーティ編成、メンバー入れ替え、隊列変更 |
+| 7 | CraftController | CraftService | アイテム合成、材料チェック、成功率表示 |
+| 8 | SkillLearnController | SkillLearnService | スキル習得、条件チェック、コスト管理 |
+| 9 | RewardController | RewardService | 戦闘報酬配分、レベルアップ演出 |
+| 10 | EnhanceController | EnhanceService | 装備・キャラ強化、成功判定 |
+| 11 | SaveLoadController | SaveLoadService | セーブ/ロード、スロット管理 |
+| 12 | JobChangeController | JobChangeService | 職業変更、条件チェック、ステータス変化プレビュー |
+| 13 | StatusEffectController | StatusEffectService | 状態異常の表示、フィルタ、解除 |
 
 ### UI不要または内部的に使用されるService
 

@@ -9,15 +9,16 @@
 | 1 | BattleController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 戦闘全体の進行、ターン管理、アニメーション制御 |
 | 2 | CommandController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 戦闘中のコマンド選択フロー |
 | 3 | ItemController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | アイテム使用、敵/味方ターゲット対応済み |
-| 4 | EquipmentController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 装備変更、スロット構成のカスタマイズ対応済み |
-| 5 | PartyController | 未レビュー | - | - | パーティ編成、メンバー入れ替え、隊列変更 |
-| 6 | CraftController | 未レビュー | - | - | アイテム合成、材料チェック、成功率表示 |
-| 7 | SkillLearnController | 未レビュー | - | - | スキル習得、条件チェック、コスト管理 |
-| 8 | RewardController | 未レビュー | - | - | 戦闘報酬配分、レベルアップ演出 |
-| 9 | EnhanceController | 未レビュー | - | - | 装備・キャラ強化、成功判定 |
-| 10 | SaveLoadController | 未レビュー | - | - | セーブ/ロード、スロット管理 |
-| 11 | JobChangeController | 未レビュー | - | - | 職業変更、条件チェック、ステータス変化プレビュー |
-| 12 | StatusEffectController | 未レビュー | - | - | 状態異常の表示、フィルタ、解除 |
+| 4 | InventoryController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | インベントリ管理、フィルタ、ソート、ページネーション |
+| 5 | EquipmentController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 装備変更、スロット構成のカスタマイズ対応済み |
+| 6 | PartyController | 未レビュー | - | - | パーティ編成、メンバー入れ替え、隊列変更 |
+| 7 | CraftController | 未レビュー | - | - | アイテム合成、材料チェック、成功率表示 |
+| 8 | SkillLearnController | 未レビュー | - | - | スキル習得、条件チェック、コスト管理 |
+| 9 | RewardController | 未レビュー | - | - | 戦闘報酬配分、レベルアップ演出 |
+| 10 | EnhanceController | 未レビュー | - | - | 装備・キャラ強化、成功判定 |
+| 11 | SaveLoadController | 未レビュー | - | - | セーブ/ロード、スロット管理 |
+| 12 | JobChangeController | 未レビュー | - | - | 職業変更、条件チェック、ステータス変化プレビュー |
+| 13 | StatusEffectController | 未レビュー | - | - | 状態異常の表示、フィルタ、解除 |
 
 ## レビュー観点
 
@@ -84,6 +85,18 @@
   - CORE_ENGINE_EXTENSIBILITY.md に装備スロット構成セクションを追加
 - **状態**: 承認
 
+### InventoryController
+- **日付**: 2026-01-11
+- **レビュアー**: @yonyon-web
+- **主な変更**:
+  - 新規追加：インベントリ管理システムの包括的な設計
+  - Core Engine、Service、Headless UIの3層で統合設計
+  - 拡張可能な検索システム（customPredicate、index signature）
+  - ItemService、EquipmentService、RewardService、CraftServiceとの連携
+  - フィルタ、ソート、ページネーション機能
+  - INVENTORY_SYSTEM_DESIGN.md に詳細設計を記載
+- **状態**: 承認
+
 ## 次のレビュー優先度
 
 1. **高**: PartyController - よく使われる機能
@@ -92,8 +105,8 @@
 
 ## 進捗状況
 
-- **レビュー済み**: 4/12 コントローラー (33%)
-- **未レビュー**: 8/12 コントローラー (67%)
+- **レビュー済み**: 5/13 コントローラー (38%)
+- **未レビュー**: 8/13 コントローラー (62%)
 
 ## メモ
 
