@@ -6,8 +6,8 @@
 
 | # | Controller | レビュー状態 | レビュー日 | レビュアー | メモ |
 |---|-----------|------------|-----------|----------|------|
-| 1 | BattleController | 未レビュー | - | - | 戦闘全体の進行、ターン管理、アニメーション制御 |
-| 2 | CommandController | 未レビュー | - | - | 戦闘中のコマンド選択フロー |
+| 1 | BattleController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 戦闘全体の進行、ターン管理、アニメーション制御 |
+| 2 | CommandController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 戦闘中のコマンド選択フロー |
 | 3 | ItemController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | アイテム使用、敵/味方ターゲット対応済み |
 | 4 | EquipmentController | 未レビュー | - | - | 装備変更、スロット構成のカスタマイズ対応済み |
 | 5 | PartyController | 未レビュー | - | - | パーティ編成、メンバー入れ替え、隊列変更 |
@@ -53,6 +53,18 @@
 
 ## レビュー履歴
 
+### BattleController
+- **日付**: 2026-01-11
+- **レビュアー**: @yonyon-web
+- **主な変更**: なし
+- **状態**: 承認
+
+### CommandController
+- **日付**: 2026-01-11
+- **レビュアー**: @yonyon-web
+- **主な変更**: なし
+- **状態**: 承認
+
 ### ItemController
 - **日付**: 2026-01-11
 - **レビュアー**: @yonyon-web
@@ -65,9 +77,13 @@
 ## 次のレビュー優先度
 
 1. **高**: EquipmentController - Core Engineとの連携部分の確認
-2. **中**: BattleController, CommandController - 戦闘システムの基盤
-3. **中**: PartyController - よく使われる機能
-4. **低**: その他のコントローラー
+2. **中**: PartyController - よく使われる機能
+3. **低**: その他のコントローラー（CraftController, SkillLearnController, RewardController, EnhanceController, SaveLoadController, JobChangeController, StatusEffectController）
+
+## 進捗状況
+
+- **レビュー済み**: 3/12 コントローラー (25%)
+- **未レビュー**: 9/12 コントローラー (75%)
 
 ## メモ
 
