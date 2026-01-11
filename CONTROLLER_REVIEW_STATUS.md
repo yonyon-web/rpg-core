@@ -9,7 +9,7 @@
 | 1 | BattleController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 戦闘全体の進行、ターン管理、アニメーション制御 |
 | 2 | CommandController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 戦闘中のコマンド選択フロー |
 | 3 | ItemController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | アイテム使用、敵/味方ターゲット対応済み |
-| 4 | EquipmentController | 未レビュー | - | - | 装備変更、スロット構成のカスタマイズ対応済み |
+| 4 | EquipmentController | ✅ レビュー済み | 2026-01-11 | @yonyon-web | 装備変更、スロット構成のカスタマイズ対応済み |
 | 5 | PartyController | 未レビュー | - | - | パーティ編成、メンバー入れ替え、隊列変更 |
 | 6 | CraftController | 未レビュー | - | - | アイテム合成、材料チェック、成功率表示 |
 | 7 | SkillLearnController | 未レビュー | - | - | スキル習得、条件チェック、コスト管理 |
@@ -74,16 +74,26 @@
   - allTargetsフィールドを追加してキャンセル時の復元に対応
 - **状態**: 承認
 
+### EquipmentController
+- **日付**: 2026-01-11
+- **レビュアー**: @yonyon-web
+- **主な変更**:
+  - 装備スロット構成をコンストラクタで必須パラメータとして受け取るように変更
+  - Core Engineの getEquipmentSlots() から取得することを必須化
+  - ヘッドレスUI側のデフォルト値を削除し、Core Engine側で一元管理
+  - CORE_ENGINE_EXTENSIBILITY.md に装備スロット構成セクションを追加
+- **状態**: 承認
+
 ## 次のレビュー優先度
 
-1. **高**: EquipmentController - Core Engineとの連携部分の確認
-2. **中**: PartyController - よく使われる機能
-3. **低**: その他のコントローラー（CraftController, SkillLearnController, RewardController, EnhanceController, SaveLoadController, JobChangeController, StatusEffectController）
+1. **高**: PartyController - よく使われる機能
+2. **中**: CraftController, SkillLearnController
+3. **低**: その他のコントローラー（RewardController, EnhanceController, SaveLoadController, JobChangeController, StatusEffectController）
 
 ## 進捗状況
 
-- **レビュー済み**: 3/12 コントローラー (25%)
-- **未レビュー**: 9/12 コントローラー (75%)
+- **レビュー済み**: 4/12 コントローラー (33%)
+- **未レビュー**: 8/12 コントローラー (67%)
 
 ## メモ
 
