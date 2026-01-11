@@ -950,9 +950,12 @@ interface ItemUIState {
   itemCategories: ItemCategory[];
   currentCategory: ItemCategory | null;
   
+  // ターゲット候補（コンテキストに応じて設定）
+  availableTargets: Combatant[];
+  
   // 選択
   selectedItem: Item | null;
-  selectedTargets: Character[];
+  selectedTargets: Combatant[];
   
   // カーソル
   cursorIndex: number;
@@ -967,7 +970,7 @@ interface ItemUIState {
 
 interface ItemEffectPreview {
   item: Item;
-  target: Character;
+  target: Combatant;
   expectedHeal?: number;
   expectedDamage?: number;
   statusEffects?: StatusEffect[];
@@ -976,9 +979,9 @@ interface ItemEffectPreview {
 interface ItemUseResult {
   success: boolean;
   item: Item;
-  targets: Character[];
+  targets: Combatant[];
   effects: {
-    target: Character;
+    target: Combatant;
     heal?: number;
     damage?: number;
     statusEffectsApplied?: StatusEffect[];
@@ -993,7 +996,7 @@ interface ItemUseResult {
 ```typescript
 type ItemEvents = {
   'item-selected': { item: Item };
-  'target-selected': { target: Character };
+  'target-selected': { target: Combatant };
   'item-used': { result: ItemUseResult };
   'item-cancelled': {};
 };
@@ -1011,6 +1014,7 @@ class ItemController {
       availableItems: [],
       itemCategories: [],
       currentCategory: null,
+      availableTargets: [],
       selectedItem: null,
       selectedTargets: [],
       cursorIndex: 0,
@@ -1032,12 +1036,21 @@ class ItemController {
     return this.events.on(event, listener);
   }
   
-  // アイテム使用開始
-  startItemUse(context: 'battle' | 'field', party: Character[]): void {
+  // アイテム使用開始（フィールド用）
+  startItemUse(context: 'field', party: Character[]): void;
+  // アイテム使用開始（戦闘用）
+  startItemUse(context: 'battle', party: Character[], enemies: Enemy[]): void;
+  startItemUse(context: 'battle' | 'field', party: Character[], enemies?: Enemy[]): void {
     this.service.startItemUse(context);
     
     const availableItems = this.service.getUsableItems(context);
     const categories = this.categorizeItems(availableItems);
+    
+    // コンテキストに応じてターゲット候補を設定
+    // フィールドではパーティメンバーのみ、戦闘では味方と敵の両方
+    const availableTargets: Combatant[] = context === 'battle' && enemies
+      ? [...party, ...enemies]
+      : party;
     
     this.state.setState({
       stage: 'selecting-item',
@@ -1045,6 +1058,7 @@ class ItemController {
       availableItems,
       itemCategories: categories,
       currentCategory: categories[0] || null,
+      availableTargets,
       selectedItem: null,
       selectedTargets: [],
       cursorIndex: 0,
@@ -1080,7 +1094,7 @@ class ItemController {
     
     // ターゲット選択が必要か判定
     if (this.requiresTargetSelection(item)) {
-      this.moveToTargetSelection();
+      this.moveToTargetSelection(item);
     } else {
       // ターゲット不要（全体効果など）
       this.confirm();
@@ -1088,16 +1102,64 @@ class ItemController {
   }
   
   // ターゲット選択へ移動
-  private moveToTargetSelection(): void {
+  private moveToTargetSelection(item: Item): void {
+    // アイテムのターゲットタイプに応じて利用可能なターゲットをフィルタ
+    const allTargets = this.state.getState().availableTargets;
+    const filteredTargets = this.filterTargetsByItemType(item, allTargets);
+    
     this.state.setState(prev => ({
       ...prev,
       stage: 'selecting-target',
+      availableTargets: filteredTargets,
       cursorIndex: 0
     }));
   }
   
+  // アイテムタイプに応じたターゲットフィルタリング
+  private filterTargetsByItemType(item: Item, allTargets: Combatant[]): Combatant[] {
+    const context = this.state.getState().context;
+    
+    if (context === 'field') {
+      // フィールドでは常に味方のみ
+      return allTargets.filter(t => 'job' in t); // Character判定
+    }
+    
+    // 戦闘中
+    switch (item.targetType) {
+      case 'ally':
+      case 'single-ally':
+        // 味方のみ（Character）
+        return allTargets.filter(t => 'job' in t && t.currentHp > 0);
+        
+      case 'enemy':
+      case 'single-enemy':
+        // 敵のみ（Enemy）
+        return allTargets.filter(t => !('job' in t) && t.currentHp > 0);
+        
+      case 'single':
+      case 'any':
+        // 味方・敵どちらでも可
+        return allTargets.filter(t => t.currentHp > 0);
+        
+      case 'all-allies':
+        // 全味方
+        return allTargets.filter(t => 'job' in t);
+        
+      case 'all-enemies':
+        // 全敵
+        return allTargets.filter(t => !('job' in t));
+        
+      case 'all':
+        // 全員
+        return allTargets;
+        
+      default:
+        return allTargets;
+    }
+  }
+  
   // ターゲット選択
-  selectTarget(target: Character): void {
+  selectTarget(target: Combatant): void {
     const item = this.state.getState().selectedItem!;
     
     this.service.selectTargets([target]);
@@ -1115,7 +1177,7 @@ class ItemController {
   }
   
   // 効果プレビュー作成
-  private createEffectPreview(item: Item, target: Character): ItemEffectPreview {
+  private createEffectPreview(item: Item, target: Combatant): ItemEffectPreview {
     // Serviceを通じて効果を計算
     const expectedHeal = item.healAmount ? item.healAmount : undefined;
     const expectedDamage = item.damageAmount ? item.damageAmount : undefined;
@@ -1141,8 +1203,8 @@ class ItemController {
         : currentState.availableItems;
       maxIndex = filteredItems.length - 1;
     } else if (currentState.stage === 'selecting-target') {
-      // パーティメンバー数
-      maxIndex = 3; // 仮の値、実際はパーティサイズに依存
+      // 利用可能なターゲット数
+      maxIndex = currentState.availableTargets.length - 1;
     }
     
     const newIndex = Math.max(0, Math.min(maxIndex, currentState.cursorIndex + delta));
@@ -1206,7 +1268,10 @@ class ItemController {
   
   // ユーティリティ
   private requiresTargetSelection(item: Item): boolean {
-    return item.targetType === 'single' || item.targetType === 'ally';
+    // 全体効果以外はターゲット選択が必要
+    return item.targetType !== 'all' && 
+           item.targetType !== 'all-allies' && 
+           item.targetType !== 'all-enemies';
   }
   
   private categorizeItems(items: Item[]): ItemCategory[] {
@@ -1219,7 +1284,8 @@ class ItemController {
 ### 使用例（React）
 
 ```typescript
-function ItemMenu() {
+// フィールドでの使用例
+function ItemMenuField() {
   const [state, setState] = useState<ItemUIState>();
   const controllerRef = useRef<ItemController>();
   
@@ -1230,6 +1296,7 @@ function ItemMenu() {
     
     const unsubscribe = controller.subscribe(setState);
     
+    // フィールドではパーティのみ渡す
     controller.startItemUse('field', party);
     
     return unsubscribe;
@@ -1252,7 +1319,58 @@ function ItemMenu() {
       
       {state.stage === 'selecting-target' && (
         <TargetSelection
-          targets={party}
+          targets={state.availableTargets}
+          selectedTargets={state.selectedTargets}
+          preview={state.effectPreview}
+          onSelectTarget={(target) => controllerRef.current?.selectTarget(target)}
+        />
+      )}
+      
+      {state.stage === 'completed' && state.result && (
+        <ItemUseResult result={state.result} />
+      )}
+    </div>
+  );
+}
+
+// 戦闘中での使用例
+function ItemMenuBattle({ party, enemies }: { party: Character[]; enemies: Enemy[] }) {
+  const [state, setState] = useState<ItemUIState>();
+  const controllerRef = useRef<ItemController>();
+  
+  useEffect(() => {
+    const service = new ItemService(coreEngine);
+    const controller = new ItemController(service);
+    controllerRef.current = controller;
+    
+    const unsubscribe = controller.subscribe(setState);
+    
+    // 戦闘中はパーティと敵を両方渡す
+    controller.startItemUse('battle', party, enemies);
+    
+    return unsubscribe;
+  }, [party, enemies]);
+  
+  if (!state) return <div>Loading...</div>;
+  
+  return (
+    <div className="item-menu-battle">
+      {state.stage === 'selecting-item' && (
+        <ItemList
+          items={state.availableItems}
+          categories={state.itemCategories}
+          currentCategory={state.currentCategory}
+          cursorIndex={state.cursorIndex}
+          onSelectItem={(item) => controllerRef.current?.selectItem(item)}
+          onSelectCategory={(cat) => controllerRef.current?.selectCategory(cat)}
+        />
+      )}
+      
+      {state.stage === 'selecting-target' && (
+        <BattleTargetSelection
+          allies={party}
+          enemies={enemies}
+          availableTargets={state.availableTargets}
           selectedTargets={state.selectedTargets}
           preview={state.effectPreview}
           onSelectTarget={(target) => controllerRef.current?.selectTarget(target)}
