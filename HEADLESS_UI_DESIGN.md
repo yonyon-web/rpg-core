@@ -1455,9 +1455,13 @@ class EquipmentController {
   private state: ObservableState<EquipmentUIState>;
   private events: EventEmitter<EquipmentEvents>;
   private service: EquipmentService;
+  private equipmentSlotConfig: EquipmentType[];
   
-  constructor(service: EquipmentService) {
+  constructor(service: EquipmentService, equipmentSlotConfig?: EquipmentType[]) {
     this.service = service;
+    // デフォルトのスロット構成。使用者が独自の構成を渡すことも可能
+    this.equipmentSlotConfig = equipmentSlotConfig || ['weapon', 'armor', 'accessory'] as EquipmentType[];
+    
     this.state = new ObservableState<EquipmentUIState>({
       character: null,
       stage: 'selecting-slot',
@@ -1625,15 +1629,21 @@ class EquipmentController {
   
   // ユーティリティ
   private getAvailableSlots(character: Character): EquipmentType[] {
-    return ['weapon', 'armor', 'accessory1', 'accessory2'] as EquipmentType[];
+    // 設定されたスロット構成を使用
+    // Characterオブジェクトから動的に取得する実装も可能
+    return [...this.equipmentSlotConfig];
   }
   
   private getCurrentEquipment(character: Character): Map<EquipmentType, Equipment | null> {
     const equipmentMap = new Map<EquipmentType, Equipment | null>();
-    equipmentMap.set('weapon', character.equipment.weapon || null);
-    equipmentMap.set('armor', character.equipment.armor || null);
-    equipmentMap.set('accessory1', character.equipment.accessory1 || null);
-    equipmentMap.set('accessory2', character.equipment.accessory2 || null);
+    
+    // 設定されたスロットに基づいて装備を取得
+    for (const slotType of this.equipmentSlotConfig) {
+      // character.equipmentオブジェクトから動的にアクセス
+      const equipment = character.equipment[slotType as string] || null;
+      equipmentMap.set(slotType, equipment);
+    }
+    
     return equipmentMap;
   }
   
@@ -1653,7 +1663,14 @@ function EquipmentScreen({ character }: { character: Character }) {
   
   useEffect(() => {
     const service = new EquipmentService(coreEngine);
+    
+    // デフォルトのスロット構成を使用する場合
     const controller = new EquipmentController(service);
+    
+    // カスタムスロット構成を使用する場合の例
+    // const customSlots: EquipmentType[] = ['weapon', 'shield', 'helmet', 'armor', 'boots', 'accessory1', 'accessory2'];
+    // const controller = new EquipmentController(service, customSlots);
+    
     controllerRef.current = controller;
     
     const unsubscribe = controller.subscribe(setState);
@@ -1694,6 +1711,31 @@ function EquipmentScreen({ character }: { character: Character }) {
       )}
     </div>
   );
+}
+
+// 複数のスロット構成を持つゲームの例
+function EquipmentScreenAdvanced({ character, gameConfig }: { 
+  character: Character; 
+  gameConfig: GameConfig;
+}) {
+  const [state, setState] = useState<EquipmentUIState>();
+  const controllerRef = useRef<EquipmentController>();
+  
+  useEffect(() => {
+    const service = new EquipmentService(coreEngine);
+    
+    // ゲーム設定から装備スロットを取得
+    const equipmentSlots = gameConfig.equipmentSlots || ['weapon', 'armor', 'accessory'];
+    const controller = new EquipmentController(service, equipmentSlots);
+    
+    controllerRef.current = controller;
+    const unsubscribe = controller.subscribe(setState);
+    controller.startEquipmentChange(character);
+    
+    return unsubscribe;
+  }, [character, gameConfig]);
+  
+  // ... rest of the component
 }
 ```
 
