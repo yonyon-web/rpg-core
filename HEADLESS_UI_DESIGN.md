@@ -2805,10 +2805,11 @@ function FormationMenu({ formations, currentFormationId, onLoad, onDelete, onSwi
 ```typescript
 interface CraftUIState {
   // 選択段階
-  stage: 'selecting-recipe' | 'confirming' | 'synthesizing' | 'completed';
+  stage: 'selecting-recipe' | 'confirming' | 'synthesizing' | 'completed' | 'viewing-locked';
   
   // レシピ
-  availableRecipes: Recipe[];
+  unlockedRecipes: Recipe[];          // 解放済みレシピ
+  lockedRecipes: Recipe[];            // 未解放レシピ（解放条件表示用）
   selectedRecipe: Recipe | null;
   
   // 材料チェック
@@ -2827,6 +2828,11 @@ interface CraftUIState {
   // フィルタ
   categoryFilter: CraftCategory | null;
   availableOnlyFilter: boolean;
+  showLockedRecipes: boolean;         // 未解放レシピも表示するか
+  
+  // レシピ解放
+  unlockableRecipes: Recipe[];        // 解放可能なレシピ
+  recentlyUnlockedRecipes: Recipe[];  // 最近解放されたレシピ（通知用）
 }
 
 interface RecipeCheckResult {
@@ -2862,6 +2868,8 @@ type CraftEvents = {
   'recipe-selected': { recipe: Recipe };
   'synthesis-started': { recipe: Recipe };
   'synthesis-completed': { result: SynthesisResult };
+  'recipe-unlocked': { recipe: Recipe; trigger?: string };
+  'recipes-auto-unlocked': { recipes: Recipe[] };
   'cancelled': {};
 };
 
@@ -2870,11 +2878,17 @@ class CraftController {
   private events: EventEmitter<CraftEvents>;
   private service: CraftService;
   
-  constructor(service: CraftService, private inventory: Inventory) {
+  constructor(
+    service: CraftService,
+    private inventory: Inventory,
+    private gameState: GameState,
+    private party: Character[]
+  ) {
     this.service = service;
     this.state = new ObservableState<CraftUIState>({
       stage: 'selecting-recipe',
-      availableRecipes: [],
+      unlockedRecipes: [],
+      lockedRecipes: [],
       selectedRecipe: null,
       materialCheck: null,
       successRate: 0,
@@ -2882,7 +2896,10 @@ class CraftController {
       result: null,
       cursorIndex: 0,
       categoryFilter: null,
-      availableOnlyFilter: false
+      availableOnlyFilter: false,
+      showLockedRecipes: false,
+      unlockableRecipes: [],
+      recentlyUnlockedRecipes: []
     });
     this.events = new EventEmitter<CraftEvents>();
   }
@@ -2900,11 +2917,27 @@ class CraftController {
   
   // クラフト開始
   startCrafting(): void {
-    const availableRecipes = this.service.getAvailableRecipes();
+    const unlockedRecipes = this.service.getUnlockedRecipes(this.gameState);
+    const unlockableRecipes = this.service.getUnlockableRecipes(this.gameState, this.party);
+    
+    // 解放可能なレシピを自動解放
+    if (unlockableRecipes.length > 0) {
+      for (const recipe of unlockableRecipes) {
+        this.service.unlockRecipe(recipe.id, this.gameState, 'auto');
+      }
+      this.events.emit('recipes-auto-unlocked', { recipes: unlockableRecipes });
+    }
+    
+    // 全レシピから解放済み以外を取得
+    const allRecipes = this.service.getAllRecipes();
+    const lockedRecipes = allRecipes.filter(r => 
+      !this.gameState.unlockedRecipes.has(r.id) && !r.isUnlockedByDefault
+    );
     
     this.state.setState({
       stage: 'selecting-recipe',
-      availableRecipes,
+      unlockedRecipes,
+      lockedRecipes,
       selectedRecipe: null,
       materialCheck: null,
       successRate: 0,
@@ -2912,12 +2945,25 @@ class CraftController {
       result: null,
       cursorIndex: 0,
       categoryFilter: null,
-      availableOnlyFilter: false
+      availableOnlyFilter: false,
+      showLockedRecipes: false,
+      unlockableRecipes: [],
+      recentlyUnlockedRecipes: unlockableRecipes
     });
   }
   
   // レシピ選択
   selectRecipe(recipe: Recipe): void {
+    // 解放チェック
+    if (!this.gameState.unlockedRecipes.has(recipe.id) && !recipe.isUnlockedByDefault) {
+      this.state.setState(prev => ({
+        ...prev,
+        stage: 'viewing-locked',
+        selectedRecipe: recipe
+      }));
+      return;
+    }
+    
     // 材料チェック
     const materialCheck = this.service.checkMaterials(recipe, this.inventory);
     
@@ -2932,6 +2978,38 @@ class CraftController {
     }));
     
     this.events.emit('recipe-selected', { recipe });
+  }
+  
+  // 未解放レシピ表示切り替え
+  toggleShowLockedRecipes(): void {
+    this.state.setState(prev => ({
+      ...prev,
+      showLockedRecipes: !prev.showLockedRecipes
+    }));
+  }
+  
+  // レシピ手動解放（特定条件で使用）
+  unlockRecipe(recipeId: UniqueId, trigger?: string): void {
+    const recipe = this.service.getAllRecipes().find(r => r.id === recipeId);
+    if (!recipe) return;
+    
+    this.service.unlockRecipe(recipeId, this.gameState, trigger);
+    
+    // 状態を更新
+    const unlockedRecipes = this.service.getUnlockedRecipes(this.gameState);
+    const allRecipes = this.service.getAllRecipes();
+    const lockedRecipes = allRecipes.filter(r => 
+      !this.gameState.unlockedRecipes.has(r.id) && !r.isUnlockedByDefault
+    );
+    
+    this.state.setState(prev => ({
+      ...prev,
+      unlockedRecipes,
+      lockedRecipes,
+      recentlyUnlockedRecipes: [...prev.recentlyUnlockedRecipes, recipe]
+    }));
+    
+    this.events.emit('recipe-unlocked', { recipe, trigger });
   }
   
   // フィルタ設定

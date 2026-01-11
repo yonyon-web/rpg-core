@@ -858,6 +858,8 @@ interface Recipe {
   requiredLevel?: number;           // 必要レベル
   requiredSkill?: UniqueId;         // 必要スキル
   category: CraftCategory;          // カテゴリ
+  unlockCondition?: RecipeUnlockCondition; // 解放条件（オプショナル）
+  isUnlockedByDefault?: boolean;    // デフォルトで解放されているか（デフォルト: false）
 }
 
 /**
@@ -866,6 +868,46 @@ interface Recipe {
 interface MaterialRequirement {
   itemId: UniqueId;                 // アイテムID
   quantity: number;                 // 必要数量
+}
+
+/**
+ * レシピ解放条件
+ * 柔軟な条件設定が可能
+ */
+interface RecipeUnlockCondition {
+  // 基本条件
+  minLevel?: number;                // 最低レベル
+  requiredJob?: UniqueId;           // 必要ジョブ
+  requiredSkill?: UniqueId;         // 必要スキル
+  
+  // 進行条件
+  requiredStoryProgress?: string;   // 必要ストーリー進行度ID
+  requiredQuest?: UniqueId;         // 必要クエストクリア
+  requiredAchievement?: UniqueId;   // 必要実績
+  
+  // アイテム条件
+  requiredItems?: { itemId: UniqueId; quantity: number }[]; // 必要所持アイテム
+  requiredCraftCount?: { itemId: UniqueId; count: number }; // 指定アイテムの作成回数
+  
+  // レシピ条件
+  requiredRecipesUnlocked?: UniqueId[]; // 他のレシピの解放が必要
+  
+  // カスタム条件（柔軟性のため）
+  customCondition?: (gameState: GameState, party: Character[]) => boolean;
+  
+  // 複合条件（AND/OR）
+  andConditions?: RecipeUnlockCondition[]; // すべて満たす必要
+  orConditions?: RecipeUnlockCondition[];  // いずれか満たせばOK
+}
+
+/**
+ * レシピ解放状態
+ */
+interface RecipeUnlockState {
+  recipeId: UniqueId;               // レシピID
+  isUnlocked: boolean;              // 解放済みフラグ
+  unlockedAt?: Date;                // 解放日時
+  unlockedBy?: string;              // 解放トリガー（'quest', 'level', 'story'等）
 }
 
 /**
@@ -1102,6 +1144,66 @@ interface CustomFormulas {
   damageFormula?: DamageFormula;    // ダメージ計算式
   expCurveFormula?: ExpCurveFormula; // 経験値曲線
   dropRateFormula?: DropRateFormula; // ドロップ率計算
+}
+```
+
+---
+
+## game/ モジュールの型定義
+
+### ゲーム状態管理
+
+```typescript
+/**
+ * ゲーム状態
+ * - ゲーム全体の進行状態を管理
+ */
+interface GameState {
+  // 基本情報
+  version: string;                  // セーブデータバージョン
+  saveDate: Timestamp;              // 保存日時
+  playTime: number;                 // プレイ時間（秒）
+  
+  // プレイヤー情報
+  player: {
+    name: string;                   // プレイヤー名
+    playerId: string;               // プレイヤーID
+    money: number;                  // 所持金
+  };
+  
+  // パーティ情報
+  party: Character[];               // パーティメンバー
+  
+  // インベントリ
+  inventory: Inventory;             // アイテム管理
+  
+  // ストーリー進行
+  storyProgress: string;            // ストーリー進行度ID
+  completedQuests: UniqueId[];      // 完了クエスト
+  achievements: UniqueId[];         // 取得済み実績
+  flags: Record<string, boolean>;   // ゲームフラグ
+  
+  // レシピ解放状態
+  unlockedRecipes: Set<UniqueId>;   // 解放済みレシピID
+  recipeUnlockStates: Map<UniqueId, RecipeUnlockState>; // 詳細な解放状態
+  craftHistory: Map<UniqueId, number>; // アイテム作成回数（アイテムID → 回数）
+  
+  // パーティ編成
+  savedFormations: Map<string, PartyFormation>; // 保存済みパーティ編成
+  activeFormationId?: string;       // 現在のアクティブ編成ID
+  
+  // その他拡張可能なデータ
+  customData?: Record<string, any>; // ゲーム固有のデータ
+}
+
+/**
+ * レシピ解放状態
+ */
+interface RecipeUnlockState {
+  recipeId: UniqueId;               // レシピID
+  isUnlocked: boolean;              // 解放済みフラグ
+  unlockedAt?: Date;                // 解放日時
+  unlockedBy?: string;              // 解放トリガー（'quest', 'level', 'story'等）
 }
 ```
 

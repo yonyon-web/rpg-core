@@ -1839,20 +1839,29 @@ class StatusEffectService {
 ## 13. CraftService - アイテム合成管理
 
 ### 概要
-アイテム合成の流れを管理。レシピ確認、材料チェック、合成実行を行う。
+アイテム合成の流れを管理。レシピ確認、材料チェック、合成実行、レシピ解放を行う。
 
 ### 公開インターフェース
 
 ```typescript
 class CraftService {
-  // 利用可能レシピ取得
-  getAvailableRecipes(): Recipe[];
+  // 解放済みレシピ取得
+  getUnlockedRecipes(gameState: GameState): Recipe[];
   
   // 材料チェック
   checkMaterials(recipe: Recipe, inventory: Inventory): RecipeCheckResult;
   
   // 合成実行
-  synthesize(recipe: Recipe, inventory: Inventory): SynthesisResult;
+  synthesize(recipe: Recipe, inventory: Inventory, gameState: GameState): SynthesisResult;
+  
+  // レシピ解放条件チェック
+  checkRecipeUnlockCondition(recipe: Recipe, gameState: GameState, party: Character[]): boolean;
+  
+  // レシピ解放
+  unlockRecipe(recipeId: UniqueId, gameState: GameState, trigger?: string): void;
+  
+  // 未解放レシピで解放可能なものを取得
+  getUnlockableRecipes(gameState: GameState, party: Character[]): Recipe[];
 }
 ```
 
@@ -1862,6 +1871,10 @@ class CraftService {
 - `craft/synthesis.calculateSynthesisSuccessRate()` - 成功率計算
 - `craft/synthesis.rollSynthesisResult()` - 合成結果判定
 - `craft/synthesis.calculateMaterialReturn()` - 材料返還判定
+- `craft/synthesis.checkRecipeUnlockCondition()` - レシピ解放条件チェック
+- `craft/synthesis.getUnlockedRecipes()` - 解放済みレシピ取得
+- `craft/synthesis.unlockRecipe()` - レシピ解放
+- `craft/synthesis.checkAllRecipeUnlockConditions()` - 全レシピ解放可否チェック
 
 ### 実装例
 
@@ -1872,10 +1885,12 @@ class CraftService {
     private inventoryService: InventoryService
   ) {}
   
-  getAvailableRecipes(): Recipe[] {
-    // 解放済みレシピを取得（ゲーム進行度による）
-    // この例では全レシピを返す
-    return this.coreEngine.getAllRecipes();
+  getUnlockedRecipes(gameState: GameState): Recipe[] {
+    // Core Engineで解放済みレシピを取得
+    return this.coreEngine.getUnlockedRecipes(
+      this.coreEngine.getAllRecipes(),
+      gameState
+    );
   }
   
   checkMaterials(recipe: Recipe, inventory: Inventory): RecipeCheckResult {
@@ -1883,14 +1898,67 @@ class CraftService {
     return this.coreEngine.checkRecipeRequirements(recipe, inventory);
   }
   
-  synthesize(recipe: Recipe, inventory: Inventory): SynthesisResult {
+  checkRecipeUnlockCondition(
+    recipe: Recipe,
+    gameState: GameState,
+    party: Character[]
+  ): boolean {
+    // レシピ解放条件のチェック
+    return this.coreEngine.checkRecipeUnlockCondition(recipe, gameState, party);
+  }
+  
+  unlockRecipe(recipeId: UniqueId, gameState: GameState, trigger?: string): void {
+    // レシピを解放
+    this.coreEngine.unlockRecipe(recipeId, gameState, trigger);
+    
+    // 作成回数を初期化
+    if (!gameState.craftHistory.has(recipeId)) {
+      gameState.craftHistory.set(recipeId, 0);
+    }
+  }
+  
+  getUnlockableRecipes(gameState: GameState, party: Character[]): Recipe[] {
+    // 未解放で解放可能なレシピを取得
+    const allRecipes = this.coreEngine.getAllRecipes();
+    const unlockableRecipes: Recipe[] = [];
+    
+    for (const recipe of allRecipes) {
+      // すでに解放済みならスキップ
+      if (gameState.unlockedRecipes.has(recipe.id)) {
+        continue;
+      }
+      
+      // 解放条件チェック
+      if (this.checkRecipeUnlockCondition(recipe, gameState, party)) {
+        unlockableRecipes.push(recipe);
+      }
+    }
+    
+    return unlockableRecipes;
+  }
+  
+  synthesize(
+    recipe: Recipe,
+    inventory: Inventory,
+    gameState: GameState
+  ): SynthesisResult {
+    // レシピ解放チェック
+    if (!gameState.unlockedRecipes.has(recipe.id) && !recipe.isUnlockedByDefault) {
+      return {
+        success: false,
+        message: 'このレシピはまだ解放されていません',
+        outcome: 'failure'
+      };
+    }
+    
     // 材料チェック
     const materialCheck = this.checkMaterials(recipe, inventory);
-    if (!materialCheck.hasAllMaterials) {
+    if (!materialCheck.canCraft) {
       return {
         success: false,
         message: '材料が不足しています',
-        missingMaterials: materialCheck.missingMaterials
+        missingMaterials: materialCheck.missingMaterials,
+        outcome: 'failure'
       };
     }
     
@@ -1901,44 +1969,116 @@ class CraftService {
     const result = this.coreEngine.rollSynthesisResult(recipe, successRate);
     
     // 材料消費
-    for (const material of recipe.materials) {
-      this.inventoryService.removeItem(material.item, material.quantity);
+    for (const material of recipe.requiredMaterials) {
+      this.inventoryService.removeItem(material.itemId, material.quantity);
     }
     
-    if (result.success) {
+    // 作成回数を記録
+    const currentCount = gameState.craftHistory.get(recipe.resultItem.id) || 0;
+    gameState.craftHistory.set(recipe.resultItem.id, currentCount + 1);
+    
+    if (result.outcome === 'success' || result.outcome === 'great-success') {
       // 成功：生成物を追加
-      this.inventoryService.addItem(recipe.result, result.quantity || 1);
+      const quantity = result.outcome === 'great-success' ? 
+        recipe.resultQuantity * 2 : recipe.resultQuantity;
+      
+      this.inventoryService.addItem(recipe.resultItem.id, quantity);
       
       // ボーナスアイテム
       if (result.bonusItems && result.bonusItems.length > 0) {
         for (const bonus of result.bonusItems) {
-          this.inventoryService.addItem(bonus.item, bonus.quantity);
+          this.inventoryService.addItem(bonus.item.id, bonus.quantity);
         }
       }
       
       return {
         success: true,
-        message: `${recipe.result.name}の合成に成功しました！`,
-        resultItem: recipe.result,
-        quantity: result.quantity || 1,
-        bonusItems: result.bonusItems,
-        wasGreatSuccess: result.wasGreatSuccess
+        message: `${recipe.resultItem.name}の合成に成功しました！`,
+        outcome: result.outcome,
+        itemsProduced: [{ item: recipe.resultItem, quantity }],
+        bonusItems: result.bonusItems
       };
     } else {
       // 失敗：材料の一部返還判定
       const returnedMaterials = this.coreEngine.calculateMaterialReturn(recipe);
       for (const material of returnedMaterials) {
-        this.inventoryService.addItem(material.item, material.quantity);
+        this.inventoryService.addItem(material.item.id, material.quantity);
       }
       
       return {
         success: false,
         message: '合成に失敗しました...',
-        returnedMaterials
+        outcome: 'failure',
+        materialsReturned: returnedMaterials
       };
     }
   }
 }
+```
+
+### レシピ解放条件の例
+
+```typescript
+// 例1: レベル条件
+const basicPotionRecipe: Recipe = {
+  id: 'recipe_basic_potion',
+  name: '基本ポーション',
+  // ... 他のフィールド
+  isUnlockedByDefault: true  // 最初から使える
+};
+
+// 例2: クエストクリア条件
+const advancedPotionRecipe: Recipe = {
+  id: 'recipe_advanced_potion',
+  name: '上級ポーション',
+  // ... 他のフィールド
+  unlockCondition: {
+    requiredQuest: 'quest_herbalist_training',
+    minLevel: 10
+  }
+};
+
+// 例3: 複数の作成実績
+const masterPotionRecipe: Recipe = {
+  id: 'recipe_master_potion',
+  name: 'マスターポーション',
+  // ... 他のフィールド
+  unlockCondition: {
+    requiredCraftCount: { itemId: 'item_advanced_potion', count: 20 },
+    requiredRecipesUnlocked: ['recipe_advanced_potion', 'recipe_herb_essence']
+  }
+};
+
+// 例4: カスタム条件
+const legendaryWeaponRecipe: Recipe = {
+  id: 'recipe_legendary_sword',
+  name: '伝説の剣',
+  // ... 他のフィールド
+  unlockCondition: {
+    customCondition: (gameState, party) => {
+      // パーティに特定のキャラクターがいる
+      const hasBlacksmith = party.some(c => c.job.id === 'job_blacksmith');
+      // 特定のアイテムを所持している
+      const hasMythril = gameState.inventory.slots.some(
+        slot => slot.item.id === 'item_mythril_ore' && slot.quantity >= 10
+      );
+      return hasBlacksmith && hasMythril;
+    }
+  }
+};
+
+// 例5: OR条件（いずれかを満たせばOK）
+const rareRecipe: Recipe = {
+  id: 'recipe_rare_item',
+  name: 'レアアイテム',
+  // ... 他のフィールド
+  unlockCondition: {
+    orConditions: [
+      { requiredAchievement: 'achievement_master_crafter' },
+      { requiredStoryProgress: 'chapter_5', minLevel: 50 }
+    ]
+  }
+};
 ```
 
 ---
