@@ -82,7 +82,8 @@ interface Inventory {
 }
 
 /**
- * インベントリ検索条件
+ * インベントリ検索条件（ベース）
+ * ライブラリ利用者が拡張可能
  */
 interface InventorySearchCriteria {
   itemId?: UniqueId;                // アイテムID
@@ -91,6 +92,8 @@ interface InventorySearchCriteria {
   minQuantity?: number;             // 最小数量
   maxQuantity?: number;             // 最大数量
   isEquipped?: boolean;             // 装備中フラグ
+  customPredicate?: (slot: InventorySlot) => boolean;  // カスタム条件関数
+  [key: string]: any;               // ライブラリ利用者による拡張を許可
 }
 
 /**
@@ -238,18 +241,24 @@ function findItemSlot(
 
 /**
  * 複数条件でアイテムを検索
+ * カスタム条件関数により柔軟な検索が可能
  */
 function searchItems(
   inventory: Inventory,
   criteria: InventorySearchCriteria
 ): InventorySlot[] {
   return inventory.slots.filter(slot => {
+    // 標準の検索条件
     if (criteria.itemId && slot.item.id !== criteria.itemId) return false;
     if (criteria.category && slot.item.category !== criteria.category) return false;
     if (criteria.name && !slot.item.name.includes(criteria.name)) return false;
     if (criteria.minQuantity && slot.quantity < criteria.minQuantity) return false;
     if (criteria.maxQuantity && slot.quantity > criteria.maxQuantity) return false;
     if (criteria.isEquipped !== undefined && slot.isEquipped !== criteria.isEquipped) return false;
+    
+    // カスタム条件関数が指定されている場合
+    if (criteria.customPredicate && !criteria.customPredicate(slot)) return false;
+    
     return true;
   });
 }
@@ -1112,7 +1121,135 @@ async function buyItem(item: Item, quantity: number): Promise<boolean> {
 
 ## 拡張性の考慮
 
-### カスタムフィルタ
+### カスタム検索条件の拡張
+
+`InventorySearchCriteria` は拡張可能な設計になっており、ライブラリ利用者が独自の検索条件を追加できます。
+
+#### 方法1: customPredicate を使用
+
+```typescript
+// カスタム条件関数を使用した検索
+const results = searchItems(inventory, {
+  category: 'weapon',
+  customPredicate: (slot) => {
+    // レアリティが3以上で、価値が1000以上のアイテム
+    return (slot.item.rarity || 0) >= 3 && (slot.item.value || 0) >= 1000;
+  }
+});
+
+// 複雑な条件: 特定のタグを持つアイテム
+const taggedItems = searchItems(inventory, {
+  customPredicate: (slot) => {
+    const item = slot.item as any;
+    return item.tags?.includes('quest-item');
+  }
+});
+
+// 日付条件: 最近1週間で取得したアイテム
+const recentItems = searchItems(inventory, {
+  customPredicate: (slot) => {
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return (slot.acquiredAt || 0) >= oneWeekAgo;
+  }
+});
+```
+
+#### 方法2: 拡張インターフェースを定義
+
+```typescript
+// ゲーム固有の検索条件を定義
+interface ExtendedInventorySearchCriteria extends InventorySearchCriteria {
+  minRarity?: number;                // 最小レアリティ
+  maxRarity?: number;                // 最大レアリティ
+  tags?: string[];                   // タグによる検索
+  acquiredAfter?: number;            // 指定日時以降に取得
+  acquiredBefore?: number;           // 指定日時以前に取得
+  minValue?: number;                 // 最小価値
+  maxValue?: number;                 // 最大価値
+  isTradeable?: boolean;             // 取引可能フラグ
+}
+
+// 拡張された検索関数を定義
+function searchItemsExtended(
+  inventory: Inventory,
+  criteria: ExtendedInventorySearchCriteria
+): InventorySlot[] {
+  return searchItems(inventory, {
+    ...criteria,
+    customPredicate: (slot) => {
+      const item = slot.item as any;
+      
+      // 拡張フィールドの検証
+      if (criteria.minRarity !== undefined && (item.rarity || 0) < criteria.minRarity) return false;
+      if (criteria.maxRarity !== undefined && (item.rarity || 0) > criteria.maxRarity) return false;
+      if (criteria.tags && !criteria.tags.some(tag => item.tags?.includes(tag))) return false;
+      if (criteria.acquiredAfter && (slot.acquiredAt || 0) < criteria.acquiredAfter) return false;
+      if (criteria.acquiredBefore && (slot.acquiredAt || 0) > criteria.acquiredBefore) return false;
+      if (criteria.minValue !== undefined && (item.value || 0) < criteria.minValue) return false;
+      if (criteria.maxValue !== undefined && (item.value || 0) > criteria.maxValue) return false;
+      if (criteria.isTradeable !== undefined && item.tradeable !== criteria.isTradeable) return false;
+      
+      return true;
+    }
+  });
+}
+
+// 使用例
+const highValueItems = searchItemsExtended(inventory, {
+  minRarity: 3,
+  minValue: 5000,
+  isTradeable: true
+});
+
+const questItems = searchItemsExtended(inventory, {
+  tags: ['quest-item', 'key-item'],
+  isEquipped: false
+});
+```
+
+#### 方法3: Service層でラッパー関数を提供
+
+```typescript
+class InventoryService {
+  // ... 既存のメソッド
+  
+  /**
+   * レアリティでフィルタリング
+   */
+  getItemsByRarity(minRarity: number, maxRarity?: number): InventorySlot[] {
+    return searchItems(this.inventory, {
+      customPredicate: (slot) => {
+        const rarity = (slot.item as any).rarity || 0;
+        return rarity >= minRarity && (maxRarity === undefined || rarity <= maxRarity);
+      }
+    });
+  }
+  
+  /**
+   * タグでフィルタリング
+   */
+  getItemsByTags(tags: string[]): InventorySlot[] {
+    return searchItems(this.inventory, {
+      customPredicate: (slot) => {
+        const itemTags = (slot.item as any).tags || [];
+        return tags.some(tag => itemTags.includes(tag));
+      }
+    });
+  }
+  
+  /**
+   * 取引可能なアイテムを取得
+   */
+  getTradeableItems(): InventorySlot[] {
+    return searchItems(this.inventory, {
+      customPredicate: (slot) => (slot.item as any).tradeable === true,
+      isEquipped: false // 装備中のアイテムは除外
+    });
+  }
+}
+```
+
+### カスタムフィルタ（UI層）
 
 ```typescript
 // ユーザー定義のフィルタ関数
