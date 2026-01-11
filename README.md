@@ -78,13 +78,46 @@ rpg-core/
 
 詳細な設計ドキュメントは以下をご参照ください：
 
-- [CORE_ENGINE.md](./CORE_ENGINE.md) - Core Engineの役割と責任範囲
-- [CORE_ENGINE_TYPES.md](./CORE_ENGINE_TYPES.md) - 型定義
-- [CORE_ENGINE_FUNCTIONS.md](./CORE_ENGINE_FUNCTIONS.md) - 関数仕様
-- [CORE_ENGINE_EXTENSIBILITY.md](./CORE_ENGINE_EXTENSIBILITY.md) - 拡張性設計
-- [SERVICE_DESIGN.md](./SERVICE_DESIGN.md) - サービス層の設計
-- [HEADLESS_UI_DESIGN.md](./HEADLESS_UI_DESIGN.md) - ヘッドレスUI設計
-- [DATA_PERSISTENCE_DESIGN.md](./DATA_PERSISTENCE_DESIGN.md) - データ永続化設計
+### アーキテクチャ設計
+
+- [docs/コアエンジン.md](./docs/コアエンジン.md) - Core Engineの完全ガイド（役割、型定義、関数仕様、拡張性）
+- [docs/サービス設計.md](./docs/サービス設計.md) - サービス層の設計
+- [docs/ヘッドレスUI設計.md](./docs/ヘッドレスUI設計.md) - ヘッドレスUI設計
+- [docs/実装要素.md](./docs/実装要素.md) - 実装要素
+
+### 機能別ドキュメント
+
+各機能は Core Engine、Service、Headless UI の3層で設計されています。
+
+#### 戦闘・バトル
+- [docs/features/戦闘.md](./docs/features/戦闘.md) - 戦闘システム全体の設計
+
+#### キャラクター・成長
+- [docs/features/キャラクター成長.md](./docs/features/キャラクター成長.md) - ステータス、レベルアップ、成長システム
+- [docs/features/スキル習得.md](./docs/features/スキル習得.md) - スキル習得管理
+- [docs/features/ジョブ変更.md](./docs/features/ジョブ変更.md) - 職業・クラス変更システム
+
+#### アイテム・装備
+- [docs/features/アイテム.md](./docs/features/アイテム.md) - アイテム使用システム
+- [docs/features/インベントリ.md](./docs/features/インベントリ.md) - インベントリ（バッグ）管理
+- [docs/features/装備.md](./docs/features/装備.md) - 装備変更管理
+- [docs/features/クラフト.md](./docs/features/クラフト.md) - アイテム合成システム
+- [docs/features/強化.md](./docs/features/強化.md) - 装備・キャラクター強化
+
+#### パーティ・編成
+- [docs/features/パーティ編成.md](./docs/features/パーティ編成.md) - パーティ編成管理
+
+#### 状態・効果
+- [docs/features/状態異常.md](./docs/features/状態異常.md) - 状態異常・バフ・デバフ管理
+
+#### 敵・AI
+- [docs/features/敵AI.md](./docs/features/敵AI.md) - 敵の行動決定とグループ管理
+
+#### システム・その他
+- [docs/features/報酬.md](./docs/features/報酬.md) - 戦闘報酬処理
+- [docs/features/セーブロード.md](./docs/features/セーブロード.md) - セーブ/ロード管理
+- [docs/features/データ永続化.md](./docs/features/データ永続化.md) - データ永続化設計
+- [docs/features/シミュレーション.md](./docs/features/シミュレーション.md) - 戦闘シミュレーション
 
 ## ライセンス
 
