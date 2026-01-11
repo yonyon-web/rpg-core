@@ -2276,6 +2276,8 @@ interface PartyUIState {
   minPartySize: number;
   
   // 隊列
+  // formationPositions: パーティメンバーの表示順序（0: 前衛, 1-2: 中衛, 3: 後衛など）
+  // 例: [0, 1, 2, 3] = 通常配置, [3, 2, 1, 0] = 逆順, [1, 0, 3, 2] = カスタム配置
   formationPositions: number[];
   
   // ドラッグ&ドロップ状態
