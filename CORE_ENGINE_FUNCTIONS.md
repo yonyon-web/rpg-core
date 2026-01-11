@@ -910,6 +910,62 @@ function calculateMaterialReturn(
 ```
 **使用Service**: アイテム合成の流れを管理するService
 
+**checkRecipeUnlockCondition**
+```typescript
+function checkRecipeUnlockCondition(
+  recipe: Recipe,
+  gameState: GameState,
+  party: Character[]
+): boolean {
+  // レシピ解放条件のチェック
+  // - すべての条件を満たしているか判定
+  // - 複合条件（AND/OR）のサポート
+  // - カスタム条件関数の実行
+}
+```
+**使用Service**: アイテム合成の流れを管理するService
+
+**getUnlockedRecipes**
+```typescript
+function getUnlockedRecipes(
+  allRecipes: Recipe[],
+  gameState: GameState
+): Recipe[] {
+  // 解放済みレシピの取得
+  // - gameState.unlockedRecipes から解放済みを取得
+  // - isUnlockedByDefaultのレシピも含める
+}
+```
+**使用Service**: アイテム合成の流れを管理するService
+
+**unlockRecipe**
+```typescript
+function unlockRecipe(
+  recipeId: UniqueId,
+  gameState: GameState,
+  trigger?: string
+): void {
+  // レシピの解放
+  // - gameState.unlockedRecipesに追加
+  // - recipeUnlockStatesに解放情報を記録
+}
+```
+**使用Service**: アイテム合成の流れを管理するService
+
+**checkAllRecipeUnlockConditions**
+```typescript
+function checkAllRecipeUnlockConditions(
+  allRecipes: Recipe[],
+  gameState: GameState,
+  party: Character[]
+): { recipeId: UniqueId; canUnlock: boolean }[] {
+  // 全レシピの解放可否チェック
+  // - 未解放レシピの中で条件を満たしているものを検出
+  // - 自動解放時に使用
+}
+```
+**使用Service**: アイテム合成の流れを管理するService
+
 #### craft/enhance.ts
 
 **calculateEnhanceSuccessRate**

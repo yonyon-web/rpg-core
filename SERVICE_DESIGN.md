@@ -41,17 +41,18 @@ rpg-coreライブラリの15のServiceについて、詳細な設計仕様をま
 8. [RewardService - 戦闘報酬処理](#8-rewardservice---戦闘報酬処理)
 
 ### 🎒 管理・編成に関するService
-9. [EquipmentService - 装備変更管理](#9-equipmentservice---装備変更管理)
-10. [PartyService - パーティ編成管理](#10-partyservice---パーティ編成管理)
-11. [StatusEffectService - 状態異常・バフ管理](#11-statuseffectservice---状態異常バフ管理)
+9. [InventoryService - インベントリ/バッグ管理](#9-inventoryservice---インベントリバッグ管理)
+10. [EquipmentService - 装備変更管理](#10-equipmentservice---装備変更管理)
+11. [PartyService - パーティ編成管理](#11-partyservice---パーティ編成管理)
+12. [StatusEffectService - 状態異常・バフ管理](#12-statuseffectservice---状態異常バフ管理)
 
 ### 🛠 クラフト・育成に関するService
-12. [CraftService - アイテム合成管理](#12-craftservice---アイテム合成管理)
-13. [EnhanceService - 装備・キャラ強化](#13-enhanceservice---装備キャラ強化)
+13. [CraftService - アイテム合成管理](#13-craftservice---アイテム合成管理)
+14. [EnhanceService - 装備・キャラ強化](#14-enhanceservice---装備キャラ強化)
 
 ### 💾 システム・支援に関するService
-14. [SaveLoadService - セーブ/ロード管理](#14-saveloadservice---セーブロード管理)
-15. [SimulationService - 戦闘シミュレーション](#15-simulationservice---戦闘シミュレーション)
+15. [SaveLoadService - セーブ/ロード管理](#15-saveloadservice---セーブロード管理)
+16. [SimulationService - 戦闘シミュレーション](#16-simulationservice---戦闘シミュレーション)
 
 ---
 
@@ -747,6 +748,62 @@ class SkillLearnService {
 - `character/skill.checkSkillLearnCondition()` - 習得条件判定
 - `character/skill.getLearnableSkills()` - 習得可能スキル取得
 
+### 実装例
+
+```typescript
+class SkillLearnService {
+  constructor(private coreEngine: CoreEngine) {}
+  
+  getLearnableSkills(character: Character): Skill[] {
+    // Core Engineから習得可能なスキルを取得
+    return this.coreEngine.getLearnableSkills(character);
+  }
+  
+  checkLearnCondition(character: Character, skill: Skill): LearnConditionCheck {
+    // Core Engineで条件チェック
+    const conditionCheck = this.coreEngine.checkSkillLearnCondition(character, skill);
+    
+    return {
+      canLearn: conditionCheck.canLearn,
+      missingConditions: conditionCheck.missingConditions,
+      cost: conditionCheck.cost
+    };
+  }
+  
+  learnSkill(character: Character, skill: Skill): LearnResult {
+    // 条件チェック
+    const check = this.checkLearnCondition(character, skill);
+    if (!check.canLearn) {
+      return {
+        success: false,
+        message: '習得条件を満たしていません',
+        missingConditions: check.missingConditions
+      };
+    }
+    
+    // スキルポイント・コスト消費
+    if (check.cost > 0) {
+      if (character.skillPoints < check.cost) {
+        return {
+          success: false,
+          message: 'スキルポイントが不足しています'
+        };
+      }
+      character.skillPoints -= check.cost;
+    }
+    
+    // スキルを習得
+    character.skills.push(skill);
+    
+    return {
+      success: true,
+      message: `${skill.name}を習得しました！`,
+      learnedSkill: skill
+    };
+  }
+}
+```
+
 ---
 
 ## 7. JobChangeService - 職業・クラス変更
@@ -775,6 +832,77 @@ class JobChangeService {
 - `character/job.checkJobChangeCondition()` - 転職条件判定
 - `character/job.calculateJobStatModifier()` - ジョブステータス補正
 - `character/stats.calculateFinalStats()` - 最終ステータス再計算
+
+### 実装例
+
+```typescript
+class JobChangeService {
+  constructor(private coreEngine: CoreEngine) {}
+  
+  getAvailableJobs(character: Character): Job[] {
+    // Core Engineから転職可能なジョブを取得
+    return this.coreEngine.getAvailableJobs(character);
+  }
+  
+  checkJobChangeCondition(character: Character, targetJob: Job): JobChangeConditionCheck {
+    // Core Engineで条件チェック
+    return this.coreEngine.checkJobChangeCondition(character, targetJob);
+  }
+  
+  changeJob(character: Character, targetJob: Job): JobChangeResult {
+    // 条件チェック
+    const check = this.checkJobChangeCondition(character, targetJob);
+    if (!check.canChange) {
+      return {
+        success: false,
+        message: '転職条件を満たしていません',
+        missingConditions: check.missingConditions
+      };
+    }
+    
+    const previousJob = character.job;
+    
+    // ジョブ変更前のステータスを保存
+    const previousStats = { ...character.stats };
+    
+    // ジョブ変更
+    character.job = targetJob;
+    
+    // ステータス再計算
+    character.stats = this.coreEngine.calculateFinalStats(character);
+    
+    // スキルの獲得・喪失
+    const gainedSkills = targetJob.defaultSkills.filter(
+      skill => !character.skills.find(s => s.id === skill.id)
+    );
+    const lostSkills = previousJob.defaultSkills.filter(
+      skill => !targetJob.defaultSkills.find(s => s.id === skill.id)
+    );
+    
+    // ジョブ固有スキルの更新
+    character.skills = character.skills.filter(
+      skill => !lostSkills.find(s => s.id === skill.id)
+    );
+    character.skills.push(...gainedSkills);
+    
+    return {
+      success: true,
+      message: `${targetJob.name}に転職しました！`,
+      previousJob,
+      newJob: targetJob,
+      statChanges: {
+        attack: character.stats.attack - previousStats.attack,
+        defense: character.stats.defense - previousStats.defense,
+        magicAttack: character.stats.magicAttack - previousStats.magicAttack,
+        magicDefense: character.stats.magicDefense - previousStats.magicDefense,
+        speed: character.stats.speed - previousStats.speed
+      },
+      gainedSkills,
+      lostSkills
+    };
+  }
+}
+```
 
 ---
 
@@ -808,9 +936,379 @@ class RewardService {
 - `character/growth.calculateStatGrowth()` - ステータス成長計算
 - `item/inventory.addItemToInventory()` - アイテム追加
 
+### 実装例
+
+```typescript
+class RewardService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  distributeRewards(party: Character[], rewards: BattleRewards): RewardDistributionResult {
+    // 経験値配分
+    const expDistribution = this.distributeExp(party, rewards.exp);
+    
+    // レベルアップ処理
+    const levelUpResults: Map<Character, LevelUpResult[]> = new Map();
+    for (const [character, gainedExp] of expDistribution.entries()) {
+      const levelUps = this.processLevelUps(character, gainedExp);
+      if (levelUps.length > 0) {
+        levelUpResults.set(character, levelUps);
+      }
+    }
+    
+    // アイテム追加
+    const itemResults = this.addItems(rewards.items);
+    
+    // お金追加
+    // gameState.money += rewards.money; // GameState経由で追加
+    
+    return {
+      expDistribution,
+      levelUpResults,
+      itemResults,
+      totalMoney: rewards.money
+    };
+  }
+  
+  distributeExp(party: Character[], totalExp: number): Map<Character, number> {
+    // Core Engineで経験値配分を計算
+    const distribution = this.coreEngine.distributeExpToParty(party, totalExp);
+    
+    // 各キャラクターに経験値を加算
+    for (const [character, exp] of distribution.entries()) {
+      character.currentExp += exp;
+    }
+    
+    return distribution;
+  }
+  
+  processLevelUps(character: Character, gainedExp: number): LevelUpResult[] {
+    const results: LevelUpResult[] = [];
+    
+    // レベルアップ判定を繰り返す
+    while (this.coreEngine.checkLevelUp(character)) {
+      const previousLevel = character.level;
+      const previousStats = { ...character.stats };
+      
+      // レベルアップ
+      character.level++;
+      
+      // 次のレベルまでの必要経験値を取得
+      const expToNext = this.coreEngine.getExpForNextLevel(character.level);
+      character.currentExp -= expToNext;
+      
+      // ステータス成長
+      const statGrowth = this.coreEngine.calculateStatGrowth(character, previousLevel);
+      character.stats.maxHp += statGrowth.hp;
+      character.stats.maxMp += statGrowth.mp;
+      character.stats.attack += statGrowth.attack;
+      character.stats.defense += statGrowth.defense;
+      character.stats.magicAttack += statGrowth.magicAttack;
+      character.stats.magicDefense += statGrowth.magicDefense;
+      character.stats.speed += statGrowth.speed;
+      
+      // HP/MP全回復
+      character.currentHp = character.stats.maxHp;
+      character.currentMp = character.stats.maxMp;
+      
+      // 習得スキル
+      const newSkills = this.coreEngine.getSkillsLearnedAtLevel(character, character.level);
+      character.skills.push(...newSkills);
+      
+      results.push({
+        newLevel: character.level,
+        statGrowth,
+        newSkills
+      });
+    }
+    
+    return results;
+  }
+  
+  addItems(items: Item[]): InventoryResult {
+    // InventoryServiceに委譲
+    const results: InventoryResult[] = [];
+    for (const item of items) {
+      results.push(this.inventoryService.addItem(item, 1));
+    }
+    
+    return {
+      success: results.every(r => r.success),
+      addedItems: items
+    };
+  }
+}
+```
+
 ---
 
-## 9. EquipmentService - 装備変更管理
+## 9. InventoryService - インベントリ/バッグ管理
+
+### 概要
+アイテムと装備のインベントリ（バッグ）を管理。アイテムの追加・削除、検索、フィルタリング、ソートなどの機能を提供。詳細な設計は `INVENTORY_SYSTEM_DESIGN.md` を参照。
+
+### 状態管理
+
+```typescript
+interface InventoryServiceState {
+  // インベントリデータ
+  inventory: Inventory;
+  
+  // 最後の操作結果
+  lastOperation?: {
+    type: 'add' | 'remove' | 'use' | 'stack';
+    success: boolean;
+    message?: string;
+  };
+}
+```
+
+### 公開インターフェース
+
+```typescript
+class InventoryService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventory: Inventory
+  ) {}
+  
+  // === アイテム操作 ===
+  
+  // アイテム追加
+  addItem(item: Item, quantity: number): InventoryResult;
+  
+  // アイテム削除
+  removeItem(item: Item, quantity: number): InventoryResult;
+  
+  // アイテム使用（ItemServiceに委譲）
+  useItem(item: Item, context: 'battle' | 'field', targets: Combatant[]): Promise<ItemUseResult>;
+  
+  // === フィルタリング ===
+  
+  // カテゴリ別取得
+  getItemsByCategory(category: ItemCategory): InventorySlot[];
+  
+  // 使用可能アイテム取得
+  getUsableItems(context: 'battle' | 'field'): InventorySlot[];
+  
+  // 装備可能アイテム取得
+  getEquippableItems(character: Character): InventorySlot[];
+  
+  // 装備中アイテム取得
+  getEquippedItems(): InventorySlot[];
+  
+  // カスタム検索
+  searchItems(criteria: InventorySearchCriteria): InventorySlot[];
+  
+  // === ソート・整理 ===
+  
+  // ソート
+  sortInventory(sortBy: InventorySortBy, order: SortOrder): void;
+  
+  // スタック整理
+  stackItems(): StackResult;
+  
+  // === 統計・情報 ===
+  
+  // 統計情報取得
+  getStats(): InventoryStats;
+  
+  // 空きスロット取得
+  getAvailableSlots(): number;
+  
+  // アイテム所持チェック
+  hasItem(itemId: UniqueId, quantity: number): boolean;
+}
+```
+
+### Core Engine 委譲
+
+- `item/inventory.addItemToInventory()` - アイテム追加
+- `item/inventory.removeItemFromInventory()` - アイテム削除
+- `item/inventory.searchItems()` - アイテム検索
+- `item/inventory.sortInventory()` - アイテムソート
+- `item/inventory.stackItems()` - スタック整理
+- `item/inventory.getInventoryStats()` - 統計情報取得
+- `item/effects.checkItemUsable()` - アイテム使用可否判定（ItemServiceと連携）
+- `item/equipment.checkEquipmentEligibility()` - 装備可否判定（EquipmentServiceと連携）
+
+### 他のServiceとの連携
+
+#### ItemService との連携
+```typescript
+// ItemService内でInventoryServiceを参照
+class ItemService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  getUsableItems(context: 'battle' | 'field'): Item[] {
+    // InventoryServiceから使用可能アイテムを取得
+    return this.inventoryService.getUsableItems(context)
+      .map(slot => slot.item);
+  }
+  
+  async useItem(item: Item, targets: Combatant[], context: 'battle' | 'field'): Promise<ItemUseResult> {
+    // アイテム効果適用
+    const result = await this.applyItemEffects(item, targets, context);
+    
+    // 成功したらインベントリから削除
+    if (result.success) {
+      this.inventoryService.removeItem(item, 1);
+    }
+    
+    return result;
+  }
+}
+```
+
+#### EquipmentService との連携
+```typescript
+// EquipmentService内でInventoryServiceを参照
+class EquipmentService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  getEquippableItems(character: Character): Equipment[] {
+    // InventoryServiceから装備可能アイテムを取得
+    return this.inventoryService.getEquippableItems(character)
+      .map(slot => slot.item as Equipment);
+  }
+  
+  equipItem(character: Character, equipment: Equipment, slot: EquipmentType): EquipResult {
+    // 装備処理
+    const result = this.performEquip(character, equipment, slot);
+    
+    // インベントリの装備フラグを更新
+    if (result.success) {
+      // Core Engineを通じてインベントリ内の装備フラグを更新
+      this.coreEngine.updateEquippedFlag(this.inventoryService.inventory, equipment.id, true);
+    }
+    
+    return result;
+  }
+}
+```
+
+#### RewardService との連携
+```typescript
+// RewardService内でInventoryServiceを参照
+class RewardService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  async distributeRewards(rewards: BattleRewards): Promise<RewardResult> {
+    // 経験値・お金を配分
+    const expResult = this.distributeExp(rewards.exp);
+    const moneyResult = this.addMoney(rewards.money);
+    
+    // アイテムをインベントリに追加
+    const itemResults: InventoryResult[] = [];
+    for (const item of rewards.items) {
+      const result = this.inventoryService.addItem(item, 1);
+      itemResults.push(result);
+    }
+    
+    return {
+      exp: expResult,
+      money: moneyResult,
+      items: itemResults
+    };
+  }
+}
+```
+
+#### CraftService との連携
+```typescript
+// CraftService内でInventoryServiceを参照
+class CraftService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  checkMaterials(recipe: Recipe): RecipeCheckResult {
+    // インベントリから材料の所持数をチェック
+    const materialsAvailable = recipe.materials.every(material =>
+      this.inventoryService.hasItem(material.itemId, material.quantity)
+    );
+    
+    return {
+      canCraft: materialsAvailable,
+      missingMaterials: this.getMissingMaterials(recipe)
+    };
+  }
+  
+  synthesize(recipe: Recipe): SynthesisResult {
+    // 材料をインベントリから削除
+    for (const material of recipe.materials) {
+      this.inventoryService.removeItem(material.item, material.quantity);
+    }
+    
+    // 合成処理
+    const result = this.performSynthesis(recipe);
+    
+    // 成功したら結果アイテムをインベントリに追加
+    if (result.success) {
+      this.inventoryService.addItem(result.resultItem, 1);
+    }
+    
+    return result;
+  }
+}
+```
+
+### 実装例
+
+```typescript
+class InventoryService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventory: Inventory
+  ) {}
+  
+  addItem(item: Item, quantity: number): InventoryResult {
+    // Core Engineに委譲
+    return this.coreEngine.addItemToInventory(this.inventory, item, quantity);
+  }
+  
+  getUsableItems(context: 'battle' | 'field'): InventorySlot[] {
+    // インベントリから全アイテムを取得
+    const allItems = this.inventory.slots;
+    
+    // 使用可能なアイテムのみフィルタ
+    return allItems.filter(slot => 
+      this.coreEngine.checkItemUsable(slot.item, context)
+    );
+  }
+  
+  searchItems(criteria: InventorySearchCriteria): InventorySlot[] {
+    // Core Engineに委譲
+    return this.coreEngine.searchItems(this.inventory, criteria);
+  }
+  
+  sortInventory(sortBy: InventorySortBy, order: SortOrder): void {
+    // Core Engineに委譲してソート実行
+    this.coreEngine.sortInventory(this.inventory, sortBy, order);
+  }
+  
+  getStats(): InventoryStats {
+    // Core Engineに委譲
+    return this.coreEngine.getInventoryStats(this.inventory);
+  }
+}
+```
+
+---
+
+## 10. EquipmentService - 装備変更管理
 
 ### 概要
 キャラクターの装備変更を管理。装備可否判定、装備変更、比較機能を提供。
@@ -840,16 +1338,122 @@ class EquipmentService {
 - `item/equipment.compareEquipment()` - 装備比較
 - `character/stats.calculateFinalStats()` - 最終ステータス再計算
 
+### 実装例
+
+```typescript
+class EquipmentService {
+  constructor(private coreEngine: CoreEngine) {}
+  
+  checkEquipmentEligibility(character: Character, equipment: Equipment): EquipmentEligibilityCheck {
+    // Core Engineで装備可否判定
+    return this.coreEngine.checkEquipmentEligibility(character, equipment);
+  }
+  
+  equipItem(character: Character, equipment: Equipment, slot: EquipmentType): EquipResult {
+    // 装備可否チェック
+    const eligibility = this.checkEquipmentEligibility(character, equipment);
+    if (!eligibility.canEquip) {
+      return {
+        success: false,
+        message: `装備できません: ${eligibility.reason}`,
+        reasons: eligibility.reasons
+      };
+    }
+    
+    // 現在の装備を取得
+    const currentEquipment = character.equipment[slot];
+    
+    // 装備変更
+    character.equipment[slot] = equipment;
+    
+    // ステータス再計算
+    const previousStats = { ...character.stats };
+    character.stats = this.coreEngine.calculateFinalStats(character);
+    
+    // インベントリのフラグ更新
+    if (equipment.inventorySlotIndex !== undefined) {
+      // equipment.isEquipped = true;
+    }
+    if (currentEquipment && currentEquipment.inventorySlotIndex !== undefined) {
+      // currentEquipment.isEquipped = false;
+    }
+    
+    return {
+      success: true,
+      message: `${equipment.name}を装備しました`,
+      equippedItem: equipment,
+      unequippedItem: currentEquipment,
+      statChanges: {
+        attack: character.stats.attack - previousStats.attack,
+        defense: character.stats.defense - previousStats.defense,
+        magicAttack: character.stats.magicAttack - previousStats.magicAttack,
+        magicDefense: character.stats.magicDefense - previousStats.magicDefense,
+        speed: character.stats.speed - previousStats.speed
+      }
+    };
+  }
+  
+  unequipItem(character: Character, slot: EquipmentType): UnequipResult {
+    const currentEquipment = character.equipment[slot];
+    if (!currentEquipment) {
+      return {
+        success: false,
+        message: '装備されていません'
+      };
+    }
+    
+    // 装備解除
+    character.equipment[slot] = null;
+    
+    // ステータス再計算
+    const previousStats = { ...character.stats };
+    character.stats = this.coreEngine.calculateFinalStats(character);
+    
+    // インベントリのフラグ更新
+    if (currentEquipment.inventorySlotIndex !== undefined) {
+      // currentEquipment.isEquipped = false;
+    }
+    
+    return {
+      success: true,
+      message: `${currentEquipment.name}を外しました`,
+      unequippedItem: currentEquipment,
+      statChanges: {
+        attack: character.stats.attack - previousStats.attack,
+        defense: character.stats.defense - previousStats.defense,
+        magicAttack: character.stats.magicAttack - previousStats.magicAttack,
+        magicDefense: character.stats.magicDefense - previousStats.magicDefense,
+        speed: character.stats.speed - previousStats.speed
+      }
+    };
+  }
+  
+  compareEquipment(character: Character, currentEquip: Equipment | null, newEquip: Equipment): EquipmentComparison {
+    // Core Engineで装備比較
+    return this.coreEngine.compareEquipment(character, currentEquip, newEquip);
+  }
+}
+```
+
 ---
 
-## 10. PartyService - パーティ編成管理
+## 11. PartyService - パーティ編成管理
 
 ### 概要
-パーティの編成、メンバー入れ替え、隊列変更を管理。
+パーティの編成、メンバー入れ替え、隊列変更を管理。複数のパーティ編成をプリセットとして保存・切り替え可能。
 
 ### 公開インターフェース
 
 ```typescript
+interface PartyFormation {
+  id: string;
+  name: string;
+  members: Character[];
+  formationPositions: number[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 class PartyService {
   // メンバー追加
   addMember(party: Character[], character: Character): PartyResult;
@@ -862,12 +1466,217 @@ class PartyService {
   
   // 隊列変更
   changeFormation(party: Character[], formation: number[]): PartyResult;
+  
+  // 複数パーティ編成管理
+  saveFormation(id: string, name: string, party: Character[], formationPositions: number[]): FormationResult;
+  loadFormation(id: string): FormationLoadResult;
+  deleteFormation(id: string): FormationResult;
+  getAllFormations(): PartyFormation[];
+  switchToFormation(id: string): FormationSwitchResult;
+}
+```
+
+### Core Engine 委譲
+
+- `party/formation.validatePartyComposition()` - パーティ構成の検証
+- `party/formation.saveFormation()` - パーティ編成の保存
+- `party/formation.loadFormation()` - パーティ編成の読み込み
+- `party/formation.deleteFormation()` - パーティ編成の削除
+- `party/formation.getAllFormations()` - 全パーティ編成の取得
+
+### 実装例
+
+```typescript
+class PartyService {
+  constructor(private coreEngine: CoreEngine) {}
+  
+  addMember(party: Character[], character: Character): PartyResult {
+    // パーティ人数制限チェック
+    const maxPartySize = 4; // ゲーム設定から取得
+    if (party.length >= maxPartySize) {
+      return {
+        success: false,
+        message: `パーティは最大${maxPartySize}人までです`
+      };
+    }
+    
+    // 重複チェック
+    if (party.find(c => c.id === character.id)) {
+      return {
+        success: false,
+        message: 'すでにパーティに参加しています'
+      };
+    }
+    
+    // メンバー追加
+    party.push(character);
+    
+    return {
+      success: true,
+      message: `${character.name}がパーティに加わりました`,
+      party: [...party]
+    };
+  }
+  
+  removeMember(party: Character[], character: Character): PartyResult {
+    const index = party.findIndex(c => c.id === character.id);
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'パーティにいません'
+      };
+    }
+    
+    // 最低人数チェック
+    if (party.length <= 1) {
+      return {
+        success: false,
+        message: 'パーティには最低1人必要です'
+      };
+    }
+    
+    // メンバー削除
+    party.splice(index, 1);
+    
+    return {
+      success: true,
+      message: `${character.name}がパーティから外れました`,
+      party: [...party]
+    };
+  }
+  
+  swapMembers(party: Character[], index1: number, index2: number): PartyResult {
+    if (index1 < 0 || index1 >= party.length || index2 < 0 || index2 >= party.length) {
+      return {
+        success: false,
+        message: '無効なインデックスです'
+      };
+    }
+    
+    // メンバー入れ替え
+    [party[index1], party[index2]] = [party[index2], party[index1]];
+    
+    return {
+      success: true,
+      message: 'メンバーを入れ替えました',
+      party: [...party]
+    };
+  }
+  
+  changeFormation(party: Character[], formation: number[]): PartyResult {
+    // 隊列検証
+    if (formation.length !== party.length) {
+      return {
+        success: false,
+        message: '隊列の長さがパーティ人数と一致しません'
+      };
+    }
+    
+    // 重複チェック
+    const uniquePositions = new Set(formation);
+    if (uniquePositions.size !== formation.length) {
+      return {
+        success: false,
+        message: '隊列に重複があります'
+      };
+    }
+    
+    // 隊列変更（パーティメンバーを並び替え）
+    const newParty = formation.map(pos => party[pos]);
+    party.splice(0, party.length, ...newParty);
+    
+    return {
+      success: true,
+      message: '隊列を変更しました',
+      party: [...party],
+      formation
+    };
+  }
+  
+  // 複数パーティ編成管理
+  saveFormation(id: string, name: string, party: Character[], formationPositions: number[]): FormationResult {
+    // Core Engineに委譲して保存
+    const formation: PartyFormation = {
+      id,
+      name,
+      members: [...party],
+      formationPositions: [...formationPositions],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    
+    this.coreEngine.saveFormation(formation);
+    
+    return {
+      success: true,
+      message: `編成「${name}」を保存しました`,
+      formation
+    };
+  }
+  
+  loadFormation(id: string): FormationLoadResult {
+    // Core Engineから読み込み
+    const formation = this.coreEngine.loadFormation(id);
+    
+    if (!formation) {
+      return {
+        success: false,
+        message: '編成が見つかりません'
+      };
+    }
+    
+    return {
+      success: true,
+      message: `編成「${formation.name}」を読み込みました`,
+      formation
+    };
+  }
+  
+  deleteFormation(id: string): FormationResult {
+    // Core Engineから削除
+    const deleted = this.coreEngine.deleteFormation(id);
+    
+    if (!deleted) {
+      return {
+        success: false,
+        message: '編成が見つかりません'
+      };
+    }
+    
+    return {
+      success: true,
+      message: '編成を削除しました'
+    };
+  }
+  
+  getAllFormations(): PartyFormation[] {
+    // Core Engineから全編成を取得
+    return this.coreEngine.getAllFormations();
+  }
+  
+  switchToFormation(id: string): FormationSwitchResult {
+    const loadResult = this.loadFormation(id);
+    if (!loadResult.success || !loadResult.formation) {
+      return {
+        success: false,
+        message: loadResult.message
+      };
+    }
+    
+    return {
+      success: true,
+      message: `編成「${loadResult.formation.name}」に切り替えました`,
+      formation: loadResult.formation,
+      party: loadResult.formation.members,
+      formationPositions: loadResult.formation.formationPositions
+    };
+  }
 }
 ```
 
 ---
 
-## 11. StatusEffectService - 状態異常・バフ管理
+## 12. StatusEffectService - 状態異常・バフ管理
 
 ### 概要
 キャラクターの状態異常とバフ/デバフを管理。付与、解除、効果適用、持続時間管理を行う。
@@ -898,25 +1707,161 @@ class StatusEffectService {
 - `status/duration.updateEffectDuration()` - 持続時間更新
 - `status/duration.checkEffectStack()` - スタック判定
 
+### 実装例
+
+```typescript
+class StatusEffectService {
+  constructor(private coreEngine: CoreEngine) {}
+  
+  applyStatusEffect(target: Combatant, effect: StatusEffect, attacker?: Combatant): ApplicationResult {
+    // 付与判定
+    const applicationCheck = this.coreEngine.checkStatusEffectApplication(target, effect, attacker);
+    
+    if (!applicationCheck.canApply) {
+      return {
+        success: false,
+        message: applicationCheck.reason,
+        resisted: true
+      };
+    }
+    
+    // スタック判定
+    const existingEffect = target.statusEffects.find(e => e.type === effect.type);
+    if (existingEffect) {
+      const stackCheck = this.coreEngine.checkEffectStack(existingEffect, effect);
+      
+      if (stackCheck.shouldStack) {
+        // スタック数を増やす
+        existingEffect.stack = (existingEffect.stack || 1) + 1;
+        existingEffect.duration = Math.max(existingEffect.duration, effect.duration);
+        
+        return {
+          success: true,
+          message: `${effect.name}の効果が強化されました（${existingEffect.stack}段階）`,
+          effect: existingEffect,
+          stacked: true
+        };
+      } else if (stackCheck.shouldRefresh) {
+        // 持続時間を更新
+        existingEffect.duration = effect.duration;
+        
+        return {
+          success: true,
+          message: `${effect.name}の持続時間が更新されました`,
+          effect: existingEffect,
+          refreshed: true
+        };
+      } else {
+        return {
+          success: false,
+          message: `${effect.name}はすでに付与されています`,
+          blocked: true
+        };
+      }
+    }
+    
+    // 新規付与
+    const newEffect = { ...effect, appliedAt: Date.now(), stack: 1 };
+    target.statusEffects.push(newEffect);
+    
+    return {
+      success: true,
+      message: `${target.name}に${effect.name}を付与しました`,
+      effect: newEffect
+    };
+  }
+  
+  removeStatusEffect(target: Combatant, effectType: StatusEffectType): RemovalResult {
+    const index = target.statusEffects.findIndex(e => e.type === effectType);
+    
+    if (index === -1) {
+      return {
+        success: false,
+        message: '効果が付与されていません'
+      };
+    }
+    
+    const removedEffect = target.statusEffects[index];
+    target.statusEffects.splice(index, 1);
+    
+    return {
+      success: true,
+      message: `${removedEffect.name}を解除しました`,
+      removedEffect
+    };
+  }
+  
+  processTurnEffects(target: Combatant): TurnEffectResult {
+    const results: EffectProcessResult[] = [];
+    const expiredEffects: StatusEffect[] = [];
+    
+    for (const effect of target.statusEffects) {
+      // 継続ダメージ/回復
+      if (effect.damagePerTurn || effect.healPerTurn) {
+        const damage = this.coreEngine.calculateStatusDamage(target, effect);
+        target.currentHp = Math.max(0, Math.min(target.stats.maxHp, target.currentHp - damage));
+        
+        results.push({
+          effect,
+          damage: damage > 0 ? damage : undefined,
+          heal: damage < 0 ? -damage : undefined
+        });
+      }
+      
+      // 持続時間更新
+      effect.duration--;
+      
+      // 効果切れチェック
+      if (effect.duration <= 0) {
+        expiredEffects.push(effect);
+      }
+    }
+    
+    // 効果切れの状態異常を削除
+    target.statusEffects = target.statusEffects.filter(e => e.duration > 0);
+    
+    return {
+      processedEffects: results,
+      expiredEffects,
+      remainingEffects: target.statusEffects
+    };
+  }
+  
+  checkActionRestriction(target: Combatant): ActionRestriction {
+    // Core Engineで行動制限をチェック
+    return this.coreEngine.checkActionRestriction(target);
+  }
+}
+```
+
 ---
 
-## 12. CraftService - アイテム合成管理
+## 13. CraftService - アイテム合成管理
 
 ### 概要
-アイテム合成の流れを管理。レシピ確認、材料チェック、合成実行を行う。
+アイテム合成の流れを管理。レシピ確認、材料チェック、合成実行、レシピ解放を行う。
 
 ### 公開インターフェース
 
 ```typescript
 class CraftService {
-  // 利用可能レシピ取得
-  getAvailableRecipes(): Recipe[];
+  // 解放済みレシピ取得
+  getUnlockedRecipes(gameState: GameState): Recipe[];
   
   // 材料チェック
   checkMaterials(recipe: Recipe, inventory: Inventory): RecipeCheckResult;
   
   // 合成実行
-  synthesize(recipe: Recipe, inventory: Inventory): SynthesisResult;
+  synthesize(recipe: Recipe, inventory: Inventory, gameState: GameState): SynthesisResult;
+  
+  // レシピ解放条件チェック
+  checkRecipeUnlockCondition(recipe: Recipe, gameState: GameState, party: Character[]): boolean;
+  
+  // レシピ解放
+  unlockRecipe(recipeId: UniqueId, gameState: GameState, trigger?: string): void;
+  
+  // 未解放レシピで解放可能なものを取得
+  getUnlockableRecipes(gameState: GameState, party: Character[]): Recipe[];
 }
 ```
 
@@ -926,10 +1871,219 @@ class CraftService {
 - `craft/synthesis.calculateSynthesisSuccessRate()` - 成功率計算
 - `craft/synthesis.rollSynthesisResult()` - 合成結果判定
 - `craft/synthesis.calculateMaterialReturn()` - 材料返還判定
+- `craft/synthesis.checkRecipeUnlockCondition()` - レシピ解放条件チェック
+- `craft/synthesis.getUnlockedRecipes()` - 解放済みレシピ取得
+- `craft/synthesis.unlockRecipe()` - レシピ解放
+- `craft/synthesis.checkAllRecipeUnlockConditions()` - 全レシピ解放可否チェック
+
+### 実装例
+
+```typescript
+class CraftService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  getUnlockedRecipes(gameState: GameState): Recipe[] {
+    // Core Engineで解放済みレシピを取得
+    return this.coreEngine.getUnlockedRecipes(
+      this.coreEngine.getAllRecipes(),
+      gameState
+    );
+  }
+  
+  checkMaterials(recipe: Recipe, inventory: Inventory): RecipeCheckResult {
+    // Core Engineで材料チェック
+    return this.coreEngine.checkRecipeRequirements(recipe, inventory);
+  }
+  
+  checkRecipeUnlockCondition(
+    recipe: Recipe,
+    gameState: GameState,
+    party: Character[]
+  ): boolean {
+    // レシピ解放条件のチェック
+    return this.coreEngine.checkRecipeUnlockCondition(recipe, gameState, party);
+  }
+  
+  unlockRecipe(recipeId: UniqueId, gameState: GameState, trigger?: string): void {
+    // レシピを解放
+    this.coreEngine.unlockRecipe(recipeId, gameState, trigger);
+    
+    // 作成回数を初期化
+    if (!gameState.craftHistory.has(recipeId)) {
+      gameState.craftHistory.set(recipeId, 0);
+    }
+  }
+  
+  getUnlockableRecipes(gameState: GameState, party: Character[]): Recipe[] {
+    // 未解放で解放可能なレシピを取得
+    const allRecipes = this.coreEngine.getAllRecipes();
+    const unlockableRecipes: Recipe[] = [];
+    
+    for (const recipe of allRecipes) {
+      // すでに解放済みならスキップ
+      if (gameState.unlockedRecipes.has(recipe.id)) {
+        continue;
+      }
+      
+      // 解放条件チェック
+      if (this.checkRecipeUnlockCondition(recipe, gameState, party)) {
+        unlockableRecipes.push(recipe);
+      }
+    }
+    
+    return unlockableRecipes;
+  }
+  
+  synthesize(
+    recipe: Recipe,
+    inventory: Inventory,
+    gameState: GameState
+  ): SynthesisResult {
+    // レシピ解放チェック
+    if (!gameState.unlockedRecipes.has(recipe.id) && !recipe.isUnlockedByDefault) {
+      return {
+        success: false,
+        message: 'このレシピはまだ解放されていません',
+        outcome: 'failure'
+      };
+    }
+    
+    // 材料チェック
+    const materialCheck = this.checkMaterials(recipe, inventory);
+    if (!materialCheck.canCraft) {
+      return {
+        success: false,
+        message: '材料が不足しています',
+        missingMaterials: materialCheck.missingMaterials,
+        outcome: 'failure'
+      };
+    }
+    
+    // 成功率計算
+    const successRate = this.coreEngine.calculateSynthesisSuccessRate(recipe);
+    
+    // 合成判定
+    const result = this.coreEngine.rollSynthesisResult(recipe, successRate);
+    
+    // 材料消費
+    for (const material of recipe.requiredMaterials) {
+      this.inventoryService.removeItem(material.itemId, material.quantity);
+    }
+    
+    // 作成回数を記録
+    const currentCount = gameState.craftHistory.get(recipe.resultItem.id) || 0;
+    gameState.craftHistory.set(recipe.resultItem.id, currentCount + 1);
+    
+    if (result.outcome === 'success' || result.outcome === 'great-success') {
+      // 成功：生成物を追加
+      const quantity = result.outcome === 'great-success' ? 
+        recipe.resultQuantity * 2 : recipe.resultQuantity;
+      
+      this.inventoryService.addItem(recipe.resultItem.id, quantity);
+      
+      // ボーナスアイテム
+      if (result.bonusItems && result.bonusItems.length > 0) {
+        for (const bonus of result.bonusItems) {
+          this.inventoryService.addItem(bonus.item.id, bonus.quantity);
+        }
+      }
+      
+      return {
+        success: true,
+        message: `${recipe.resultItem.name}の合成に成功しました！`,
+        outcome: result.outcome,
+        itemsProduced: [{ item: recipe.resultItem, quantity }],
+        bonusItems: result.bonusItems
+      };
+    } else {
+      // 失敗：材料の一部返還判定
+      const returnedMaterials = this.coreEngine.calculateMaterialReturn(recipe);
+      for (const material of returnedMaterials) {
+        this.inventoryService.addItem(material.item.id, material.quantity);
+      }
+      
+      return {
+        success: false,
+        message: '合成に失敗しました...',
+        outcome: 'failure',
+        materialsReturned: returnedMaterials
+      };
+    }
+  }
+}
+```
+
+### レシピ解放条件の例
+
+```typescript
+// 例1: レベル条件
+const basicPotionRecipe: Recipe = {
+  id: 'recipe_basic_potion',
+  name: '基本ポーション',
+  // ... 他のフィールド
+  isUnlockedByDefault: true  // 最初から使える
+};
+
+// 例2: クエストクリア条件
+const advancedPotionRecipe: Recipe = {
+  id: 'recipe_advanced_potion',
+  name: '上級ポーション',
+  // ... 他のフィールド
+  unlockCondition: {
+    requiredQuest: 'quest_herbalist_training',
+    minLevel: 10
+  }
+};
+
+// 例3: 複数の作成実績
+const masterPotionRecipe: Recipe = {
+  id: 'recipe_master_potion',
+  name: 'マスターポーション',
+  // ... 他のフィールド
+  unlockCondition: {
+    requiredCraftCount: { itemId: 'item_advanced_potion', count: 20 },
+    requiredRecipesUnlocked: ['recipe_advanced_potion', 'recipe_herb_essence']
+  }
+};
+
+// 例4: カスタム条件
+const legendaryWeaponRecipe: Recipe = {
+  id: 'recipe_legendary_sword',
+  name: '伝説の剣',
+  // ... 他のフィールド
+  unlockCondition: {
+    customCondition: (gameState, party) => {
+      // パーティに特定のキャラクターがいる
+      const hasBlacksmith = party.some(c => c.job.id === 'job_blacksmith');
+      // 特定のアイテムを所持している
+      const hasMythril = gameState.inventory.slots.some(
+        slot => slot.item.id === 'item_mythril_ore' && slot.quantity >= 10
+      );
+      return hasBlacksmith && hasMythril;
+    }
+  }
+};
+
+// 例5: OR条件（いずれかを満たせばOK）
+const rareRecipe: Recipe = {
+  id: 'recipe_rare_item',
+  name: 'レアアイテム',
+  // ... 他のフィールド
+  unlockCondition: {
+    orConditions: [
+      { requiredAchievement: 'achievement_master_crafter' },
+      { requiredStoryProgress: 'chapter_5', minLevel: 50 }
+    ]
+  }
+};
+```
 
 ---
 
-## 13. EnhanceService - 装備・キャラ強化
+## 14. EnhanceService - 装備・キャラ強化
 
 ### 概要
 装備やキャラクターの強化を管理。強化実行、成功判定を行う。
@@ -956,9 +2110,127 @@ class EnhanceService {
 - `craft/enhance.calculateEnhanceBonus()` - 強化ボーナス計算
 - `craft/enhance.calculateEnhanceCost()` - コスト計算
 
+### 実装例
+
+```typescript
+class EnhanceService {
+  constructor(
+    private coreEngine: CoreEngine,
+    private inventoryService: InventoryService
+  ) {}
+  
+  getSuccessRate(target: EnhanceTarget, currentLevel: number): number {
+    // Core Engineで成功率を計算
+    return this.coreEngine.calculateEnhanceSuccessRate(target, currentLevel);
+  }
+  
+  calculateCost(target: EnhanceTarget, currentLevel: number): EnhanceCost {
+    // Core Engineでコストを計算
+    return this.coreEngine.calculateEnhanceCost(target, currentLevel);
+  }
+  
+  enhance(target: EnhanceTarget, materials: Item[]): EnhanceResult {
+    const currentLevel = target.enhanceLevel || 0;
+    
+    // コスト計算
+    const cost = this.calculateCost(target, currentLevel);
+    
+    // 材料チェック
+    for (const material of cost.requiredMaterials) {
+      if (!this.inventoryService.hasItem(material.item.id, material.quantity)) {
+        return {
+          success: false,
+          failed: false,
+          message: `${material.item.name}が不足しています`
+        };
+      }
+    }
+    
+    // お金チェック
+    // if (gameState.money < cost.money) {
+    //   return { success: false, failed: false, message: 'お金が不足しています' };
+    // }
+    
+    // 成功率取得
+    const successRate = this.getSuccessRate(target, currentLevel);
+    
+    // 材料・お金消費
+    for (const material of cost.requiredMaterials) {
+      this.inventoryService.removeItem(material.item, material.quantity);
+    }
+    // gameState.money -= cost.money;
+    
+    // 強化判定
+    const result = this.coreEngine.rollEnhanceResult(target, successRate);
+    
+    if (result.success) {
+      // 成功：強化レベルアップ
+      const previousLevel = currentLevel;
+      target.enhanceLevel = currentLevel + 1;
+      
+      // ボーナス計算
+      const bonus = this.coreEngine.calculateEnhanceBonus(target, target.enhanceLevel);
+      
+      // 装備の場合はステータスを更新
+      if ('stats' in target) {
+        (target as Equipment).stats = {
+          ...((target as Equipment).stats || {}),
+          attack: ((target as Equipment).stats?.attack || 0) + (bonus.attack || 0),
+          defense: ((target as Equipment).stats?.defense || 0) + (bonus.defense || 0),
+          magicAttack: ((target as Equipment).stats?.magicAttack || 0) + (bonus.magicAttack || 0),
+          magicDefense: ((target as Equipment).stats?.magicDefense || 0) + (bonus.magicDefense || 0)
+        };
+      }
+      
+      return {
+        success: true,
+        failed: false,
+        message: `強化に成功しました！ +${target.enhanceLevel}`,
+        newLevel: target.enhanceLevel,
+        previousLevel,
+        bonus,
+        wasGreatSuccess: result.wasGreatSuccess
+      };
+    } else {
+      // 失敗
+      if (result.destroyed) {
+        // 破壊
+        // target を削除する処理が必要
+        return {
+          success: false,
+          failed: true,
+          destroyed: true,
+          message: '強化に失敗し、装備が破壊されました...'
+        };
+      } else if (result.levelDown) {
+        // レベルダウン
+        const previousLevel = currentLevel;
+        target.enhanceLevel = Math.max(0, currentLevel - 1);
+        
+        return {
+          success: false,
+          failed: true,
+          levelDown: true,
+          message: `強化に失敗し、強化レベルが下がりました（+${previousLevel} → +${target.enhanceLevel}）`,
+          newLevel: target.enhanceLevel,
+          previousLevel
+        };
+      } else {
+        // 失敗（レベル維持）
+        return {
+          success: false,
+          failed: true,
+          message: '強化に失敗しましたが、強化レベルは維持されました'
+        };
+      }
+    }
+  }
+}
+```
+
 ---
 
-## 14. SaveLoadService - セーブ/ロード管理
+## 15. SaveLoadService - セーブ/ロード管理
 
 ### 概要
 ゲームの状態をセーブ・ロードする。シリアライズ、デシリアライズ、バージョン管理を行う。
@@ -981,9 +2253,106 @@ class SaveLoadService {
 }
 ```
 
+### 実装例
+
+```typescript
+class SaveLoadService {
+  constructor(private storageAdapter: StorageAdapter) {}
+  
+  async save(slot: number, gameState: GameState): Promise<SaveResult> {
+    try {
+      // ゲーム状態をシリアライズ
+      const saveData: SaveData = {
+        slot,
+        version: '1.0.0',
+        timestamp: Date.now(),
+        playtime: gameState.playtime,
+        location: gameState.currentLocation,
+        partyLevel: Math.floor(
+          gameState.party.reduce((sum, c) => sum + c.level, 0) / gameState.party.length
+        ),
+        data: JSON.stringify(gameState)
+      };
+      
+      // ストレージに保存
+      await this.storageAdapter.write(`save_${slot}`, saveData);
+      
+      return {
+        success: true,
+        message: 'セーブしました',
+        saveData
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `セーブに失敗しました: ${error.message}`
+      };
+    }
+  }
+  
+  async load(slot: number): Promise<GameState> {
+    try {
+      // ストレージから読み込み
+      const saveData = await this.storageAdapter.read<SaveData>(`save_${slot}`);
+      
+      if (!saveData) {
+        throw new Error('セーブデータが見つかりません');
+      }
+      
+      // バージョンチェック
+      if (saveData.version !== '1.0.0') {
+        // マイグレーション処理
+        console.warn(`旧バージョンのセーブデータ: ${saveData.version}`);
+      }
+      
+      // デシリアライズ
+      const gameState: GameState = JSON.parse(saveData.data);
+      
+      return gameState;
+    } catch (error) {
+      throw new Error(`ロードに失敗しました: ${error.message}`);
+    }
+  }
+  
+  listSaves(): SaveData[] {
+    const saves: SaveData[] = [];
+    
+    // 全スロットをチェック
+    for (let slot = 1; slot <= 10; slot++) {
+      try {
+        const saveData = this.storageAdapter.readSync<SaveData>(`save_${slot}`);
+        if (saveData) {
+          // データ本体は含めない（サイズ削減）
+          saves.push({
+            ...saveData,
+            data: ''
+          });
+        }
+      } catch (error) {
+        // スロットが空の場合はスキップ
+      }
+    }
+    
+    return saves;
+  }
+  
+  async deleteSave(slot: number): Promise<void> {
+    await this.storageAdapter.delete(`save_${slot}`);
+  }
+}
+
+// ストレージアダプターのインターフェース
+interface StorageAdapter {
+  write<T>(key: string, data: T): Promise<void>;
+  read<T>(key: string): Promise<T | null>;
+  readSync<T>(key: string): T | null;
+  delete(key: string): Promise<void>;
+}
+```
+
 ---
 
-## 15. SimulationService - 戦闘シミュレーション
+## 16. SimulationService - 戦闘シミュレーション
 
 ### 概要
 戦闘結果をシミュレーションし、勝率や期待ダメージを計算。
@@ -1005,6 +2374,155 @@ class SimulationService {
 
 ### Core Engine 委譲
 - ほぼすべてのCore Engine機能を使用して戦闘をシミュレート
+
+### 実装例
+
+```typescript
+class SimulationService {
+  constructor(private coreEngine: CoreEngine) {}
+  
+  simulateBattle(party: Character[], enemies: Enemy[], iterations: number = 1000): SimulationResult {
+    let victories = 0;
+    let defeats = 0;
+    let totalTurns = 0;
+    const damageDealt: number[] = [];
+    const damageTaken: number[] = [];
+    
+    for (let i = 0; i < iterations; i++) {
+      // パーティと敵のコピーを作成
+      const partyCopy = party.map(c => ({ ...c, currentHp: c.stats.maxHp, currentMp: c.stats.maxMp }));
+      const enemiesCopy = enemies.map(e => ({ ...e, currentHp: e.stats.maxHp, currentMp: e.stats.maxMp }));
+      
+      // 1回のシミュレーション実行
+      const battleResult = this.simulateSingleBattle(partyCopy, enemiesCopy);
+      
+      if (battleResult.victory) {
+        victories++;
+      } else {
+        defeats++;
+      }
+      
+      totalTurns += battleResult.turns;
+      damageDealt.push(battleResult.totalDamageDealt);
+      damageTaken.push(battleResult.totalDamageTaken);
+    }
+    
+    return {
+      winRate: victories / iterations,
+      averageTurns: totalTurns / iterations,
+      averageDamageDealt: damageDealt.reduce((a, b) => a + b, 0) / iterations,
+      averageDamageTaken: damageTaken.reduce((a, b) => a + b, 0) / iterations,
+      iterations
+    };
+  }
+  
+  private simulateSingleBattle(party: Character[], enemies: Enemy[]): SingleBattleResult {
+    let turns = 0;
+    let totalDamageDealt = 0;
+    let totalDamageTaken = 0;
+    const maxTurns = 100; // 無限ループ防止
+    
+    while (turns < maxTurns) {
+      turns++;
+      
+      // ターン順序計算
+      const turnOrder = this.coreEngine.calculateTurnOrder([...party, ...enemies]);
+      
+      for (const combatant of turnOrder) {
+        // 行動不能チェック
+        const canAct = this.coreEngine.checkCanAct(combatant);
+        if (!canAct) continue;
+        
+        // 行動選択
+        let action: BattleAction;
+        if ('aiStrategy' in combatant) {
+          // 敵の行動
+          const targets = party.filter(c => c.currentHp > 0);
+          if (targets.length === 0) break;
+          
+          const skill = combatant.skills[Math.floor(Math.random() * combatant.skills.length)];
+          action = {
+            actor: combatant as Enemy,
+            type: 'skill',
+            skill,
+            targets: [targets[Math.floor(Math.random() * targets.length)]]
+          };
+        } else {
+          // 味方の行動（簡易AI）
+          const targets = enemies.filter(e => e.currentHp > 0);
+          if (targets.length === 0) break;
+          
+          const skill = combatant.skills[0] || { type: 'physical-attack' };
+          action = {
+            actor: combatant as Character,
+            type: 'skill',
+            skill,
+            targets: [targets[0]]
+          };
+        }
+        
+        // 行動実行
+        const result = this.coreEngine.executeAction(action);
+        
+        // ダメージ集計
+        if ('aiStrategy' in combatant) {
+          totalDamageTaken += result.totalDamage || 0;
+        } else {
+          totalDamageDealt += result.totalDamage || 0;
+        }
+        
+        // 勝敗判定
+        const aliveParty = party.filter(c => c.currentHp > 0).length;
+        const aliveEnemies = enemies.filter(e => e.currentHp > 0).length;
+        
+        if (aliveEnemies === 0) {
+          return {
+            victory: true,
+            turns,
+            totalDamageDealt,
+            totalDamageTaken
+          };
+        }
+        
+        if (aliveParty === 0) {
+          return {
+            victory: false,
+            turns,
+            totalDamageDealt,
+            totalDamageTaken
+          };
+        }
+      }
+    }
+    
+    // タイムアウト（引き分け扱い）
+    return {
+      victory: false,
+      turns,
+      totalDamageDealt,
+      totalDamageTaken
+    };
+  }
+  
+  calculateExpectedDamage(attacker: Combatant, target: Combatant, skill: Skill): number {
+    // Core Engineで期待ダメージを計算
+    return this.coreEngine.calculateExpectedDamage(attacker, target, skill);
+  }
+  
+  calculateWinRate(party: Character[], enemies: Enemy[]): number {
+    // 簡易シミュレーション（100回）
+    const result = this.simulateBattle(party, enemies, 100);
+    return result.winRate;
+  }
+}
+
+interface SingleBattleResult {
+  victory: boolean;
+  turns: number;
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+}
+```
 
 ---
 
