@@ -17,3 +17,4 @@ export * from './reward';
 export * from './equipment';
 export * from './job';
 export * from './item';
+export * from './craft';
