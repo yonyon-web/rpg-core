@@ -2,13 +2,13 @@
  * デフォルトゲーム設定
  */
 
-import { GameConfig } from '../types';
+import { GameConfig, DefaultStats } from '../types';
 
 /**
  * デフォルトゲーム設定
  * - 標準的なJRPGパラメータ
  */
-export const defaultGameConfig: GameConfig = {
+export const defaultGameConfig: GameConfig<'exponential', DefaultStats> = {
   combat: {
     baseCriticalRate: 0.05,           // 基本クリティカル率5%
     criticalMultiplier: 2.0,          // クリティカル時2倍ダメージ
@@ -31,6 +31,9 @@ export const defaultGameConfig: GameConfig = {
       magicDefense: 2,                // レベル毎に+2 魔法防御
       speed: 2,                       // レベル毎に+2 素早さ
       luck: 1,                        // レベル毎に+1 運
+      accuracy: 1,                    // レベル毎に+1 命中補正
+      evasion: 1,                     // レベル毎に+1 回避補正
+      criticalRate: 0.01,             // レベル毎に+1% クリティカル率
     },
     maxLevel: 99,                     // 最大レベル99
   },

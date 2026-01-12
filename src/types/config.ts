@@ -3,6 +3,8 @@
  */
 
 import { Probability } from './common';
+import type { BaseStats } from './stats';
+import type { CustomFormulas } from './formulas';
 
 /**
  * 戦闘設定
@@ -48,22 +50,41 @@ export type ExpCurveType = DefaultExpCurveType;
 
 /**
  * ステータス成長率
+ * - カスタムステータスに対応するため、ジェネリック型で定義
+ * 
+ * @template TStats - カスタムステータス型（デフォルト: 各ステータスにnumber型の成長率を持つ型）
+ * 
+ * @example
+ * // デフォルトステータスの場合
+ * const defaultGrowth: StatGrowthRates = {
+ *   maxHp: 10,
+ *   maxMp: 5,
+ *   attack: 2,
+ *   // ... その他のステータス
+ * };
+ * 
+ * @example
+ * // カスタムステータスの場合
+ * interface MyStats extends BaseStats {
+ *   strength: number;
+ *   intelligence: number;
+ *   vitality: number;
+ * }
+ * const customGrowth: StatGrowthRates<MyStats> = {
+ *   strength: 3,
+ *   intelligence: 2,
+ *   vitality: 5,
+ * };
  */
-export interface StatGrowthRates {
-  maxHp: number;
-  maxMp: number;
-  attack: number;
-  defense: number;
-  magic: number;
-  magicDefense: number;
-  speed: number;
-  luck: number;
-}
+export type StatGrowthRates<TStats extends BaseStats = BaseStats> = {
+  [K in keyof TStats]: number;
+};
 
 /**
  * 成長設定
  * 
  * @template TExpCurve - 経験値曲線タイプ（デフォルト: DefaultExpCurveType）
+ * @template TStats - カスタムステータス型（デフォルト: BaseStats）
  * 
  * @example
  * // デフォルトの経験値曲線を使用
@@ -79,15 +100,32 @@ export interface StatGrowthRates {
  *   expCurve: 'fast',
  *   // ...
  * };
+ * 
+ * @example
+ * // カスタムステータスと経験値曲線を使用
+ * interface MyStats extends BaseStats {
+ *   strength: number;
+ *   dexterity: number;
+ * }
+ * type MyExpCurve = 'fast' | 'slow';
+ * const growth: GrowthConfig<MyExpCurve, MyStats> = {
+ *   expCurve: 'fast',
+ *   statGrowthRates: {
+ *     strength: 3,
+ *     dexterity: 2,
+ *   },
+ *   // ...
+ * };
  */
 export interface GrowthConfig<
-  TExpCurve extends BaseExpCurveType = DefaultExpCurveType
+  TExpCurve extends BaseExpCurveType = DefaultExpCurveType,
+  TStats extends BaseStats = BaseStats
 > {
-  expCurve: TExpCurve;              // 経験値曲線タイプ
-  baseExpRequired: number;          // 基本必要経験値（100）
-  expGrowthRate: number;            // 経験値成長率（1.2）
-  statGrowthRates: StatGrowthRates; // ステータス成長率
-  maxLevel: number;                 // 最大レベル（99）
+  expCurve: TExpCurve;                     // 経験値曲線タイプ
+  baseExpRequired: number;                 // 基本必要経験値（100）
+  expGrowthRate: number;                   // 経験値成長率（1.2）
+  statGrowthRates: StatGrowthRates<TStats>; // ステータス成長率
+  maxLevel: number;                        // 最大レベル（99）
 }
 
 /**
@@ -103,6 +141,7 @@ export interface BalanceConfig {
  * - ゲーム全体のパラメータと設定
  * 
  * @template TExpCurve - 経験値曲線タイプ（デフォルト: DefaultExpCurveType）
+ * @template TStats - カスタムステータス型（デフォルト: BaseStats）
  * 
  * @example
  * // デフォルトの設定を使用
@@ -112,11 +151,25 @@ export interface BalanceConfig {
  * // カスタム経験値曲線を使用
  * type MyExpCurve = 'fast' | 'normal' | 'slow';
  * const config: GameConfig<MyExpCurve> = { ... };
+ * 
+ * @example
+ * // カスタム計算式を使用
+ * const config: GameConfig = {
+ *   combat: { ... },
+ *   growth: { ... },
+ *   balance: { ... },
+ *   customFormulas: {
+ *     hitRate: (attacker, target, skill) => { ... },
+ *     physicalDamage: (attacker, target, skill, isCritical, config) => { ... },
+ *   },
+ * };
  */
 export interface GameConfig<
-  TExpCurve extends BaseExpCurveType = DefaultExpCurveType
+  TExpCurve extends BaseExpCurveType = DefaultExpCurveType,
+  TStats extends BaseStats = BaseStats
 > {
-  combat: CombatConfig;              // 戦闘パラメータ
-  growth: GrowthConfig<TExpCurve>;   // 成長パラメータ
-  balance: BalanceConfig;            // バランス調整
+  combat: CombatConfig;                      // 戦闘パラメータ
+  growth: GrowthConfig<TExpCurve, TStats>;   // 成長パラメータ
+  balance: BalanceConfig;                    // バランス調整
+  customFormulas?: CustomFormulas<TStats>;   // カスタム計算式（オプション）
 }

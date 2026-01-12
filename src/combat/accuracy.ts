@@ -2,18 +2,18 @@
  * 命中率とクリティカル判定モジュール
  */
 
-import { Combatant, Skill, GameConfig } from '../types';
+import { Combatant, Skill, GameConfig, DefaultStats } from '../types';
 
 /**
- * 命中率を計算
+ * デフォルトの命中率計算式
  * @param attacker - 攻撃者
  * @param target - 対象
  * @param skill - 使用スキル
  * @returns 命中率（0.0〜1.0）
  */
-export function calculateHitRate(
-  attacker: Combatant,
-  target: Combatant,
+function defaultHitRateFormula(
+  attacker: Combatant<DefaultStats, any, any>,
+  target: Combatant<DefaultStats, any, any>,
   skill: Skill
 ): number {
   // 必中スキルは常に命中
@@ -40,6 +40,36 @@ export function calculateHitRate(
 }
 
 /**
+ * 命中率を計算
+ * - GameConfigでカスタム計算式が指定されている場合はそれを使用
+ * - 指定されていない場合はデフォルトの計算式を使用
+ * 
+ * @param attacker - 攻撃者
+ * @param target - 対象
+ * @param skill - 使用スキル
+ * @param config - ゲーム設定（オプション、カスタム計算式を使用する場合に指定）
+ * @returns 命中率（0.0〜1.0）
+ */
+export function calculateHitRate(
+  attacker: Combatant,
+  target: Combatant,
+  skill: Skill,
+  config?: GameConfig
+): number {
+  // カスタム計算式が指定されている場合はそれを使用
+  if (config?.customFormulas?.hitRate) {
+    return config.customFormulas.hitRate(attacker, target, skill);
+  }
+
+  // デフォルトの計算式を使用
+  return defaultHitRateFormula(
+    attacker as Combatant<DefaultStats, any, any>,
+    target as Combatant<DefaultStats, any, any>,
+    skill
+  );
+}
+
+/**
  * 攻撃が命中するか判定
  * @param hitRate - 命中率（0.0〜1.0）
  * @returns 命中した場合true、外れた場合false
@@ -49,14 +79,14 @@ export function checkHit(hitRate: number): boolean {
 }
 
 /**
- * クリティカル率を計算
+ * デフォルトのクリティカル率計算式
  * @param attacker - 攻撃者
  * @param skill - 使用スキル
  * @param config - ゲーム設定
  * @returns クリティカル率（0.0〜1.0）
  */
-export function calculateCriticalRate(
-  attacker: Combatant,
+function defaultCriticalRateFormula(
+  attacker: Combatant<DefaultStats, any, any>,
   skill: Skill,
   config: GameConfig
 ): number {
@@ -76,6 +106,34 @@ export function calculateCriticalRate(
   critRate = Math.min(1.0, critRate);
 
   return critRate;
+}
+
+/**
+ * クリティカル率を計算
+ * - GameConfigでカスタム計算式が指定されている場合はそれを使用
+ * - 指定されていない場合はデフォルトの計算式を使用
+ * 
+ * @param attacker - 攻撃者
+ * @param skill - 使用スキル
+ * @param config - ゲーム設定
+ * @returns クリティカル率（0.0〜1.0）
+ */
+export function calculateCriticalRate(
+  attacker: Combatant,
+  skill: Skill,
+  config: GameConfig
+): number {
+  // カスタム計算式が指定されている場合はそれを使用
+  if (config.customFormulas?.criticalRate) {
+    return config.customFormulas.criticalRate(attacker, skill, config);
+  }
+
+  // デフォルトの計算式を使用
+  return defaultCriticalRateFormula(
+    attacker as Combatant<DefaultStats, any, any>,
+    skill,
+    config
+  );
 }
 
 /**

@@ -102,7 +102,8 @@ export type TypedSkill<TGameTypes extends GameTypeConfig> = BaseSkill<
  * @template TGameTypes - ゲーム型設定
  */
 export type TypedGameConfig<TGameTypes extends GameTypeConfig> = BaseGameConfig<
-  TGameTypes['ExpCurveType']
+  TGameTypes['ExpCurveType'],
+  TGameTypes['Stats']
 >;
 
 /**

@@ -2,11 +2,34 @@
  * ダメージ計算モジュール
  */
 
-import { Combatant, Skill, GameConfig, DamageResult, Element, ElementResistance } from '../types';
+import { Combatant, Skill, GameConfig, DamageResult, Element, ElementResistance, DefaultStats } from '../types';
 import { calculateHitRate, checkHit, calculateCriticalRate, checkCritical } from './accuracy';
 
 /**
+ * デフォルトの物理ダメージ計算式
+ * @param attacker - 攻撃者
+ * @param target - 対象
+ * @param skill - 使用スキル
+ * @param isCritical - クリティカルヒットかどうか
+ * @param config - ゲーム設定
+ * @returns 基礎ダメージ値
+ */
+function defaultPhysicalDamageFormula(
+  attacker: Combatant<DefaultStats, any, any>,
+  target: Combatant<DefaultStats, any, any>,
+  skill: Skill,
+  isCritical: boolean,
+  config: GameConfig
+): number {
+  // 基礎ダメージを計算：（攻撃力 × 威力）- 防御力
+  return Math.max(1, attacker.stats.attack * skill.power - target.stats.defense);
+}
+
+/**
  * 物理ダメージを計算
+ * - GameConfigでカスタム計算式が指定されている場合はそれを使用
+ * - 指定されていない場合はデフォルトの計算式を使用
+ * 
  * @param attacker - 攻撃者
  * @param target - 対象
  * @param skill - 使用スキル
@@ -22,7 +45,7 @@ export function calculatePhysicalDamage(
   const appliedModifiers: Array<{ source: string; multiplier: number }> = [];
 
   // 攻撃が命中するか判定
-  const hitRate = calculateHitRate(attacker, target, skill);
+  const hitRate = calculateHitRate(attacker, target, skill, config);
   const isHit = checkHit(hitRate);
 
   if (!isHit) {
@@ -37,12 +60,25 @@ export function calculatePhysicalDamage(
     };
   }
 
-  // 基礎ダメージを計算：（攻撃力 × 威力）- 防御力
-  const baseDamage = Math.max(1, attacker.stats.attack * skill.power - target.stats.defense);
-
   // クリティカルヒット判定
   const criticalRate = calculateCriticalRate(attacker, skill, config);
   const isCritical = checkCritical(criticalRate);
+
+  // 基礎ダメージを計算
+  let baseDamage: number;
+  if (config.customFormulas?.physicalDamage) {
+    // カスタム計算式を使用
+    baseDamage = config.customFormulas.physicalDamage(attacker, target, skill, isCritical, config);
+  } else {
+    // デフォルトの計算式を使用
+    baseDamage = defaultPhysicalDamageFormula(
+      attacker as Combatant<DefaultStats, any, any>,
+      target as Combatant<DefaultStats, any, any>,
+      skill,
+      isCritical,
+      config
+    );
+  }
   
   let finalDamage = baseDamage;
 
@@ -79,7 +115,30 @@ export function calculatePhysicalDamage(
 }
 
 /**
+ * デフォルトの魔法ダメージ計算式
+ * @param attacker - 攻撃者
+ * @param target - 対象
+ * @param skill - 使用スキル
+ * @param isCritical - クリティカルヒットかどうか
+ * @param config - ゲーム設定
+ * @returns 基礎ダメージ値
+ */
+function defaultMagicDamageFormula(
+  attacker: Combatant<DefaultStats, any, any>,
+  target: Combatant<DefaultStats, any, any>,
+  skill: Skill,
+  isCritical: boolean,
+  config: GameConfig
+): number {
+  // 基礎魔法ダメージを計算：（魔力 × 威力）- 魔法防御
+  return Math.max(1, attacker.stats.magic * skill.power - target.stats.magicDefense);
+}
+
+/**
  * 魔法ダメージを計算
+ * - GameConfigでカスタム計算式が指定されている場合はそれを使用
+ * - 指定されていない場合はデフォルトの計算式を使用
+ * 
  * @param attacker - 攻撃者
  * @param target - 対象
  * @param skill - 使用スキル
@@ -95,7 +154,7 @@ export function calculateMagicDamage(
   const appliedModifiers: Array<{ source: string; multiplier: number }> = [];
 
   // 攻撃が命中するか判定
-  const hitRate = calculateHitRate(attacker, target, skill);
+  const hitRate = calculateHitRate(attacker, target, skill, config);
   const isHit = checkHit(hitRate);
 
   if (!isHit) {
@@ -110,12 +169,25 @@ export function calculateMagicDamage(
     };
   }
 
-  // 基礎魔法ダメージを計算：（魔力 × 威力）- 魔法防御
-  const baseDamage = Math.max(1, attacker.stats.magic * skill.power - target.stats.magicDefense);
-
   // クリティカルヒット判定
   const criticalRate = calculateCriticalRate(attacker, skill, config);
   const isCritical = checkCritical(criticalRate);
+
+  // 基礎ダメージを計算
+  let baseDamage: number;
+  if (config.customFormulas?.magicDamage) {
+    // カスタム計算式を使用
+    baseDamage = config.customFormulas.magicDamage(attacker, target, skill, isCritical, config);
+  } else {
+    // デフォルトの計算式を使用
+    baseDamage = defaultMagicDamageFormula(
+      attacker as Combatant<DefaultStats, any, any>,
+      target as Combatant<DefaultStats, any, any>,
+      skill,
+      isCritical,
+      config
+    );
+  }
   
   let finalDamage = baseDamage;
 
@@ -150,7 +222,28 @@ export function calculateMagicDamage(
 }
 
 /**
+ * デフォルトの回復量計算式
+ * @param caster - 術者
+ * @param target - 対象
+ * @param skill - 使用スキル
+ * @param config - ゲーム設定
+ * @returns 基礎回復量
+ */
+function defaultHealFormula(
+  caster: Combatant<DefaultStats, any, any>,
+  target: Combatant<DefaultStats, any, any>,
+  skill: Skill,
+  config: GameConfig
+): number {
+  // 基礎回復量：魔力 × 威力
+  return caster.stats.magic * skill.power;
+}
+
+/**
  * 回復量を計算
+ * - GameConfigでカスタム計算式が指定されている場合はそれを使用
+ * - 指定されていない場合はデフォルトの計算式を使用
+ * 
  * @param caster - 術者
  * @param target - 対象
  * @param skill - 使用スキル
@@ -163,8 +256,20 @@ export function calculateHealAmount(
   skill: Skill,
   config: GameConfig
 ): number {
-  // 基礎回復量：魔力 × 威力
-  const baseHeal = caster.stats.magic * skill.power;
+  // 基礎回復量を計算
+  let baseHeal: number;
+  if (config.customFormulas?.heal) {
+    // カスタム計算式を使用
+    baseHeal = config.customFormulas.heal(caster, target, skill, config);
+  } else {
+    // デフォルトの計算式を使用
+    baseHeal = defaultHealFormula(
+      caster as Combatant<DefaultStats, any, any>,
+      target as Combatant<DefaultStats, any, any>,
+      skill,
+      config
+    );
+  }
 
   // 回復量に小さな分散を適用
   const variance = 1.0 + (Math.random() * 2 - 1) * 0.05; // ±5%の分散
