@@ -61,7 +61,6 @@ describe('命中率モジュール', () => {
     targetType: 'single-enemy',
     element: 'none',
     power: 1.0,
-    mpCost: 0,
     accuracy: 1.0,
     criticalBonus: 0,
     isGuaranteedHit: false,

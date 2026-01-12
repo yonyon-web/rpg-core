@@ -11,3 +11,5 @@ export * from './damage';
 export * from './config';
 export * from './formulas';
 export * from './gameTypes';
+export * from './battle';
+export * from './command';

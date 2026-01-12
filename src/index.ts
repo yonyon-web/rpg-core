@@ -17,4 +17,7 @@ export * from './combat';
 // キャラクターモジュールのエクスポート
 export * from './character';
 
+// Serviceモジュールのエクスポート
+export * from './services';
+
 export const version = '1.0.0';
