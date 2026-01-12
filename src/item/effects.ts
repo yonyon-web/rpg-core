@@ -19,16 +19,7 @@ export function canUseItem(
   target: Combatant,
   conditions: ItemUseConditions
 ): boolean {
-  // 戦闘中かどうかのチェック
-  if (conditions.inBattle && !item.usableInBattle) {
-    return false;
-  }
-  
-  if (!conditions.inBattle && !item.usableOutOfBattle) {
-    return false;
-  }
-
-  // 対象の生死チェック
+  // 対象の生死チェック（追加条件）
   if (conditions.targetAlive && target.currentHp <= 0) {
     return false;
   }
@@ -37,7 +28,7 @@ export function canUseItem(
     return false;
   }
 
-  // HP率チェック
+  // HP率チェック（追加条件）
   if (conditions.minHpRate !== undefined) {
     const hpRate = target.currentHp / target.stats.maxHp;
     if (hpRate < conditions.minHpRate) {
@@ -52,25 +43,8 @@ export function canUseItem(
     }
   }
 
-  // アイテム効果に応じた追加チェック
-  const effect = item.effect;
-  
-  // HP回復アイテムは満タンの対象には使えない
-  if (effect.type === 'heal-hp' && target.currentHp >= target.stats.maxHp) {
-    return false;
-  }
-
-  // MP回復アイテムは満タンの対象には使えない
-  if (effect.type === 'heal-mp' && target.currentMp >= target.stats.maxMp) {
-    return false;
-  }
-
-  // 蘇生アイテムは死亡している対象にのみ使える
-  if (effect.type === 'revive' && target.currentHp > 0) {
-    return false;
-  }
-
-  return true;
+  // 基本的な検証はvalidateItemTargetに委譲
+  return validateItemTarget(item, target, conditions).valid;
 }
 
 /**
