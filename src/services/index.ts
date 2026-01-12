@@ -9,3 +9,4 @@ export * from './EnemyGroupService';
 export * from './RewardService';
 export * from './EquipmentService';
 export * from './PartyService';
+export * from './StatusEffectService';
