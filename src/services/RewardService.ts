@@ -6,6 +6,7 @@
 import type { Combatant } from '../types/combatant';
 import type { BaseStats, DefaultStats } from '../types/stats';
 import type { BattleRewards } from '../types/battle';
+import type { BaseExpCurveType, DefaultExpCurveType } from '../types/config';
 import type { 
   ExpDistribution, 
   LevelUpResult, 
@@ -14,12 +15,51 @@ import type {
 import * as growth from '../character/growth';
 
 /**
+ * RewardService設定
+ */
+export interface RewardServiceConfig<
+  TExpCurve extends BaseExpCurveType = DefaultExpCurveType,
+  TStats extends BaseStats = DefaultStats
+> {
+  expCurve?: growth.ExpCurveConfig<TExpCurve>;
+  statGrowth?: growth.StatGrowthConfig<TStats>;
+}
+
+/**
  * RewardService
  * 報酬処理を管理するサービスクラス
+ * 
+ * @template TExpCurve - 経験値曲線タイプ（デフォルト: DefaultExpCurveType）
+ * @template TStats - ステータスの型（デフォルト: DefaultStats）
+ * 
+ * @example
+ * // デフォルト設定で使用
+ * const service = new RewardService();
+ * 
+ * @example
+ * // カスタム経験値曲線で使用
+ * const service = new RewardService({
+ *   expCurve: { type: 'exponential', baseExpRequired: 100, expGrowthRate: 1.5 }
+ * });
+ * 
+ * @example
+ * // カスタム成長率で使用
+ * const service = new RewardService({
+ *   statGrowth: {
+ *     growthRates: { maxHp: 15, maxMp: 8, attack: 4, ... },
+ *     useRandomVariance: true,
+ *     variancePercent: 0.1
+ *   }
+ * });
  */
-export class RewardService<TStats extends BaseStats = DefaultStats> {
-  constructor() {
-    // 初期化処理
+export class RewardService<
+  TExpCurve extends BaseExpCurveType = DefaultExpCurveType,
+  TStats extends BaseStats = DefaultStats
+> {
+  private config: RewardServiceConfig<TExpCurve, TStats>;
+
+  constructor(config?: RewardServiceConfig<TExpCurve, TStats>) {
+    this.config = config || {};
   }
 
   /**
@@ -54,12 +94,12 @@ export class RewardService<TStats extends BaseStats = DefaultStats> {
     const results: LevelUpResult<TStats>[] = [];
     
     // レベルアップ判定を繰り返す
-    while (growth.canLevelUp(character.currentExp || 0, character.level)) {
+    while (growth.canLevelUp(character.currentExp || 0, character.level, this.config.expCurve)) {
       // レベルアップ
       character.level++;
       
       // ステータス成長
-      const statGrowth = growth.calculateStatGrowth<TStats>(character.level);
+      const statGrowth = growth.calculateStatGrowth<TStats>(character.level, this.config.statGrowth);
       
       // ステータスを更新
       for (const [key, value] of Object.entries(statGrowth)) {

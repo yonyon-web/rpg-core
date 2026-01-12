@@ -206,4 +206,109 @@ describe('RewardService', () => {
       expect(charLevelUps!.length).toBeGreaterThan(0);
     });
   });
+
+  describe('カスタマイズ機能', () => {
+    test('カスタム経験値曲線を使用できる', () => {
+      // 指数曲線を使用（より急激な成長）
+      const service = new RewardService({
+        expCurve: { 
+          type: 'exponential', 
+          baseExpRequired: 100, 
+          expGrowthRate: 1.5 
+        }
+      });
+      
+      const char = createCharacter('char1', 1, 0);
+      
+      // 指数曲線では200expでレベルアップできる
+      char.currentExp = 200;
+      
+      const results = service.processLevelUps(char);
+      
+      expect(results.length).toBeGreaterThan(0);
+      expect(char.level).toBeGreaterThan(1);
+    });
+
+    test('完全カスタム経験値曲線を使用できる', () => {
+      // レベル * 50 の簡単な曲線
+      const service = new RewardService({
+        expCurve: { 
+          type: 'custom',
+          customCurve: (level) => level * 50
+        }
+      });
+      
+      const char = createCharacter('char1', 1, 0);
+      
+      // レベル2には100exp必要（2 * 50）
+      char.currentExp = 100;
+      
+      const results = service.processLevelUps(char);
+      
+      expect(results.length).toBe(1);
+      expect(char.level).toBe(2);
+    });
+
+    test('固定ステータス成長率を使用できる', () => {
+      const service = new RewardService({
+        statGrowth: {
+          growthRates: {
+            maxHp: 20,
+            maxMp: 10,
+            attack: 5,
+            defense: 3,
+            magic: 4,
+            magicDefense: 3,
+            speed: 3,
+            luck: 2,
+            accuracy: 1,
+            evasion: 1,
+            criticalRate: 0.02
+          },
+          useRandomVariance: false
+        }
+      });
+      
+      const char = createCharacter('char1', 1, 200);
+      const prevMaxHp = char.stats.maxHp;
+      
+      const results = service.processLevelUps(char);
+      
+      expect(results.length).toBe(1);
+      expect(char.stats.maxHp).toBe(prevMaxHp + 20); // 正確に+20
+    });
+
+    test('カスタム分散率でステータス成長できる', () => {
+      const service = new RewardService({
+        statGrowth: {
+          growthRates: {
+            maxHp: 10,
+            maxMp: 5,
+            attack: 3,
+            defense: 2,
+            magic: 3,
+            magicDefense: 2,
+            speed: 2,
+            luck: 1,
+            accuracy: 1,
+            evasion: 1,
+            criticalRate: 0.01
+          },
+          useRandomVariance: true,
+          variancePercent: 0.1  // ±10%
+        }
+      });
+      
+      const char = createCharacter('char1', 1, 200);
+      const prevMaxHp = char.stats.maxHp;
+      
+      const results = service.processLevelUps(char);
+      
+      expect(results.length).toBe(1);
+      // 10 ± 10% = 9-11の範囲
+      const hpGrowth = char.stats.maxHp - prevMaxHp;
+      expect(hpGrowth).toBeGreaterThanOrEqual(9);
+      expect(hpGrowth).toBeLessThanOrEqual(11);
+    });
+  });
 });
