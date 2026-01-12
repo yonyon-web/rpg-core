@@ -5,7 +5,7 @@
  * すべての計算ロジックを提供します。
  */
 
-import type { EnhanceConfig, EnhancableEquipment } from '../types/craft';
+import type { EnhanceConfig, EnhancableEquipment, EnhanceCost } from '../types/craft';
 import type { Probability } from '../types/common';
 
 /**
@@ -38,15 +38,54 @@ export function calculateEnhanceSuccess(
  * 
  * @param equipment - 装備
  * @param level - 強化レベル
- * @returns 強化に必要なコスト（ゴールド）
+ * @returns 強化に必要なコスト
  */
 export function calculateEnhanceCost(
   equipment: EnhancableEquipment,
   level: number
-): number {
-  // レベルの二乗に比例してコストが増加
+): EnhanceCost {
+  // 装備にカスタムコストが設定されている場合はそれを使用
+  if (equipment.enhanceCost) {
+    return equipment.enhanceCost;
+  }
+  
+  // デフォルト: レベルの二乗に比例してゴールドコストが増加
   const baseCost = 100;
-  return baseCost * Math.pow(level + 1, 2);
+  return {
+    gold: baseCost * Math.pow(level + 1, 2)
+  };
+}
+
+/**
+ * コストが十分かチェックする
+ * 
+ * @param required - 必要なコスト
+ * @param available - 利用可能なリソース
+ * @returns コストが足りるか
+ */
+export function canAffordCost(
+  required: EnhanceCost,
+  available: { gold?: number; resources?: Record<string, number> }
+): boolean {
+  // ゴールドチェック
+  if (required.gold !== undefined) {
+    const availableGold = available.gold ?? 0;
+    if (availableGold < required.gold) {
+      return false;
+    }
+  }
+  
+  // その他のリソースチェック
+  if (required.resources) {
+    for (const [resource, amount] of Object.entries(required.resources)) {
+      const availableAmount = available.resources?.[resource] ?? 0;
+      if (availableAmount < amount) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
 }
 
 /**
@@ -62,10 +101,14 @@ export function applyEnhancement(
 ): Record<string, number> {
   const enhancedStats: Record<string, number> = {};
   
+  // 装備ごとの強化ボーナス設定を取得
+  const bonusConfig = equipment.enhancementBonus;
+  
   // 各ステータスに強化ボーナスを適用
-  // 強化レベル×10%のボーナス
   for (const [stat, value] of Object.entries(equipment.baseStats)) {
-    const bonus = Math.floor(value * level * 0.1);
+    // ステータスごとのボーナス倍率を取得（設定がない場合はデフォルト10%）
+    const bonusRate = bonusConfig?.statBonuses[stat] ?? 0.1;
+    const bonus = Math.floor(value * level * bonusRate);
     enhancedStats[stat] = value + bonus;
   }
   

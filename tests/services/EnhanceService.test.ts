@@ -2,7 +2,7 @@
  * EnhanceService テスト
  */
 
-import { EnhanceService } from '../../src/services/EnhanceService';
+import { EnhanceService, ResourceManager } from '../../src/services/EnhanceService';
 import type { EnhancableEquipment } from '../../src/types/craft';
 
 describe('EnhanceService', () => {
@@ -28,6 +28,12 @@ describe('EnhanceService', () => {
     ...overrides
   });
 
+  // テスト用のリソースマネージャー作成ヘルパー
+  const createResourceManager = (gold: number = 10000, resources?: Record<string, number>): ResourceManager => ({
+    gold,
+    resources
+  });
+
   describe('constructor', () => {
     test('should create service with config', () => {
       expect(service).toBeDefined();
@@ -42,7 +48,8 @@ describe('EnhanceService', () => {
   describe('canEnhance', () => {
     test('should return true when equipment can be enhanced', () => {
       const equipment = createEquipment();
-      const result = service.canEnhance(equipment, 10000);
+      const resourceManager = createResourceManager(10000);
+      const result = service.canEnhance(equipment, resourceManager);
       
       expect(result.canEnhance).toBe(true);
       expect(result.successRate).toBeDefined();
@@ -59,10 +66,11 @@ describe('EnhanceService', () => {
 
     test('should return false when gold is insufficient', () => {
       const equipment = createEquipment();
-      const result = service.canEnhance(equipment, 0);
+      const resourceManager = createResourceManager(0);
+      const result = service.canEnhance(equipment, resourceManager);
       
       expect(result.canEnhance).toBe(false);
-      expect(result.reason).toContain('Insufficient gold');
+      expect(result.reason).toContain('Insufficient resources');
     });
 
     test('should not check gold when requirePayment is false', () => {
@@ -75,7 +83,8 @@ describe('EnhanceService', () => {
       });
       
       const equipment = createEquipment();
-      const result = serviceNoPayment.canEnhance(equipment, 0);
+      const resourceManager = createResourceManager(0);
+      const result = serviceNoPayment.canEnhance(equipment, resourceManager);
       
       expect(result.canEnhance).toBe(true);
     });
@@ -91,14 +100,19 @@ describe('EnhanceService', () => {
       });
       
       const equipment = createEquipment();
-      const result = serviceHighSuccess.enhance(equipment, 10000, 0.5);
+      const resourceManager = createResourceManager(10000);
+      const result = serviceHighSuccess.enhance(equipment, resourceManager, 0.5);
       
       expect(result.success).toBe(true);
       expect(result.newLevel).toBe(1);
       expect(result.previousLevel).toBe(0);
       expect(result.stats).toBeDefined();
+      expect(result.costConsumed).toBeDefined();
       expect(result.message).toContain('Successfully enhanced');
       expect(equipment.enhanceLevel).toBe(1);
+      
+      // ゴールドが消費されているか確認
+      expect(resourceManager.gold).toBeLessThan(10000);
     });
 
     test('should fail enhancement with 0% success rate', () => {
@@ -110,12 +124,18 @@ describe('EnhanceService', () => {
       });
       
       const equipment = createEquipment();
-      const result = serviceLowSuccess.enhance(equipment, 10000, 0.5);
+      const resourceManager = createResourceManager(10000);
+      const initialGold = resourceManager.gold;
+      const result = serviceLowSuccess.enhance(equipment, resourceManager, 0.5);
       
       expect(result.success).toBe(false);
       expect(result.newLevel).toBe(0);
       expect(result.destroyed).toBe(false);
+      expect(result.costConsumed).toBeDefined();
       expect(result.message).toContain('failed');
+      
+      // 失敗してもゴールドが消費されているか確認
+      expect(resourceManager.gold).toBeLessThan(initialGold);
     });
 
     test('should downgrade equipment on failure when penalty is downgrade', () => {
@@ -127,7 +147,8 @@ describe('EnhanceService', () => {
       });
       
       const equipment = createEquipment({ enhanceLevel: 5 });
-      const result = serviceWithPenalty.enhance(equipment, 10000, 0.5);
+      const resourceManager = createResourceManager(10000);
+      const result = serviceWithPenalty.enhance(equipment, resourceManager, 0.5);
       
       expect(result.success).toBe(false);
       expect(result.newLevel).toBe(4);
@@ -144,7 +165,8 @@ describe('EnhanceService', () => {
       });
       
       const equipment = createEquipment({ enhanceLevel: 5 });
-      const result = serviceWithDestroy.enhance(equipment, 10000, 0.5);
+      const resourceManager = createResourceManager(10000);
+      const result = serviceWithDestroy.enhance(equipment, resourceManager, 0.5);
       
       expect(result.success).toBe(false);
       expect(result.destroyed).toBe(true);
@@ -153,7 +175,8 @@ describe('EnhanceService', () => {
 
     test('should fail when equipment is at max level', () => {
       const equipment = createEquipment({ enhanceLevel: 10 });
-      const result = service.enhance(equipment, 10000);
+      const resourceManager = createResourceManager(10000);
+      const result = service.enhance(equipment, resourceManager);
       
       expect(result.success).toBe(false);
       expect(result.message).toMatch(/Cannot enhance|max level/);
@@ -161,22 +184,25 @@ describe('EnhanceService', () => {
 
     test('should fail when gold is insufficient', () => {
       const equipment = createEquipment();
-      const result = service.enhance(equipment, 0);
+      const resourceManager = createResourceManager(0);
+      const result = service.enhance(equipment, resourceManager);
       
       expect(result.success).toBe(false);
-      expect(result.message).toContain('Insufficient gold');
+      expect(result.message).toContain('Insufficient resources');
     });
 
     test('should use random value correctly for success check', () => {
       const equipment1 = createEquipment();
       const equipment2 = createEquipment();
+      const rm1 = createResourceManager(10000);
+      const rm2 = createResourceManager(10000);
       
       // Success case: random < successRate (0.9)
-      const successResult = service.enhance(equipment1, 10000, 0.5);
+      const successResult = service.enhance(equipment1, rm1, 0.5);
       expect(successResult.success).toBe(true);
       
       // Failure case: random >= successRate (0.9)
-      const failResult = service.enhance(equipment2, 10000, 0.95);
+      const failResult = service.enhance(equipment2, rm2, 0.95);
       expect(failResult.success).toBe(false);
     });
 
@@ -192,7 +218,8 @@ describe('EnhanceService', () => {
         baseStats: { attack: 100, defense: 50 }
       });
       
-      const result = serviceHighSuccess.enhance(equipment, 10000, 0.5);
+      const resourceManager = createResourceManager(10000);
+      const result = serviceHighSuccess.enhance(equipment, resourceManager, 0.5);
       
       expect(result.success).toBe(true);
       expect(result.stats).toBeDefined();
@@ -217,7 +244,8 @@ describe('EnhanceService', () => {
       const equipment = createEquipment();
       const cost = service.getEnhanceCost(equipment);
       
-      expect(cost).toBeGreaterThan(0);
+      expect(cost).toBeDefined();
+      expect(cost.gold).toBeGreaterThan(0);
     });
 
     test('should return higher cost for higher level', () => {
@@ -227,7 +255,7 @@ describe('EnhanceService', () => {
       const cost1 = service.getEnhanceCost(equipment1);
       const cost2 = service.getEnhanceCost(equipment2);
       
-      expect(cost2).toBeGreaterThan(cost1);
+      expect(cost2.gold!).toBeGreaterThan(cost1.gold!);
     });
   });
 
@@ -255,6 +283,87 @@ describe('EnhanceService', () => {
       const rate = service.getSuccessRate(equipment);
       
       expect(rate).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('custom enhancement bonus', () => {
+    test('should use custom stat bonuses when provided', () => {
+      const serviceHighSuccess = new EnhanceService({
+        maxLevel: 10,
+        baseSuccessRate: 1.0,
+        successRateDecay: 0,
+        failurePenalty: 'none'
+      });
+      
+      const equipment = createEquipment({
+        baseStats: { attack: 100, defense: 50 },
+        enhancementBonus: {
+          statBonuses: {
+            attack: 0.2, // 20% bonus per level
+            defense: 0.05  // 5% bonus per level
+          }
+        }
+      });
+      
+      const resourceManager = createResourceManager(10000);
+      const result = serviceHighSuccess.enhance(equipment, resourceManager, 0.5);
+      
+      expect(result.success).toBe(true);
+      expect(result.stats!.attack).toBe(120); // 100 + 100*1*0.2
+      expect(result.stats!.defense).toBe(52);  // 50 + 50*1*0.05
+    });
+  });
+
+  describe('custom resource costs', () => {
+    test('should support custom resource costs', () => {
+      const equipment = createEquipment({
+        enhanceCost: {
+          gold: 500,
+          resources: {
+            'enhancement_stone': 3,
+            'magic_dust': 5
+          }
+        }
+      });
+      
+      const resourceManager = createResourceManager(1000, {
+        'enhancement_stone': 10,
+        'magic_dust': 10
+      });
+      
+      const serviceHighSuccess = new EnhanceService({
+        maxLevel: 10,
+        baseSuccessRate: 1.0,
+        successRateDecay: 0,
+        failurePenalty: 'none'
+      });
+      
+      const result = serviceHighSuccess.enhance(equipment, resourceManager, 0.5);
+      
+      expect(result.success).toBe(true);
+      expect(resourceManager.gold).toBe(500); // 1000 - 500
+      expect(resourceManager.resources!['enhancement_stone']).toBe(7); // 10 - 3
+      expect(resourceManager.resources!['magic_dust']).toBe(5); // 10 - 5
+    });
+
+    test('should fail when custom resources are insufficient', () => {
+      const equipment = createEquipment({
+        enhanceCost: {
+          gold: 500,
+          resources: {
+            'enhancement_stone': 3
+          }
+        }
+      });
+      
+      const resourceManager = createResourceManager(1000, {
+        'enhancement_stone': 1 // Not enough
+      });
+      
+      const result = service.canEnhance(equipment, resourceManager);
+      
+      expect(result.canEnhance).toBe(false);
+      expect(result.reason).toContain('Insufficient resources');
     });
   });
 

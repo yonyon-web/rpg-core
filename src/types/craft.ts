@@ -80,6 +80,26 @@ export interface CraftResult<
 }
 
 /**
+ * 強化コスト
+ * 様々なリソースに対応
+ */
+export interface EnhanceCost {
+  /** ゴールド */
+  gold?: number;
+  /** その他のリソース（ポイント、素材など） */
+  resources?: Record<string, number>;
+}
+
+/**
+ * 強化ボーナス設定
+ * 装備ごと、ステータスごとにボーナスを設定可能
+ */
+export interface EnhancementBonus {
+  /** ステータス名とボーナス倍率のマップ */
+  statBonuses: Record<string, number>;
+}
+
+/**
  * 強化設定
  */
 export interface EnhanceConfig {
@@ -105,6 +125,8 @@ export interface EnhanceResult {
   previousLevel: number;
   /** 変化したステータス（成功時） */
   stats?: Record<string, number>;
+  /** 消費されたコスト */
+  costConsumed?: EnhanceCost;
   /** 結果メッセージ */
   message: string;
   /** 装備が破壊されたか */
@@ -121,4 +143,8 @@ export interface EnhancableEquipment {
   enhanceLevel: number;
   /** 基本ステータス */
   baseStats: Record<string, number>;
+  /** 強化ボーナス設定（オプション、未設定の場合はデフォルト10%） */
+  enhancementBonus?: EnhancementBonus;
+  /** 強化コスト設定（オプション、未設定の場合はデフォルト計算） */
+  enhanceCost?: EnhanceCost;
 }

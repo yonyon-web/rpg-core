@@ -6,10 +6,21 @@
 import type { 
   EnhanceConfig, 
   EnhanceResult,
-  EnhancableEquipment 
+  EnhancableEquipment,
+  EnhanceCost 
 } from '../types/craft';
 import type { UniqueId } from '../types/common';
 import * as enhance from '../craft/enhance';
+
+/**
+ * リソース管理インターフェース
+ */
+export interface ResourceManager {
+  /** ゴールド */
+  gold: number;
+  /** その他のリソース */
+  resources?: Record<string, number>;
+}
 
 /**
  * EnhanceService設定
@@ -27,7 +38,7 @@ export interface EnhanceInfo {
   canEnhance: boolean;
   reason?: string;
   successRate?: number;
-  cost?: number;
+  cost?: EnhanceCost;
 }
 
 /**
@@ -57,12 +68,12 @@ export class EnhanceService {
    * 装備を強化可能かチェックする
    * 
    * @param equipment - 装備
-   * @param availableGold - 所持金（オプション）
+   * @param resourceManager - リソース管理（オプション）
    * @returns 強化可否情報
    */
   canEnhance(
     equipment: EnhancableEquipment,
-    availableGold?: number
+    resourceManager?: ResourceManager
   ): EnhanceInfo {
     // 最大レベルチェック
     if (!enhance.canEnhance(equipment, this.config)) {
@@ -75,12 +86,13 @@ export class EnhanceService {
 
     // コストチェック
     const cost = enhance.calculateEnhanceCost(equipment, equipment.enhanceLevel);
-    if (this.config.requirePayment && availableGold !== undefined) {
-      if (availableGold < cost) {
+    if (this.config.requirePayment && resourceManager) {
+      const canAfford = enhance.canAffordCost(cost, resourceManager);
+      if (!canAfford) {
         return {
           equipment,
           canEnhance: false,
-          reason: `Insufficient gold (need ${cost}, have ${availableGold})`,
+          reason: `Insufficient resources`,
           cost
         };
       }
@@ -101,17 +113,17 @@ export class EnhanceService {
    * 装備を強化する
    * 
    * @param equipment - 装備
-   * @param availableGold - 所持金（コストチェック用、オプション）
+   * @param resourceManager - リソース管理（コストチェック用、オプション）
    * @param random - ランダム値（テスト用）
    * @returns 強化結果
    */
   enhance(
     equipment: EnhancableEquipment,
-    availableGold?: number,
+    resourceManager?: ResourceManager,
     random?: number
   ): EnhanceResult {
     // 強化可能かチェック
-    const checkResult = this.canEnhance(equipment, availableGold);
+    const checkResult = this.canEnhance(equipment, resourceManager);
     if (!checkResult.canEnhance) {
       return {
         success: false,
@@ -121,9 +133,17 @@ export class EnhanceService {
       };
     }
 
+    // コストを計算
+    const cost = enhance.calculateEnhanceCost(equipment, equipment.enhanceLevel);
+
     // 成功率計算
     const successRate = enhance.calculateEnhanceSuccess(equipment, this.config);
     const success = enhance.rollEnhanceSuccess(successRate, random);
+
+    // コストを消費（失敗しても消費される）
+    if (this.config.requirePayment && resourceManager) {
+      this.consumeCost(resourceManager, cost);
+    }
 
     // 失敗時の処理
     if (!success) {
@@ -137,6 +157,7 @@ export class EnhanceService {
         newLevel: failureResult.newLevel,
         previousLevel: equipment.enhanceLevel,
         destroyed: failureResult.destroyed,
+        costConsumed: cost,
         message: failureResult.destroyed
           ? 'Enhancement failed! Equipment was destroyed.'
           : `Enhancement failed (${Math.round(successRate * 100)}% success rate). ${
@@ -162,8 +183,33 @@ export class EnhanceService {
       newLevel,
       previousLevel,
       stats: enhancedStats,
+      costConsumed: cost,
       message: `Successfully enhanced to +${newLevel}!`
     };
+  }
+
+  /**
+   * コストを消費する
+   * 
+   * @param resourceManager - リソース管理
+   * @param cost - 消費するコスト
+   */
+  private consumeCost(resourceManager: ResourceManager, cost: EnhanceCost): void {
+    // ゴールドを消費
+    if (cost.gold !== undefined) {
+      resourceManager.gold -= cost.gold;
+    }
+    
+    // その他のリソースを消費
+    if (cost.resources) {
+      if (!resourceManager.resources) {
+        resourceManager.resources = {};
+      }
+      for (const [resource, amount] of Object.entries(cost.resources)) {
+        const current = resourceManager.resources[resource] ?? 0;
+        resourceManager.resources[resource] = current - amount;
+      }
+    }
   }
 
   /**
@@ -172,7 +218,7 @@ export class EnhanceService {
    * @param equipment - 装備
    * @returns 強化コスト
    */
-  getEnhanceCost(equipment: EnhancableEquipment): number {
+  getEnhanceCost(equipment: EnhancableEquipment): EnhanceCost {
     return enhance.calculateEnhanceCost(equipment, equipment.enhanceLevel);
   }
 
