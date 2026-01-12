@@ -1,22 +1,21 @@
-import { greet, version } from '../src/index';
+import { version, defaultGameConfig, calculatePhysicalDamage } from '../src/index';
 
-describe('rpg-core', () => {
-  describe('greet', () => {
-    it('should return a greeting message', () => {
-      const result = greet('Player');
-      expect(result).toBe('Hello, Player! Welcome to rpg-core.');
-    });
-
-    it('should work with different names', () => {
-      const result = greet('Hero');
-      expect(result).toBe('Hello, Hero! Welcome to rpg-core.');
-    });
-  });
-
-  describe('version', () => {
-    it('should export version string', () => {
+describe('rpg-core（パッケージ）', () => {
+  describe('エクスポート', () => {
+    it('バージョン文字列をエクスポートする', () => {
       expect(version).toBe('1.0.0');
       expect(typeof version).toBe('string');
+    });
+
+    it('デフォルトゲーム設定をエクスポートする', () => {
+      expect(defaultGameConfig).toBeDefined();
+      expect(defaultGameConfig.combat).toBeDefined();
+      expect(defaultGameConfig.growth).toBeDefined();
+      expect(defaultGameConfig.balance).toBeDefined();
+    });
+
+    it('戦闘関数をエクスポートする', () => {
+      expect(typeof calculatePhysicalDamage).toBe('function');
     });
   });
 });

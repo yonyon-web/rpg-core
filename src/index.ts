@@ -1,16 +1,20 @@
 /**
- * rpg-core - A TypeScript library for creating turn-based RPG games
+ * rpg-core - ターン制RPGゲームを作成するためのTypeScriptライブラリ
  * 
- * This library provides a Core Engine for handling numerical calculations
- * and rule judgments in JRPG-style games.
+ * このライブラリは、JRPGスタイルのゲームにおける数値計算と
+ * ルール判定を行うCore Engineを提供します。
  */
 
-/**
- * Example function to demonstrate the setup
- * This will be replaced with actual game logic
- */
-export function greet(name: string): string {
-  return `Hello, ${name}! Welcome to rpg-core.`;
-}
+// 型定義のエクスポート
+export * from './types';
+
+// 設定のエクスポート
+export * from './config';
+
+// 戦闘モジュールのエクスポート
+export * from './combat';
+
+// キャラクターモジュールのエクスポート
+export * from './character';
 
 export const version = '1.0.0';
