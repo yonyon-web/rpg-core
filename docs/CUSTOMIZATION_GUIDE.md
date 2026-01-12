@@ -4,7 +4,15 @@
 
 rpg-coreライブラリは、ゲームごとに異なる要素を自由に定義できる柔軟な設計を採用しています。
 
-## カスタマイズ可能な要素
+**カスタマイズ可能な要素（Phase 1対応）:**
+1. ✅ **Stats（ステータス）** - HP、攻撃力、防御力など
+2. ✅ **StatusEffect（状態異常）** - 毒、麻痺、バフなど
+3. ✅ **Element（属性）** - 火、水、雷など
+4. ✅ **SkillType（スキル種類）** - 物理、魔法、回復など
+5. ✅ **TargetType（対象タイプ）** - 単体、全体など
+6. ✅ **ExpCurveType（経験値曲線）** - 線形、指数など
+
+## カスタマイズ可能な要素の詳細
 
 ### 1. ステータス（Stats）
 
@@ -161,6 +169,155 @@ const shockBlast: Skill<MyEffectType> = {
 };
 ```
 
+### 3. 属性（Element）
+
+#### なぜカスタマイズ可能にしたか
+
+- ゲームジャンルによって属性システムは大きく異なる
+- ファンタジーRPGでは「火・水・雷」、SFゲームでは「プラズマ・レーザー・EMP」など
+- ポケモン風の18種類のタイプシステムなど、独自の属性相性を実現可能
+
+#### デフォルト属性を使用
+
+```typescript
+import { Skill, DefaultElement } from 'rpg-core';
+
+const fireballSkill: Skill = {
+  id: 'skill-fireball',
+  name: 'ファイアボール',
+  type: 'magic',
+  targetType: 'single-enemy',
+  element: 'fire',  // デフォルト属性
+  power: 1.5,
+  // ...
+};
+```
+
+#### カスタム属性を使用
+
+```typescript
+import { Skill, BaseElement } from 'rpg-core';
+
+// SF風の属性を定義
+type SciFiElement = 
+  | 'plasma'      // プラズマ
+  | 'laser'       // レーザー
+  | 'emp'         // 電磁パルス
+  | 'radiation'   // 放射能
+  | 'kinetic'     // 運動エネルギー
+  | 'thermal';    // 熱エネルギー
+
+// カスタム属性を使用したスキル
+const empBlast: Skill<SciFiElement> = {
+  id: 'skill-emp',
+  name: 'EMP爆弾',
+  type: 'special',
+  targetType: 'all-enemies',
+  element: 'emp',  // カスタム属性
+  power: 1.2,
+  // ...
+};
+```
+
+### 4. スキルタイプ（SkillType）
+
+#### なぜカスタマイズ可能にしたか
+
+- ゲームジャンルによってスキルの分類が異なる
+- JRPG: 物理/魔法、アクションRPG: 軽攻撃/重攻撃/ガード/回避
+- 戦略ゲーム: 近接/遠距離/支援/策略など
+
+#### カスタムスキルタイプを使用
+
+```typescript
+import { Skill, BaseSkillType } from 'rpg-core';
+
+// アクションRPG風のスキルタイプ
+type ActionSkillType = 
+  | 'light-attack'   // 軽攻撃
+  | 'heavy-attack'   // 重攻撃
+  | 'guard'          // ガード
+  | 'dodge'          // 回避
+  | 'special-move'   // 必殺技
+  | 'counter';       // カウンター
+
+const rushAttack: Skill<any, ActionSkillType> = {
+  id: 'skill-rush',
+  name: 'ラッシュアタック',
+  type: 'light-attack',  // カスタムスキルタイプ
+  targetType: 'single-enemy',
+  element: 'none',
+  power: 0.8,
+  // ...
+};
+```
+
+### 5. 対象タイプ（TargetType）
+
+#### なぜカスタマイズ可能にしたか
+
+- ゲームシステムによって対象選択の仕組みが異なる
+- 標準: 単体/全体、戦略: 範囲指定/直線3マス/扇形/十字
+- カードゲーム: 隣接カード/同列全て/ランダム2枚など
+
+#### カスタム対象タイプを使用
+
+```typescript
+import { Skill, BaseTargetType } from 'rpg-core';
+
+// 戦略ゲーム風の対象タイプ
+type TacticsTargetType = 
+  | 'single-cell'      // 単一マス
+  | 'range-2'          // 範囲2マス
+  | 'range-3'          // 範囲3マス
+  | 'line-3'           // 直線3マス
+  | 'fan-shape'        // 扇形
+  | 'cross-shape'      // 十字形
+  | 'entire-field';    // 全体
+
+const areaAttack: Skill<any, any, TacticsTargetType> = {
+  id: 'skill-area',
+  name: 'エリア攻撃',
+  type: 'physical',
+  targetType: 'range-3',  // カスタム対象タイプ
+  element: 'none',
+  power: 1.0,
+  // ...
+};
+```
+
+### 6. 経験値曲線（ExpCurveType）
+
+#### なぜカスタマイズ可能にしたか
+
+- ゲームバランスによって成長曲線が異なる
+- JRPG: 指数関数的、ローグライク: 段階的/区間別
+- MMORPG: レベル帯別に異なる曲線など
+
+#### カスタム経験値曲線を使用
+
+```typescript
+import { GameConfig, BaseExpCurveType } from 'rpg-core';
+
+// ローグライク風の経験値曲線
+type RoguelikeExpCurve = 
+  | 'fast-early'      // 序盤速い
+  | 'balanced'        // バランス型
+  | 'milestone-based' // マイルストーン型
+  | 'steep-late';     // 後半急
+
+const roguelikeConfig: GameConfig<RoguelikeExpCurve> = {
+  combat: { /* ... */ },
+  growth: {
+    expCurve: 'milestone-based',  // カスタム経験値曲線
+    baseExpRequired: 100,
+    expGrowthRate: 1.5,
+    // ...
+  },
+  balance: { /* ... */ },
+};
+```
+
 ### 実装例
 
 #### 例1: ファンタジーRPG
@@ -276,15 +433,39 @@ interface Combatant<
 >
 ```
 
-### Skill<TEffectType>
+- `TStats`: カスタムステータス型
+- `TEffectType`: カスタム状態異常タイプ
+- `TEffectCategory`: カスタム状態異常カテゴリ
 
-スキルインターフェースは状態異常タイプのジェネリック型をサポート。
+### Skill<TElement, TSkillType, TTargetType, TEffectType>
+
+スキルインターフェースは4つのジェネリック型をサポート。
 
 ```typescript
 interface Skill<
+  TElement extends BaseElement = DefaultElement,
+  TSkillType extends BaseSkillType = DefaultSkillType,
+  TTargetType extends BaseTargetType = DefaultTargetType,
   TEffectType extends BaseStatusEffectType = DefaultStatusEffectType
 >
 ```
+
+- `TElement`: カスタム属性型
+- `TSkillType`: カスタムスキルタイプ
+- `TTargetType`: カスタム対象タイプ
+- `TEffectType`: カスタム状態異常タイプ
+
+### GameConfig<TExpCurve>
+
+ゲーム設定インターフェースは経験値曲線のジェネリック型をサポート。
+
+```typescript
+interface GameConfig<
+  TExpCurve extends BaseExpCurveType = DefaultExpCurveType
+>
+```
+
+- `TExpCurve`: カスタム経験値曲線タイプ
 
 ## ベストプラクティス
 

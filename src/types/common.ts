@@ -27,10 +27,26 @@ export type Probability = number;
 export type Percentage = number;
 
 /**
- * 属性タイプ
+ * 属性タイプの基底型
+ * - ゲームごとに独自の属性システムを定義可能
+ * - string型を基底として、任意の属性名を使用できる
+ * 
+ * @example
+ * // ファンタジーRPG向け
+ * type FantasyElement = 'fire' | 'water' | 'earth' | 'wind';
+ * 
+ * @example
+ * // SF向け
+ * type SciFiElement = 'plasma' | 'laser' | 'emp' | 'radiation';
+ */
+export type BaseElement = string;
+
+/**
+ * デフォルト属性タイプ
+ * - 標準的なJRPG向けの属性システム
  * - ゲーム内の各種属性を表現
  */
-export type Element = 
+export type DefaultElement = 
   | 'none'      // 無属性
   | 'fire'      // 炎
   | 'water'     // 水
@@ -42,11 +58,26 @@ export type Element =
   | 'dark';     // 闇
 
 /**
- * 属性耐性マップ
+ * 属性タイプ（後方互換性のためのエイリアス）
+ * @deprecated DefaultElementを使用してください
+ */
+export type Element = DefaultElement;
+
+/**
+ * 属性耐性マップの基底型
+ * - ゲームごとに独自の属性耐性システムを定義可能
  * - 各属性に対する耐性値（0.0〜2.0）
  * - 1.0 = 通常、0.5 = 半減、2.0 = 2倍ダメージ、0 = 無効
  */
-export interface ElementResistance {
+export type BaseElementResistance = Record<string, number>;
+
+/**
+ * デフォルト属性耐性マップ
+ * - 標準的なJRPG向けの属性耐性
+ * - 各属性に対する耐性値（0.0〜2.0）
+ * - 1.0 = 通常、0.5 = 半減、2.0 = 2倍ダメージ、0 = 無効
+ */
+export interface DefaultElementResistance {
   fire: number;
   water: number;
   earth: number;
@@ -56,3 +87,9 @@ export interface ElementResistance {
   light: number;
   dark: number;
 }
+
+/**
+ * 属性耐性マップ（後方互換性のためのエイリアス）
+ * @deprecated DefaultElementResistanceを使用してください
+ */
+export type ElementResistance = DefaultElementResistance;

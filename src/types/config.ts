@@ -18,12 +18,33 @@ export interface CombatConfig {
 }
 
 /**
- * 経験値曲線タイプ
+ * 経験値曲線タイプの基底型
+ * - ゲームごとに独自の経験値曲線を定義可能
+ * 
+ * @example
+ * // ローグライク向け
+ * type RoguelikeExpCurve = 'stepped' | 'segmented' | 'milestone';
+ * 
+ * @example
+ * // MMORPG向け
+ * type MMOExpCurve = 'early-fast' | 'mid-slow' | 'late-moderate';
  */
-export type ExpCurveType = 
+export type BaseExpCurveType = string;
+
+/**
+ * デフォルト経験値曲線タイプ
+ * - 標準的なJRPG向けの経験値曲線
+ */
+export type DefaultExpCurveType = 
   | 'linear'        // 線形（レベル × 基本値）
   | 'exponential'   // 指数（基本値 × レベル ^ 成長率）
   | 'custom';       // カスタム
+
+/**
+ * 経験値曲線タイプ（後方互換性のためのエイリアス）
+ * @deprecated DefaultExpCurveTypeを使用してください
+ */
+export type ExpCurveType = DefaultExpCurveType;
 
 /**
  * ステータス成長率
@@ -41,9 +62,28 @@ export interface StatGrowthRates {
 
 /**
  * 成長設定
+ * 
+ * @template TExpCurve - 経験値曲線タイプ（デフォルト: DefaultExpCurveType）
+ * 
+ * @example
+ * // デフォルトの経験値曲線を使用
+ * const growth: GrowthConfig = {
+ *   expCurve: 'exponential',
+ *   // ...
+ * };
+ * 
+ * @example
+ * // カスタム経験値曲線を使用
+ * type MyExpCurve = 'fast' | 'normal' | 'slow';
+ * const growth: GrowthConfig<MyExpCurve> = {
+ *   expCurve: 'fast',
+ *   // ...
+ * };
  */
-export interface GrowthConfig {
-  expCurve: ExpCurveType;           // 経験値曲線タイプ
+export interface GrowthConfig<
+  TExpCurve extends BaseExpCurveType = DefaultExpCurveType
+> {
+  expCurve: TExpCurve;              // 経験値曲線タイプ
   baseExpRequired: number;          // 基本必要経験値（100）
   expGrowthRate: number;            // 経験値成長率（1.2）
   statGrowthRates: StatGrowthRates; // ステータス成長率
@@ -61,9 +101,22 @@ export interface BalanceConfig {
 /**
  * ゲーム設定
  * - ゲーム全体のパラメータと設定
+ * 
+ * @template TExpCurve - 経験値曲線タイプ（デフォルト: DefaultExpCurveType）
+ * 
+ * @example
+ * // デフォルトの設定を使用
+ * const config: GameConfig = { ... };
+ * 
+ * @example
+ * // カスタム経験値曲線を使用
+ * type MyExpCurve = 'fast' | 'normal' | 'slow';
+ * const config: GameConfig<MyExpCurve> = { ... };
  */
-export interface GameConfig {
-  combat: CombatConfig;     // 戦闘パラメータ
-  growth: GrowthConfig;     // 成長パラメータ
-  balance: BalanceConfig;   // バランス調整
+export interface GameConfig<
+  TExpCurve extends BaseExpCurveType = DefaultExpCurveType
+> {
+  combat: CombatConfig;              // 戦闘パラメータ
+  growth: GrowthConfig<TExpCurve>;   // 成長パラメータ
+  balance: BalanceConfig;            // バランス調整
 }
