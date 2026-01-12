@@ -33,49 +33,7 @@ export function canLearnSkill(
   skill: Skill,
   requirements?: SkillLearnRequirements
 ): boolean {
-  // すでに習得済み
-  if (hasSkill(character, skill.id)) {
-    return false;
-  }
-
-  // レベル要件チェック
-  if (requirements?.levelRequirement && character.level < requirements.levelRequirement) {
-    return false;
-  }
-
-  // ジョブレベル要件チェック
-  if (requirements?.jobLevelRequirement) {
-    const jobLevel = (character as any).jobLevel || 0;
-    if (jobLevel < requirements.jobLevelRequirement) {
-      return false;
-    }
-  }
-
-  // ジョブ要件チェック
-  if (requirements?.requiredJob && character.job !== requirements.requiredJob) {
-    return false;
-  }
-
-  // 前提スキルチェック
-  if (requirements?.prerequisiteSkills) {
-    for (const prereqId of requirements.prerequisiteSkills) {
-      if (!hasSkill(character, prereqId)) {
-        return false;
-      }
-    }
-  }
-
-  // ステータス要件チェック
-  if (requirements?.requiredStats) {
-    for (const [statKey, requiredValue] of Object.entries(requirements.requiredStats)) {
-      const characterStat = (character.stats as any)[statKey];
-      if (characterStat === undefined || characterStat < requiredValue) {
-        return false;
-      }
-    }
-  }
-
-  return true;
+  return validateSkillLearnConditions(character, skill, requirements).canLearn;
 }
 
 /**
