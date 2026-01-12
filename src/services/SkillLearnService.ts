@@ -231,15 +231,17 @@ export class SkillLearnService {
     }
     
     // レベルアップ実行
-    const learned = skillModule.getLearnedSkill(character, skillId);
     if (skillModule.levelUpSkill(character, skillId)) {
-      const newLevel = learned!.level + 1;
-      return {
-        success: true,
-        message: `${learned!.skill.name} leveled up to ${newLevel}!`,
-        skill: learned!.skill,
-        level: newLevel
-      };
+      // レベルアップ後の状態を取得
+      const learned = skillModule.getLearnedSkill(character, skillId);
+      if (learned) {
+        return {
+          success: true,
+          message: `${learned.skill.name} leveled up to ${learned.level}!`,
+          skill: learned.skill,
+          level: learned.level
+        };
+      }
     }
     
     return {
