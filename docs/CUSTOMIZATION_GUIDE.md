@@ -12,6 +12,232 @@ rpg-coreライブラリは、ゲームごとに異なる要素を自由に定義
 5. ✅ **TargetType（対象タイプ）** - 単体、全体など
 6. ✅ **ExpCurveType（経験値曲線）** - 線形、指数など
 
+## 型の一元管理（推奨パターン）
+
+複数のジェネリック型パラメータを毎回指定するのは不便です。`GameTypeConfig`を使用することで、すべての型を1箇所で定義し、プロジェクト全体で再利用できます。
+
+### 基本的な使い方
+
+#### 方法1: デフォルト型を使用（最もシンプル）
+
+```typescript
+import { GameTypes } from 'rpg-core';
+
+// デフォルト型で十分な場合は型パラメータ不要
+type Combatant = GameTypes['Combatant'];
+type Skill = GameTypes['Skill'];
+type GameConfig = GameTypes['GameConfig'];
+
+const hero: Combatant = { ... };
+const fireball: Skill = { ... };
+const config: GameConfig = { ... };
+```
+
+#### 方法2: カスタム型を一元管理（推奨）
+
+```typescript
+import { 
+  GameTypeConfig, 
+  GameTypes,
+  BaseStats,
+  BaseStatusEffectType,
+  BaseStatusEffectCategory,
+  BaseElement,
+  BaseSkillType,
+  BaseTargetType,
+  BaseExpCurveType
+} from 'rpg-core';
+
+// === 1. カスタム型の定義 ===
+
+// ステータス
+interface MechStats extends BaseStats {
+  hull: number;        // 装甲
+  shield: number;      // シールド
+  energy: number;      // エネルギー
+  firepower: number;   // 火力
+  mobility: number;    // 機動力
+}
+
+// 属性
+type SciFiElement = 'plasma' | 'laser' | 'emp' | 'kinetic' | 'thermal';
+
+// スキルタイプ
+type TacticsSkillType = 'tech-weapon' | 'hack' | 'support' | 'tactical';
+
+// 対象タイプ
+type TacticsTargetType = 'single' | 'range-2' | 'range-3' | 'line' | 'all';
+
+// 状態異常
+type SciFiEffectType = 'emp-stunned' | 'overheated' | 'shield-boost' | 'cloaked';
+type SciFiEffectCategory = 'malfunction' | 'enhancement' | 'tactical';
+
+// 経験値曲線
+type MechExpCurve = 'pilot-training' | 'combat-veteran' | 'ace-pilot';
+
+// === 2. ゲーム型設定を一箇所で定義 ===
+
+interface MyGameTypes extends GameTypeConfig<
+  MechStats,
+  SciFiEffectType,
+  SciFiEffectCategory,
+  SciFiElement,
+  TacticsSkillType,
+  TacticsTargetType,
+  MechExpCurve
+> {}
+
+// === 3. 型エイリアスを作成（プロジェクト全体で使用） ===
+
+type Combatant = GameTypes<MyGameTypes>['Combatant'];
+type Skill = GameTypes<MyGameTypes>['Skill'];
+type GameConfig = GameTypes<MyGameTypes>['GameConfig'];
+
+// === 4. 簡単に使用可能 ===
+
+const battleMech: Combatant = {
+  id: 'mech-001',
+  name: 'タイタンアルファ',
+  level: 15,
+  stats: {
+    hull: 120,
+    shield: 80,
+    energy: 100,
+    firepower: 95,
+    mobility: 70,
+  },
+  currentHp: 120,
+  currentMp: 100,
+  statusEffects: [
+    {
+      id: 'effect-1',
+      type: 'shield-boost',      // カスタムタイプ（型安全）
+      category: 'enhancement',   // カスタムカテゴリ（型安全）
+      name: 'シールド強化',
+      description: 'シールドが強化される',
+      power: 20,
+      duration: 3,
+      maxDuration: 3,
+      stackCount: 1,
+      maxStack: 1,
+      canBeDispelled: false,
+      appliedAt: Date.now(),
+    }
+  ],
+  position: 0,
+};
+
+const empCannon: Skill = {
+  id: 'skill-emp-cannon',
+  name: 'EMP砲',
+  type: 'tech-weapon',        // カスタムタイプ（型安全）
+  targetType: 'range-2',      // カスタムタイプ（型安全）
+  element: 'emp',             // カスタムタイプ（型安全）
+  power: 1.3,
+  mpCost: 15,
+  accuracy: 0.95,
+  criticalBonus: 0.05,
+  isGuaranteedHit: false,
+  statusEffects: [
+    {
+      effectType: 'emp-stunned',  // カスタムタイプ（型安全）
+      probability: 0.8,
+      duration: 2,
+      power: 1,
+    }
+  ],
+  description: 'EMP弾を発射し、範囲2マスの敵にダメージと麻痺を与える',
+};
+
+const scifiGameConfig: GameConfig = {
+  combat: {
+    baseCriticalRate: 0.05,
+    criticalMultiplier: 2.0,
+    damageVariance: 0.1,
+    escapeBaseRate: 0.5,
+    escapeRateIncrement: 0.1,
+    preemptiveStrikeThreshold: 20,
+    speedVariance: 0.1,
+  },
+  growth: {
+    expCurve: 'combat-veteran',  // カスタムタイプ（型安全）
+    baseExpRequired: 100,
+    expGrowthRate: 1.2,
+    statGrowthRates: {
+      maxHp: 10,
+      maxMp: 5,
+      attack: 2,
+      defense: 2,
+      magic: 1,
+      magicDefense: 1,
+      speed: 1,
+      luck: 0.5,
+    },
+    maxLevel: 50,
+  },
+  balance: {
+    maxPartySize: 4,
+    dropRateModifier: 1.0,
+  },
+};
+```
+
+### メリット
+
+1. **型パラメータの重複を排除**: 各所で長い型パラメータを書く必要がない
+2. **一元管理**: プロジェクト全体で一貫した型を使用
+3. **変更が容易**: `MyGameTypes`を変更するだけで全体に反映
+4. **型安全性**: TypeScriptの型チェックが効く
+5. **可読性**: コードがシンプルで理解しやすい
+
+### プロジェクト構成の推奨例
+
+```
+src/
+  types/
+    myGameTypes.ts    # ← ここでGameTypeConfigを定義
+  entities/
+    combatants.ts     # ← 定義した型を使用
+    skills.ts         # ← 定義した型を使用
+  config/
+    gameConfig.ts     # ← 定義した型を使用
+```
+
+**myGameTypes.ts:**
+```typescript
+import { GameTypeConfig, GameTypes } from 'rpg-core';
+
+// カスタム型定義
+interface MechStats { ... }
+type SciFiElement = ...;
+// ... その他の型定義
+
+// ゲーム型設定
+export interface MyGameTypes extends GameTypeConfig<
+  MechStats,
+  SciFiEffectType,
+  SciFiEffectCategory,
+  SciFiElement,
+  TacticsSkillType,
+  TacticsTargetType,
+  MechExpCurve
+> {}
+
+// プロジェクト全体で使用する型をエクスポート
+export type Combatant = GameTypes<MyGameTypes>['Combatant'];
+export type Skill = GameTypes<MyGameTypes>['Skill'];
+export type GameConfig = GameTypes<MyGameTypes>['GameConfig'];
+```
+
+**combatants.ts:**
+```typescript
+import { Combatant } from '../types/myGameTypes';
+
+// 型パラメータの指定不要！
+export const battleMech: Combatant = { ... };
+export const cyberWarrior: Combatant = { ... };
+```
+
 ## カスタマイズ可能な要素の詳細
 
 ### 1. ステータス（Stats）

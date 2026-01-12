@@ -2,6 +2,136 @@
 
 This document demonstrates how to use the Phase 1 Core Engine modules.
 
+## 型の一元管理パターン（推奨）
+
+複数のジェネリック型パラメータを毎回指定するのは不便です。`GameTypeConfig`を使用することで、すべての型を1箇所で定義し、プロジェクト全体で再利用できます。
+
+### Example 0: GameTypeConfigを使った一元管理
+
+```typescript
+import { 
+  GameTypeConfig, 
+  GameTypes,
+  BaseStats,
+  BaseElement,
+  BaseSkillType,
+  BaseTargetType,
+  BaseStatusEffectType,
+  BaseStatusEffectCategory,
+  BaseExpCurveType,
+  calculatePhysicalDamage,
+  defaultGameConfig
+} from 'rpg-core';
+
+// === プロジェクト用の型設定ファイル (src/types/myGameTypes.ts) ===
+
+// カスタム型の定義
+interface MechStats extends BaseStats {
+  hull: number;        // 装甲
+  shield: number;      // シールド
+  energy: number;      // エネルギー
+  firepower: number;   // 火力
+  mobility: number;    // 機動力
+}
+
+type SciFiElement = 'plasma' | 'laser' | 'emp' | 'kinetic';
+type TacticsSkillType = 'tech-weapon' | 'hack' | 'support';
+type TacticsTargetType = 'single' | 'range-2' | 'range-3' | 'all';
+type SciFiEffectType = 'emp-stunned' | 'overheated' | 'shield-boost';
+type SciFiEffectCategory = 'malfunction' | 'enhancement';
+type MechExpCurve = 'pilot-training' | 'combat-veteran';
+
+// ゲーム型設定を一箇所で定義
+export interface MyGameTypes extends GameTypeConfig<
+  MechStats,
+  SciFiEffectType,
+  SciFiEffectCategory,
+  SciFiElement,
+  TacticsSkillType,
+  TacticsTargetType,
+  MechExpCurve
+> {}
+
+// プロジェクト全体で使用する型エイリアスをエクスポート
+export type Combatant = GameTypes<MyGameTypes>['Combatant'];
+export type Skill = GameTypes<MyGameTypes>['Skill'];
+export type GameConfig = GameTypes<MyGameTypes>['GameConfig'];
+
+// === 他のファイルで使用 (src/entities/mechs.ts) ===
+
+import { Combatant, Skill, GameConfig } from './types/myGameTypes';
+
+// 型パラメータの指定不要！シンプルに使える
+const battleMech: Combatant = {
+  id: 'mech-001',
+  name: 'タイタンアルファ',
+  level: 15,
+  stats: {
+    hull: 120,
+    shield: 80,
+    energy: 100,
+    firepower: 95,
+    mobility: 70,
+  },
+  currentHp: 120,
+  currentMp: 100,
+  statusEffects: [],
+  position: 0,
+};
+
+const empCannon: Skill = {
+  id: 'skill-emp-cannon',
+  name: 'EMP砲',
+  type: 'tech-weapon',     // 型安全
+  targetType: 'range-2',   // 型安全
+  element: 'emp',          // 型安全
+  power: 1.3,
+  mpCost: 15,
+  accuracy: 0.95,
+  criticalBonus: 0.05,
+  isGuaranteedHit: false,
+  description: 'EMP弾を発射',
+};
+
+// === デフォルト型を使う場合（最もシンプル） ===
+
+import { GameTypes as DefaultGameTypes } from 'rpg-core';
+
+// 型パラメータ不要
+type DefaultCombatant = DefaultGameTypes['Combatant'];
+type DefaultSkill = DefaultGameTypes['Skill'];
+
+const hero: DefaultCombatant = {
+  id: 'hero-1',
+  name: '勇者',
+  level: 10,
+  stats: {
+    maxHp: 150,
+    maxMp: 60,
+    attack: 50,
+    defense: 30,
+    magic: 35,
+    magicDefense: 25,
+    speed: 55,
+    luck: 15,
+    accuracy: 10,
+    evasion: 8,
+    criticalRate: 0.05,
+  },
+  currentHp: 150,
+  currentMp: 60,
+  statusEffects: [],
+  position: 0,
+};
+```
+
+**メリット:**
+- ✅ 型パラメータの重複を排除
+- ✅ プロジェクト全体で一貫した型を使用
+- ✅ 変更が容易（1箇所変更で全体に反映）
+- ✅ 型安全性を保持
+- ✅ コードがシンプルで理解しやすい
+
 ## Basic Setup
 
 ```typescript

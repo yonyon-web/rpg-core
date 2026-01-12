@@ -9,3 +9,4 @@ export * from './combatant';
 export * from './skill';
 export * from './damage';
 export * from './config';
+export * from './gameTypes';
