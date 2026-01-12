@@ -16,3 +16,4 @@ export * from './ItemService';
 export * from './CraftService';
 export * from './EnhanceService';
 export * from './SaveLoadService';
+export * from './SimulationService';
