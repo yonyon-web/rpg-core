@@ -169,6 +169,33 @@ describe('SkillLearnService', () => {
       expect(result.success).toBe(false);
       expect(result.message).toContain('level');
     });
+
+    test('should respect job level requirements', () => {
+      const character = createTestCharacter();
+      (character as any).jobLevel = 3;
+      const skill = createTestSkill();
+      
+      const result = service.learnSkill(character, skill, { 
+        jobLevelRequirement: 5 
+      });
+
+      expect(result.success).toBe(false);
+      expect(character.skills).toHaveLength(0);
+      expect(result.message).toContain('job level');
+    });
+
+    test('should allow learning when job level requirement is met', () => {
+      const character = createTestCharacter();
+      (character as any).jobLevel = 5;
+      const skill = createTestSkill();
+      
+      const result = service.learnSkill(character, skill, { 
+        jobLevelRequirement: 5 
+      });
+
+      expect(result.success).toBe(true);
+      expect(character.skills).toHaveLength(1);
+    });
   });
 
   describe('forgetSkill', () => {

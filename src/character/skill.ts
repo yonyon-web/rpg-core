@@ -12,6 +12,7 @@ import type { UniqueId } from '../types/common';
  */
 export interface SkillLearnRequirements {
   levelRequirement?: number;         // 必要レベル
+  jobLevelRequirement?: number;      // 必要ジョブレベル
   requiredJob?: string;              // 必要なジョブ
   prerequisiteSkills?: UniqueId[];   // 前提スキル
   requiredStats?: {                  // 必要なステータス
@@ -40,6 +41,14 @@ export function canLearnSkill(
   // レベル要件チェック
   if (requirements?.levelRequirement && character.level < requirements.levelRequirement) {
     return false;
+  }
+
+  // ジョブレベル要件チェック
+  if (requirements?.jobLevelRequirement) {
+    const jobLevel = (character as any).jobLevel || 0;
+    if (jobLevel < requirements.jobLevelRequirement) {
+      return false;
+    }
   }
 
   // ジョブ要件チェック
@@ -107,6 +116,17 @@ export function validateSkillLearnConditions(
       canLearn: false, 
       reason: `Requires level ${requirements.levelRequirement} (current: ${character.level})` 
     };
+  }
+
+  // ジョブレベル要件チェック
+  if (requirements?.jobLevelRequirement) {
+    const jobLevel = (character as any).jobLevel || 0;
+    if (jobLevel < requirements.jobLevelRequirement) {
+      return { 
+        canLearn: false, 
+        reason: `Requires job level ${requirements.jobLevelRequirement} (current: ${jobLevel})` 
+      };
+    }
   }
 
   // ジョブ要件チェック

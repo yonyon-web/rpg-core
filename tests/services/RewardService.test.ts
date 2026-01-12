@@ -311,4 +311,54 @@ describe('RewardService', () => {
       expect(hpGrowth).toBeLessThanOrEqual(11);
     });
   });
+
+  describe('ジョブ経験値とジョブレベルアップ', () => {
+    test('ジョブ経験値を配分できる', () => {
+      const service = new RewardService();
+      const party = [
+        createCharacter('char1', 5, 0),
+        createCharacter('char2', 5, 0)
+      ];
+      
+      const expDist = service.distributeExp(party, 100, 50);
+      
+      expect(expDist).toHaveLength(2);
+      expect(expDist[0].exp).toBe(50);
+      expect(expDist[0].jobExp).toBe(25);
+      expect(expDist[1].exp).toBe(50);
+      expect(expDist[1].jobExp).toBe(25);
+    });
+
+    test('ジョブレベルアップが発生する', () => {
+      const service = new RewardService();
+      const char = createCharacter('char1', 5, 0);
+      (char as any).jobLevel = 1;
+      (char as any).jobExp = 160; // ジョブレベル2に必要な経験値以上
+      
+      const results = service.processLevelUps(char);
+      
+      const jobLevelUpResult = results.find(r => r.jobLevelUp);
+      expect(jobLevelUpResult).toBeDefined();
+      expect(jobLevelUpResult?.newJobLevel).toBe(2);
+      expect((char as any).jobLevel).toBe(2);
+    });
+
+    test('報酬配分でジョブ経験値も配分される', () => {
+      const service = new RewardService();
+      const party = [createCharacter('char1', 5, 0)];
+      (party[0] as any).jobLevel = 1;
+      
+      const rewards: BattleRewards = {
+        exp: 100,
+        jobExp: 50,
+        money: 100,
+        items: []
+      };
+      
+      const result = service.distributeRewards(party, rewards);
+      
+      expect(result.expDistribution[0].jobExp).toBe(50);
+      expect((party[0] as any).jobExp).toBe(50);
+    });
+  });
 });
