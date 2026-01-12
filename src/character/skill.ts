@@ -131,5 +131,87 @@ export function validateSkillLearnConditions(
  * @returns 習得している場合true
  */
 export function hasSkill(character: Character, skillId: UniqueId): boolean {
+  // learnedSkillsがある場合はそちらもチェック
+  if (character.learnedSkills) {
+    if (character.learnedSkills.some(ls => ls.skill.id === skillId)) {
+      return true;
+    }
+  }
   return character.skills.some(s => s.id === skillId);
+}
+
+/**
+ * 習得済みスキルを取得
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns 習得済みスキル（見つからない場合はnull）
+ */
+export function getLearnedSkill(
+  character: Character,
+  skillId: UniqueId
+): import('../types/skill').LearnedSkill | null {
+  if (!character.learnedSkills) {
+    return null;
+  }
+  return character.learnedSkills.find(ls => ls.skill.id === skillId) || null;
+}
+
+/**
+ * スキルの現在のレベルを取得
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns スキルレベル（習得していない場合は0）
+ */
+export function getSkillLevel(character: Character, skillId: UniqueId): number {
+  const learned = getLearnedSkill(character, skillId);
+  return learned ? learned.level : 0;
+}
+
+/**
+ * スキルをレベルアップ可能かチェック
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns レベルアップ可能な場合true
+ */
+export function canLevelUpSkill(
+  character: Character,
+  skillId: UniqueId
+): boolean {
+  const learned = getLearnedSkill(character, skillId);
+  if (!learned) {
+    return false;
+  }
+  
+  const maxLevel = learned.skill.maxLevel || 1;
+  return learned.level < maxLevel;
+}
+
+/**
+ * スキルをレベルアップ
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns レベルアップに成功した場合true
+ */
+export function levelUpSkill(
+  character: Character,
+  skillId: UniqueId
+): boolean {
+  if (!canLevelUpSkill(character, skillId)) {
+    return false;
+  }
+  
+  const learned = getLearnedSkill(character, skillId);
+  if (learned) {
+    learned.level++;
+    if (learned.experience !== undefined) {
+      learned.experience = 0; // 経験値リセット（オプション）
+    }
+    return true;
+  }
+  
+  return false;
 }

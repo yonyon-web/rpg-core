@@ -141,4 +141,42 @@ export interface Skill<
   isGuaranteedHit: boolean; // 必中フラグ
   statusEffects?: StatusEffectApplication<TEffectType>[]; // 付与する状態異常
   description: string;      // スキル説明
+  maxLevel?: number;        // 最大レベル（省略時は1、レベルシステムがないゲーム用）
+}
+
+/**
+ * 習得済みスキル
+ * - スキルの習得状態とレベルを管理
+ * - レベルシステムがないゲームでは常にlevel=1で使用
+ * 
+ * @template TElement - 属性タイプ（デフォルト: DefaultElement）
+ * @template TSkillType - スキルタイプ（デフォルト: DefaultSkillType）
+ * @template TTargetType - 対象タイプ（デフォルト: DefaultTargetType）
+ * @template TEffectType - 状態異常タイプ（デフォルト: DefaultStatusEffectType）
+ * 
+ * @example
+ * // レベルシステムありのゲーム
+ * const learnedSkill: LearnedSkill = {
+ *   skill: fireballSkill,
+ *   level: 3,
+ *   experience: 150
+ * };
+ * 
+ * @example
+ * // レベルシステムなしのゲーム（レベル1固定）
+ * const learnedSkill: LearnedSkill = {
+ *   skill: healSkill,
+ *   level: 1
+ * };
+ */
+export interface LearnedSkill<
+  TElement extends BaseElement = DefaultElement,
+  TSkillType extends BaseSkillType = DefaultSkillType,
+  TTargetType extends BaseTargetType = DefaultTargetType,
+  TEffectType extends BaseStatusEffectType = DefaultStatusEffectType
+> {
+  skill: Skill<TElement, TSkillType, TTargetType, TEffectType>;  // スキル本体
+  level: number;           // 現在のレベル（1以上）
+  experience?: number;     // スキル経験値（オプション、レベルアップ用）
+  learnedAt?: number;      // 習得日時（タイムスタンプ、オプション）
 }
