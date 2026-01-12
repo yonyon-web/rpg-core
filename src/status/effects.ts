@@ -1,6 +1,6 @@
 /**
- * Status Effect Core Engine Module
- * Pure functions for status effect management
+ * status/effects - ステータス効果管理モジュール
+ * ステータス効果の検証と管理に関する純粋な計算関数
  */
 
 import type { Combatant } from '../types/combatant';
@@ -8,11 +8,11 @@ import type { StatusEffect, BaseStatusEffectType, BaseStatusEffectCategory } fro
 import type { BaseStats } from '../types/stats';
 
 /**
- * Check if a combatant has a specific status effect type
+ * 戦闘者が特定のステータス効果タイプを持っているかチェック
  * 
- * @param combatant - The combatant to check
- * @param effectType - The status effect type to look for
- * @returns True if the combatant has the status effect
+ * @param combatant - チェック対象の戦闘者
+ * @param effectType - 検索するステータス効果タイプ
+ * @returns ステータス効果を持っている場合true
  * 
  * @example
  * ```typescript
@@ -31,11 +31,11 @@ export function hasStatusEffect<
 }
 
 /**
- * Find a status effect by ID
+ * IDでステータス効果を検索
  * 
- * @param combatant - The combatant to search
- * @param effectId - The effect ID to find
- * @returns The status effect if found, undefined otherwise
+ * @param combatant - 検索対象の戦闘者
+ * @param effectId - 検索する効果のID
+ * @returns 見つかった場合はステータス効果、それ以外はundefined
  * 
  * @example
  * ```typescript
@@ -54,11 +54,11 @@ export function findEffectById<
 }
 
 /**
- * Find a status effect by type
+ * タイプでステータス効果を検索
  * 
- * @param combatant - The combatant to search
- * @param effectType - The effect type to find
- * @returns The status effect if found, undefined otherwise
+ * @param combatant - 検索対象の戦闘者
+ * @param effectType - 検索する効果のタイプ
+ * @returns 見つかった場合はステータス効果、それ以外はundefined
  * 
  * @example
  * ```typescript
@@ -77,11 +77,11 @@ export function findEffectByType<
 }
 
 /**
- * Get all status effects of a specific category
+ * 特定カテゴリの全ステータス効果を取得
  * 
- * @param combatant - The combatant to search
- * @param category - The category to filter by
- * @returns Array of status effects in the category
+ * @param combatant - 検索対象の戦闘者
+ * @param category - フィルタリングするカテゴリ
+ * @returns カテゴリに該当するステータス効果の配列
  * 
  * @example
  * ```typescript
@@ -100,15 +100,15 @@ export function getEffectsByCategory<
 }
 
 /**
- * Check if a status effect can be dispelled
+ * ステータス効果が解除可能かチェック
  * 
- * @param effect - The status effect to check
- * @returns True if the effect can be dispelled
+ * @param effect - チェック対象のステータス効果
+ * @returns 解除可能な場合true
  * 
  * @example
  * ```typescript
  * if (canDispel(effect)) {
- *   // Remove the effect
+ *   // 効果を解除
  * }
  * ```
  */
@@ -122,10 +122,10 @@ export function canDispel<
 }
 
 /**
- * Check if a status effect can be stacked
+ * ステータス効果がさらにスタック可能かチェック
  * 
- * @param effect - The status effect to check
- * @returns True if the effect can be stacked further
+ * @param effect - チェック対象のステータス効果
+ * @returns スタック可能な場合true
  * 
  * @example
  * ```typescript
@@ -144,15 +144,15 @@ export function canStack<
 }
 
 /**
- * Check if a status effect has expired (duration <= 0)
+ * ステータス効果が期限切れかチェック（duration <= 0）
  * 
- * @param effect - The status effect to check
- * @returns True if the effect has expired
+ * @param effect - チェック対象のステータス効果
+ * @returns 期限切れの場合true
  * 
  * @example
  * ```typescript
  * if (isExpired(effect)) {
- *   // Remove the effect
+ *   // 効果を削除
  * }
  * ```
  */
@@ -166,10 +166,10 @@ export function isExpired<
 }
 
 /**
- * Filter out expired status effects
+ * 期限切れのステータス効果を除外
  * 
- * @param effects - Array of status effects
- * @returns Array with expired effects removed
+ * @param effects - ステータス効果の配列
+ * @returns 期限切れの効果を除外した配列
  * 
  * @example
  * ```typescript
