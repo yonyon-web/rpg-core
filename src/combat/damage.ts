@@ -66,9 +66,9 @@ export function calculatePhysicalDamage(
 
   // 基礎ダメージを計算
   let baseDamage: number;
-  if (config.customFormulas?.physicalDamage) {
+  if (config.customFormulas?.damageFormulas?.['physical']) {
     // カスタム計算式を使用
-    baseDamage = config.customFormulas.physicalDamage(attacker, target, skill, isCritical, config);
+    baseDamage = config.customFormulas.damageFormulas['physical'](attacker, target, skill, isCritical, config);
   } else {
     // デフォルトの計算式を使用
     baseDamage = defaultPhysicalDamageFormula(
@@ -175,9 +175,9 @@ export function calculateMagicDamage(
 
   // 基礎ダメージを計算
   let baseDamage: number;
-  if (config.customFormulas?.magicDamage) {
+  if (config.customFormulas?.damageFormulas?.['magic']) {
     // カスタム計算式を使用
-    baseDamage = config.customFormulas.magicDamage(attacker, target, skill, isCritical, config);
+    baseDamage = config.customFormulas.damageFormulas['magic'](attacker, target, skill, isCritical, config);
   } else {
     // デフォルトの計算式を使用
     baseDamage = defaultMagicDamageFormula(
@@ -355,14 +355,7 @@ export function calculateDamage(
   if (config.customFormulas?.damageFormulas?.[skillType]) {
     baseDamage = config.customFormulas.damageFormulas[skillType]!(attacker, target, skill, isCritical, config);
   }
-  // 2. 後方互換性: 旧形式のphysicalDamage/magicDamageをチェック
-  else if (skillType === 'physical' && config.customFormulas?.physicalDamage) {
-    baseDamage = config.customFormulas.physicalDamage(attacker, target, skill, isCritical, config);
-  }
-  else if (skillType === 'magic' && config.customFormulas?.magicDamage) {
-    baseDamage = config.customFormulas.magicDamage(attacker, target, skill, isCritical, config);
-  }
-  // 3. デフォルト計算式を使用
+  // 2. デフォルト計算式を使用
   else {
     if (skillType === 'physical') {
       baseDamage = defaultPhysicalDamageFormula(

@@ -28,14 +28,26 @@ export interface Enemy extends Combatant {
 }
 
 /**
- * AI戦略
+ * AI戦略の基底型
+ * - ゲームごとに独自のAI戦略を定義可能
  */
-export type AIStrategy = 
+export type BaseAIStrategy = string;
+
+/**
+ * デフォルトAI戦略
+ * - 標準的な戦略パターン
+ */
+export type DefaultAIStrategy = 
   | 'aggressive'   // 攻撃的（最もダメージを与える行動を選択）
   | 'defensive'    // 防御的（HPが低い味方を守る）
   | 'balanced'     // バランス型（状況に応じて行動を変える）
   | 'random'       // ランダム（ランダムに行動）
   | 'support';     // サポート型（バフ・デバフを優先）
+
+/**
+ * AI戦略（後方互換性のため）
+ */
+export type AIStrategy = DefaultAIStrategy;
 
 /**
  * ドロップアイテム

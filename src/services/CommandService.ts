@@ -196,6 +196,40 @@ export class CommandService {
   }
 
   /**
+   * ターゲット文字列から対象を取得する（プレビュー用）
+   * @param targetString ターゲット文字列（例: "enemy-0", "ally-1", "self"）
+   * @returns 対象の戦闘者、または見つからない場合はnull
+   */
+  previewTarget(targetString: string): Combatant | null {
+    if (!this.battleState) {
+      return null;
+    }
+
+    // "self"の場合
+    if (targetString === 'self' && this.state?.actor) {
+      return this.state.actor;
+    }
+
+    // "enemy-X"形式の場合
+    const enemyMatch = targetString.match(/^enemy-(\d+)$/);
+    if (enemyMatch) {
+      const index = parseInt(enemyMatch[1], 10);
+      const aliveEnemies = this.battleState.enemyGroup.filter(e => e.currentHp > 0);
+      return aliveEnemies[index] || null;
+    }
+
+    // "ally-X"形式の場合
+    const allyMatch = targetString.match(/^ally-(\d+)$/);
+    if (allyMatch) {
+      const index = parseInt(allyMatch[1], 10);
+      const aliveAllies = this.battleState.playerParty.filter(c => c.currentHp > 0);
+      return aliveAllies[index] || null;
+    }
+
+    return null;
+  }
+
+  /**
    * コマンドをキャンセルする
    */
   cancel(): void {
@@ -243,7 +277,29 @@ export class CommandService {
    * @param actor キャラクター
    */
   private getUsableSkills(actor: Character): Skill[] {
-    return actor.skills.filter(skill => actor.currentMp >= skill.mpCost);
+    return actor.skills.filter(skill => {
+      // 新しいcost形式をチェック
+      if (skill.cost) {
+        if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {
+          return false;
+        }
+        if (skill.cost.hp !== undefined && actor.currentHp <= skill.cost.hp) {
+          return false;
+        }
+        // カスタムコストのチェック
+        for (const [key, value] of Object.entries(skill.cost)) {
+          if (key !== 'mp' && key !== 'hp' && value !== undefined && value !== null) {
+            const actorResource = (actor as any)[`current${key.charAt(0).toUpperCase()}${key.slice(1)}`];
+            if (actorResource !== undefined && actorResource < (value as number)) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      // 後方互換性: mpCost
+      return actor.currentMp >= skill.mpCost;
+    });
   }
 
   /**
@@ -277,6 +333,12 @@ export class CommandService {
         return this.battleState.playerParty.filter(c => c.currentHp > 0);
       case 'self':
         return this.state?.actor ? [this.state.actor] : [];
+      case 'select-enemies':
+        // 任意の敵を1~N体選択可能
+        return this.battleState.enemyGroup.filter(e => e.currentHp > 0);
+      case 'select-allies':
+        // 任意の味方を1~N体選択可能
+        return this.battleState.playerParty.filter(c => c.currentHp > 0);
       default:
         return [];
     }

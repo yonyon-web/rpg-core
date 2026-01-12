@@ -234,43 +234,4 @@ describe('Generic Damage Calculation', () => {
       expect(result.baseDamage).toBeCloseTo(80, 0);
     });
   });
-
-  describe('Backward compatibility', () => {
-    it('should still support physicalDamage custom formula', () => {
-      const attacker = createTestCombatant({ attack: 50 });
-      const target = createTestCombatant({ defense: 20 });
-
-      const customFormulas: CustomFormulas = {
-        physicalDamage: (attacker, target, skill, isCritical, config) => {
-          // カスタム計算式
-          return attacker.stats.attack * skill.power * 1.5;
-        }
-      };
-
-      const configWithCustom: GameConfig = {
-        ...basicConfig,
-        customFormulas
-      };
-
-      const skill: Skill = {
-        id: 'physical-attack',
-        name: 'Physical Attack',
-        type: 'physical',
-        targetType: 'single-enemy',
-        element: 'none',
-        power: 2.0,
-        mpCost: 0,
-        accuracy: 1.0,
-        criticalBonus: 0,
-        isGuaranteedHit: true,
-        description: 'Test physical attack'
-      };
-
-      const result = calculateDamage(attacker, target, skill, configWithCustom);
-      
-      expect(result.isHit).toBe(true);
-      // 50 * 2.0 * 1.5 = 150
-      expect(result.baseDamage).toBeCloseTo(150, 0);
-    });
-  });
 });

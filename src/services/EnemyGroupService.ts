@@ -20,6 +20,7 @@ export interface EnemyType {
   expReward: number;                     // 基本経験値
   moneyReward: number;                   // 基本お金
   dropItems?: DropItem[];                // ドロップアイテム
+  statMultipliers?: Partial<Record<keyof DefaultStats, number>>; // ステータスごとの上昇倍率
 }
 
 /**
@@ -31,6 +32,7 @@ export interface EnemyGroupType {
   enemies: {                 // 敵の構成
     typeId: UniqueId;        // 敵タイプID
     count: number;           // 数
+    level?: number;          // 個別レベル指定（オプション）
   }[];
   difficulty: number;        // 難易度（1.0が基準）
 }
@@ -52,7 +54,7 @@ export class EnemyGroupService {
   /**
    * 敵グループを生成する
    * @param groupType グループタイプ
-   * @param level レベル
+   * @param level デフォルトレベル（個別レベルが指定されていない敵に適用）
    */
   generateEnemyGroup(groupType: EnemyGroupType, level: number): Enemy[] {
     const enemies: Enemy[] = [];
@@ -63,8 +65,11 @@ export class EnemyGroupService {
         throw new Error(`Enemy type not found: ${composition.typeId}`);
       }
 
+      // 個別レベル指定があればそれを使用、なければデフォルトレベルを使用
+      const enemyLevel = composition.level !== undefined ? composition.level : level;
+
       for (let i = 0; i < composition.count; i++) {
-        const enemy = this.initializeEnemy(enemyType, level);
+        const enemy = this.initializeEnemy(enemyType, enemyLevel);
         enemies.push(enemy);
       }
     }
@@ -79,8 +84,7 @@ export class EnemyGroupService {
    */
   initializeEnemy(enemyType: EnemyType, level: number): Enemy {
     // ステータスをレベルに応じてスケーリング
-    const levelMultiplier = 1 + (level - 1) * 0.1; // レベルごとに10%増加
-    const stats = this.scaleStats(enemyType.baseStats, levelMultiplier);
+    const stats = this.scaleStats(enemyType.baseStats, level, enemyType.statMultipliers);
 
     // ユニークIDを生成
     const id = `enemy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` as UniqueId;
@@ -98,8 +102,8 @@ export class EnemyGroupService {
       enemyType: enemyType.id,
       aiStrategy: enemyType.aiStrategy,
       dropItems: enemyType.dropItems,
-      expReward: Math.floor(enemyType.expReward * levelMultiplier),
-      moneyReward: Math.floor(enemyType.moneyReward * levelMultiplier)
+      expReward: Math.floor(enemyType.expReward * (1 + (level - 1) * 0.1)),
+      moneyReward: Math.floor(enemyType.moneyReward * (1 + (level - 1) * 0.1))
     };
   }
 
@@ -151,21 +155,28 @@ export class EnemyGroupService {
   /**
    * ステータスをスケーリングする
    * @param baseStats 基本ステータス
-   * @param multiplier 倍率
+   * @param level レベル
+   * @param statMultipliers ステータスごとの倍率（オプション）
    */
-  private scaleStats(baseStats: DefaultStats, multiplier: number): DefaultStats {
+  private scaleStats(
+    baseStats: DefaultStats, 
+    level: number, 
+    statMultipliers?: Partial<Record<keyof DefaultStats, number>>
+  ): DefaultStats {
+    const defaultMultiplier = 1 + (level - 1) * 0.1; // レベルごとに10%増加（デフォルト）
+    
     return {
-      maxHp: Math.floor(baseStats.maxHp * multiplier),
-      maxMp: Math.floor(baseStats.maxMp * multiplier),
-      attack: Math.floor(baseStats.attack * multiplier),
-      defense: Math.floor(baseStats.defense * multiplier),
-      magic: Math.floor(baseStats.magic * multiplier),
-      magicDefense: Math.floor(baseStats.magicDefense * multiplier),
-      speed: Math.floor(baseStats.speed * multiplier),
-      luck: Math.floor(baseStats.luck * multiplier),
-      accuracy: Math.floor(baseStats.accuracy * multiplier),
-      evasion: Math.floor(baseStats.evasion * multiplier),
-      criticalRate: baseStats.criticalRate * multiplier
+      maxHp: Math.floor(baseStats.maxHp * (statMultipliers?.maxHp !== undefined ? 1 + (level - 1) * statMultipliers.maxHp : defaultMultiplier)),
+      maxMp: Math.floor(baseStats.maxMp * (statMultipliers?.maxMp !== undefined ? 1 + (level - 1) * statMultipliers.maxMp : defaultMultiplier)),
+      attack: Math.floor(baseStats.attack * (statMultipliers?.attack !== undefined ? 1 + (level - 1) * statMultipliers.attack : defaultMultiplier)),
+      defense: Math.floor(baseStats.defense * (statMultipliers?.defense !== undefined ? 1 + (level - 1) * statMultipliers.defense : defaultMultiplier)),
+      magic: Math.floor(baseStats.magic * (statMultipliers?.magic !== undefined ? 1 + (level - 1) * statMultipliers.magic : defaultMultiplier)),
+      magicDefense: Math.floor(baseStats.magicDefense * (statMultipliers?.magicDefense !== undefined ? 1 + (level - 1) * statMultipliers.magicDefense : defaultMultiplier)),
+      speed: Math.floor(baseStats.speed * (statMultipliers?.speed !== undefined ? 1 + (level - 1) * statMultipliers.speed : defaultMultiplier)),
+      luck: Math.floor(baseStats.luck * (statMultipliers?.luck !== undefined ? 1 + (level - 1) * statMultipliers.luck : defaultMultiplier)),
+      accuracy: Math.floor(baseStats.accuracy * (statMultipliers?.accuracy !== undefined ? 1 + (level - 1) * statMultipliers.accuracy : defaultMultiplier)),
+      evasion: Math.floor(baseStats.evasion * (statMultipliers?.evasion !== undefined ? 1 + (level - 1) * statMultipliers.evasion : defaultMultiplier)),
+      criticalRate: baseStats.criticalRate * (statMultipliers?.criticalRate !== undefined ? 1 + (level - 1) * statMultipliers.criticalRate : defaultMultiplier)
     };
   }
 

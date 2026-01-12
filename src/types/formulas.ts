@@ -217,17 +217,5 @@ export interface CustomFormulas<
    */
   damageFormulas?: Partial<Record<TSkillType, DamageFormula<TStats>>>;
   
-  /**
-   * 後方互換性のための個別ダメージ計算式
-   * @deprecated damageFormulasを使用してください
-   */
-  physicalDamage?: DamageFormula<TStats>;
-  
-  /**
-   * 後方互換性のための個別ダメージ計算式
-   * @deprecated damageFormulasを使用してください
-   */
-  magicDamage?: DamageFormula<TStats>;
-  
   heal?: HealFormula<TStats>;
 }

@@ -197,13 +197,14 @@ export class BattleService {
       return { success: false, message: 'Invalid skill or target' };
     }
 
-    // MP消費チェック
-    if (attacker.currentMp < skill.mpCost) {
-      return { success: false, message: 'Not enough MP' };
+    // コスト消費チェック
+    const costCheck = this.checkSkillCost(attacker, skill);
+    if (!costCheck.canUse) {
+      return { success: false, message: costCheck.message || 'Cannot use skill' };
     }
 
-    // MP消費
-    attacker.currentMp -= skill.mpCost;
+    // コスト消費
+    this.consumeSkillCost(attacker, skill);
 
     // 回復スキルの場合
     if (skill.type === 'heal') {
@@ -302,13 +303,23 @@ export class BattleService {
 
   /**
    * 戦闘を終了する
+   * @param restoreHp 戦闘終了後にHPを回復するか（デフォルト: false）
    */
-  endBattle(): BattleRewards {
+  endBattle(restoreHp: boolean = false): BattleRewards {
     if (!this.state) {
       throw new Error('Battle not started');
     }
 
     this.state.phase = 'ended' as BattlePhase;
+
+    // HPを回復
+    if (restoreHp) {
+      for (const character of this.state.playerParty) {
+        if (character.currentHp > 0) {
+          character.currentHp = character.stats.maxHp;
+        }
+      }
+    }
 
     // 報酬を計算
     let totalExp = 0;
@@ -365,5 +376,63 @@ export class BattleService {
   private isPlayerCharacter(actor: any): boolean {
     if (!this.state) return false;
     return this.state.playerParty.some(c => c.id === actor.id);
+  }
+
+  /**
+   * スキルコストをチェックする
+   */
+  private checkSkillCost(actor: any, skill: any): { canUse: boolean; message?: string } {
+    // 新しいcost形式をチェック
+    if (skill.cost) {
+      if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {
+        return { canUse: false, message: 'Not enough MP' };
+      }
+      if (skill.cost.hp !== undefined && actor.currentHp <= skill.cost.hp) {
+        return { canUse: false, message: 'Not enough HP' };
+      }
+      // カスタムコストのチェック
+      for (const [key, value] of Object.entries(skill.cost)) {
+        if (key !== 'mp' && key !== 'hp' && value !== undefined && value !== null) {
+          const actorResource = (actor as any)[`current${key.charAt(0).toUpperCase()}${key.slice(1)}`];
+          if (actorResource !== undefined && actorResource < (value as number)) {
+            return { canUse: false, message: `Not enough ${key}` };
+          }
+        }
+      }
+    }
+    // 後方互換性: mpCost
+    else if (skill.mpCost > 0 && actor.currentMp < skill.mpCost) {
+      return { canUse: false, message: 'Not enough MP' };
+    }
+    
+    return { canUse: true };
+  }
+
+  /**
+   * スキルコストを消費する
+   */
+  private consumeSkillCost(actor: any, skill: any): void {
+    // 新しいcost形式を消費
+    if (skill.cost) {
+      if (skill.cost.mp !== undefined) {
+        actor.currentMp -= skill.cost.mp;
+      }
+      if (skill.cost.hp !== undefined) {
+        actor.currentHp -= skill.cost.hp;
+      }
+      // カスタムコストの消費
+      for (const [key, value] of Object.entries(skill.cost)) {
+        if (key !== 'mp' && key !== 'hp' && value !== undefined && value !== null) {
+          const resourceKey = `current${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+          if ((actor as any)[resourceKey] !== undefined) {
+            (actor as any)[resourceKey] -= (value as number);
+          }
+        }
+      }
+    }
+    // 後方互換性: mpCost
+    else if (skill.mpCost > 0) {
+      actor.currentMp -= skill.mpCost;
+    }
   }
 }

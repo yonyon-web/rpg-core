@@ -58,7 +58,9 @@ export type DefaultTargetType =
   | 'all-allies'      // 味方全体
   | 'self'            // 自分
   | 'random-enemies'  // 敵ランダム
-  | 'random-allies';  // 味方ランダム
+  | 'random-allies'   // 味方ランダム
+  | 'select-enemies'  // 敵を1~N体選択
+  | 'select-allies';  // 味方を1~N体選択
 
 
 
@@ -74,6 +76,17 @@ export interface StatusEffectApplication<
   probability: Probability;     // 付与確率
   duration: number;             // 持続ターン数
   power: number;                // 効果の強さ
+}
+
+/**
+ * スキルコスト
+ * - カスタマイズ可能なスキルコスト定義
+ * - MP以外のリソース（HP、SP、アイテム等）にも対応
+ */
+export interface SkillCost {
+  mp?: number;              // 消費MP
+  hp?: number;              // 消費HP
+  [key: string]: number | undefined;  // その他のカスタムコスト（SP、エナジー等）
 }
 
 /**
@@ -122,7 +135,8 @@ export interface Skill<
   targetType: TTargetType;  // 対象タイプ
   element: TElement;        // 属性
   power: number;            // 威力（倍率）
-  mpCost: number;           // 消費MP
+  cost?: SkillCost;         // 消費コスト（カスタマイズ可能）
+  mpCost: number;           // 消費MP（後方互換性のため維持）
   accuracy: number;         // 命中率（1.0 = 100%）
   criticalBonus: number;    // クリティカル率ボーナス
   isGuaranteedHit: boolean; // 必中フラグ
