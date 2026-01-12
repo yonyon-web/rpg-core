@@ -5,22 +5,60 @@
 
 import type { Combatant } from '../types/combatant';
 import type { BaseStats, DefaultStats } from '../types/stats';
-import type { Equipment, EquipmentSlot, EquipResult, UnequipResult, EquippedItems } from '../types/equipment';
+import type { 
+  Equipment, 
+  BaseEquipmentSlot,
+  DefaultEquipmentSlot,
+  BaseEquipmentType,
+  DefaultEquipmentType,
+  EquipResult, 
+  UnequipResult, 
+  EquippedItems 
+} from '../types/equipment';
 import * as equipmentCore from '../item/equipment';
+
+/**
+ * EquipmentService設定
+ * @template TSlot - 装備スロットタイプ
+ * @template TEquipType - 装備タイプ
+ */
+export interface EquipmentServiceConfig<
+  TSlot extends BaseEquipmentSlot = DefaultEquipmentSlot,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+> {
+  slotMapping?: equipmentCore.EquipmentSlotMapping<TSlot, TEquipType>;
+}
 
 /**
  * EquipmentService
  * 装備処理を管理するサービスクラス
  * 
  * @template TStats - ステータスの型（デフォルト: DefaultStats）
+ * @template TSlot - 装備スロットタイプ（デフォルト: DefaultEquipmentSlot）
+ * @template TEquipType - 装備タイプ（デフォルト: DefaultEquipmentType）
  * 
  * @example
+ * // デフォルト設定で使用
  * const service = new EquipmentService();
  * const result = service.equipItem(character, weapon, 'weapon');
+ * 
+ * @example
+ * // カスタムスロットマッピングで使用
+ * const customMapping = {
+ *   defaultSlot: { sword: 'mainHand', shield: 'offHand' },
+ *   validSlots: { sword: ['mainHand'], shield: ['offHand'] }
+ * };
+ * const service = new EquipmentService({ slotMapping: customMapping });
  */
-export class EquipmentService<TStats extends BaseStats = DefaultStats> {
-  constructor() {
-    // 初期化処理
+export class EquipmentService<
+  TStats extends BaseStats = DefaultStats,
+  TSlot extends BaseEquipmentSlot = DefaultEquipmentSlot,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+> {
+  private config: EquipmentServiceConfig<TSlot, TEquipType>;
+
+  constructor(config?: EquipmentServiceConfig<TSlot, TEquipType>) {
+    this.config = config || {};
   }
 
   /**
@@ -32,10 +70,10 @@ export class EquipmentService<TStats extends BaseStats = DefaultStats> {
    * @returns 装備結果
    */
   equipItem(
-    character: Combatant<TStats>, 
-    equipment: Equipment<TStats>, 
-    slot: EquipmentSlot
-  ): EquipResult {
+    character: Combatant<TStats, any, any, TSlot, TEquipType>, 
+    equipment: Equipment<TStats, TEquipType>, 
+    slot: TSlot
+  ): EquipResult<TStats, TEquipType> {
     // 装備可能かチェック
     if (!equipmentCore.canEquip(character, equipment)) {
       return {
@@ -45,7 +83,7 @@ export class EquipmentService<TStats extends BaseStats = DefaultStats> {
     }
 
     // スロットが適合するかチェック
-    if (!equipmentCore.validateEquipmentSlot(slot, equipment.type)) {
+    if (!equipmentCore.validateEquipmentSlot(slot, equipment.type, this.config.slotMapping)) {
       return {
         success: false,
         reason: 'このスロットには装備できません'
@@ -76,7 +114,10 @@ export class EquipmentService<TStats extends BaseStats = DefaultStats> {
    * @param slot - 装備スロット
    * @returns 解除結果
    */
-  unequipItem(character: Combatant<TStats>, slot: EquipmentSlot): UnequipResult {
+  unequipItem(
+    character: Combatant<TStats, any, any, TSlot, TEquipType>, 
+    slot: TSlot
+  ): UnequipResult<TStats, TEquipType> {
     if (!character.equipment) {
       return {
         success: true
@@ -100,7 +141,7 @@ export class EquipmentService<TStats extends BaseStats = DefaultStats> {
    * @param character - キャラクター
    * @returns 装備中のアイテム
    */
-  getEquippedItems(character: Combatant<TStats>): EquippedItems<TStats> {
+  getEquippedItems(character: Combatant<TStats, any, any, TSlot, TEquipType>): EquippedItems<TStats, TSlot, TEquipType> {
     return character.equipment || {};
   }
 
@@ -110,12 +151,14 @@ export class EquipmentService<TStats extends BaseStats = DefaultStats> {
    * @param character - キャラクター
    * @returns ステータス補正
    */
-  getEquipmentStats(character: Combatant<TStats>): Partial<TStats> {
+  getEquipmentStats(character: Combatant<TStats, any, any, TSlot, TEquipType>): Partial<TStats> {
     if (!character.equipment) {
       return {};
     }
 
-    const equipments = Object.values(character.equipment).filter((e): e is Equipment<TStats> => e !== undefined);
+    const equipments = Object.values(character.equipment).filter(
+      (e): e is Equipment<TStats, TEquipType> => e !== undefined
+    );
     return equipmentCore.calculateTotalEquipmentEffects(equipments);
   }
 }

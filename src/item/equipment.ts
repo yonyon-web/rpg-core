@@ -5,7 +5,13 @@
 
 import type { BaseStats, DefaultStats } from '../types/stats';
 import type { Combatant } from '../types/combatant';
-import type { Equipment, EquipmentSlot, EquipmentType } from '../types/equipment';
+import type { 
+  Equipment, 
+  BaseEquipmentSlot, 
+  DefaultEquipmentSlot,
+  BaseEquipmentType, 
+  DefaultEquipmentType 
+} from '../types/equipment';
 
 /**
  * 装備可能かチェック
@@ -14,9 +20,12 @@ import type { Equipment, EquipmentSlot, EquipmentType } from '../types/equipment
  * @param equipment - 装備アイテム
  * @returns 装備可能な場合true
  */
-export function canEquip<TStats extends BaseStats = DefaultStats>(
-  character: Combatant<TStats>,
-  equipment: Equipment<TStats>
+export function canEquip<
+  TStats extends BaseStats = DefaultStats,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+>(
+  character: Combatant<TStats, any, any, any, TEquipType>,
+  equipment: Equipment<TStats, TEquipType>
 ): boolean {
   // レベル要件チェック
   if (character.level < equipment.levelRequirement) {
@@ -27,21 +36,66 @@ export function canEquip<TStats extends BaseStats = DefaultStats>(
 }
 
 /**
- * 装備タイプに対応するスロットを取得
- * 
- * @param equipmentType - 装備タイプ
- * @returns 対応するスロット
+ * 装備タイプとスロットのマッピング設定
+ * @template TSlot - 装備スロットタイプ
+ * @template TEquipType - 装備タイプ
  */
-export function getSlotForEquipmentType(equipmentType: EquipmentType): EquipmentSlot {
-  const slotMap: Record<EquipmentType, EquipmentSlot> = {
+export type EquipmentSlotMapping<
+  TSlot extends BaseEquipmentSlot = DefaultEquipmentSlot,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+> = {
+  defaultSlot: Record<TEquipType, TSlot>;
+  validSlots: Record<TEquipType, TSlot[]>;
+};
+
+/**
+ * デフォルトの装備スロットマッピング
+ */
+export const defaultEquipmentSlotMapping: EquipmentSlotMapping<DefaultEquipmentSlot, DefaultEquipmentType> = {
+  defaultSlot: {
     weapon: 'weapon',
     shield: 'shield',
     helmet: 'head',
     armor: 'body',
-    accessory: 'accessory1' // デフォルトはaccessory1
-  };
-  
-  return slotMap[equipmentType];
+    accessory: 'accessory1'
+  },
+  validSlots: {
+    weapon: ['weapon'],
+    shield: ['shield'],
+    helmet: ['head'],
+    armor: ['body'],
+    accessory: ['accessory1', 'accessory2']
+  }
+};
+
+/**
+ * 装備タイプに対応するスロットを取得
+ * 
+ * @param equipmentType - 装備タイプ
+ * @param slotMapping - スロットマッピング設定（オプショナル）
+ * @returns 対応するスロット
+ * 
+ * @example
+ * // デフォルトマッピングを使用
+ * const slot = getSlotForEquipmentType('weapon');
+ * 
+ * @example
+ * // カスタムマッピングを使用
+ * const customMapping = {
+ *   defaultSlot: { sword: 'mainHand', bow: 'mainHand' },
+ *   validSlots: { sword: ['mainHand'], bow: ['mainHand'] }
+ * };
+ * const slot = getSlotForEquipmentType('sword', customMapping);
+ */
+export function getSlotForEquipmentType<
+  TSlot extends BaseEquipmentSlot = DefaultEquipmentSlot,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+>(
+  equipmentType: TEquipType,
+  slotMapping?: EquipmentSlotMapping<TSlot, TEquipType>
+): TSlot {
+  const mapping = slotMapping || (defaultEquipmentSlotMapping as any);
+  return mapping.defaultSlot[equipmentType];
 }
 
 /**
@@ -49,18 +103,31 @@ export function getSlotForEquipmentType(equipmentType: EquipmentType): Equipment
  * 
  * @param slot - 装備スロット
  * @param equipmentType - 装備タイプ
+ * @param slotMapping - スロットマッピング設定（オプショナル）
  * @returns 適合する場合true
+ * 
+ * @example
+ * // デフォルトマッピングを使用
+ * const isValid = validateEquipmentSlot('weapon', 'weapon');
+ * 
+ * @example
+ * // カスタムマッピングを使用
+ * const customMapping = {
+ *   defaultSlot: { sword: 'mainHand', dagger: 'offHand' },
+ *   validSlots: { sword: ['mainHand'], dagger: ['mainHand', 'offHand'] }
+ * };
+ * const isValid = validateEquipmentSlot('offHand', 'dagger', customMapping);
  */
-export function validateEquipmentSlot(slot: EquipmentSlot, equipmentType: EquipmentType): boolean {
-  const validSlots: Record<EquipmentType, EquipmentSlot[]> = {
-    weapon: ['weapon'],
-    shield: ['shield'],
-    helmet: ['head'],
-    armor: ['body'],
-    accessory: ['accessory1', 'accessory2']
-  };
-  
-  return validSlots[equipmentType]?.includes(slot) ?? false;
+export function validateEquipmentSlot<
+  TSlot extends BaseEquipmentSlot = DefaultEquipmentSlot,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+>(
+  slot: TSlot,
+  equipmentType: TEquipType,
+  slotMapping?: EquipmentSlotMapping<TSlot, TEquipType>
+): boolean {
+  const mapping = slotMapping || (defaultEquipmentSlotMapping as any);
+  return mapping.validSlots[equipmentType]?.includes(slot) ?? false;
 }
 
 /**
@@ -69,8 +136,11 @@ export function validateEquipmentSlot(slot: EquipmentSlot, equipmentType: Equipm
  * @param equipment - 装備アイテム
  * @returns ステータス補正
  */
-export function getEquipmentEffects<TStats extends BaseStats = DefaultStats>(
-  equipment: Equipment<TStats>
+export function getEquipmentEffects<
+  TStats extends BaseStats = DefaultStats,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+>(
+  equipment: Equipment<TStats, TEquipType>
 ): Partial<TStats> {
   return equipment.statModifiers;
 }
@@ -81,8 +151,11 @@ export function getEquipmentEffects<TStats extends BaseStats = DefaultStats>(
  * @param equipments - 装備アイテムの配列
  * @returns 合算されたステータス補正
  */
-export function calculateTotalEquipmentEffects<TStats extends BaseStats = DefaultStats>(
-  equipments: Equipment<TStats>[]
+export function calculateTotalEquipmentEffects<
+  TStats extends BaseStats = DefaultStats,
+  TEquipType extends BaseEquipmentType = DefaultEquipmentType
+>(
+  equipments: Equipment<TStats, TEquipType>[]
 ): Partial<TStats> {
   const total: Partial<TStats> = {};
   

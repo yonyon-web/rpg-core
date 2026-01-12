@@ -204,4 +204,137 @@ describe('EquipmentService', () => {
       expect(equipped).toEqual({});
     });
   });
+
+  describe('カスタム装備スロット', () => {
+    type CustomSlot = 'mainHand' | 'offHand' | 'head';
+    type CustomEquipType = 'sword' | 'dagger' | 'helmet';
+
+    function createCustomCharacter(id: string, level: number = 1): Combatant<DefaultStats, any, any, CustomSlot, CustomEquipType> {
+      const stats: DefaultStats = {
+        maxHp: 100,
+        maxMp: 50,
+        attack: 10,
+        defense: 5,
+        magic: 8,
+        magicDefense: 6,
+        speed: 7,
+        luck: 5,
+        accuracy: 0,
+        evasion: 0,
+        criticalRate: 0
+      };
+      
+      return {
+        id,
+        name: `Character ${id}`,
+        level,
+        stats,
+        currentHp: stats.maxHp,
+        currentMp: stats.maxMp,
+        currentExp: 0,
+        equipment: {},
+        statusEffects: [],
+        position: 0
+      };
+    }
+
+    function createCustomWeapon(
+      id: string, 
+      type: CustomEquipType,
+      attackBonus: number = 5
+    ): Equipment<DefaultStats, CustomEquipType> {
+      return {
+        id,
+        name: `Weapon ${id}`,
+        type,
+        levelRequirement: 1,
+        statModifiers: {
+          attack: attackBonus
+        }
+      };
+    }
+
+    test('カスタムスロットマッピングを使用できる', () => {
+      const customMapping = {
+        defaultSlot: {
+          sword: 'mainHand' as CustomSlot,
+          dagger: 'offHand' as CustomSlot,
+          helmet: 'head' as CustomSlot
+        },
+        validSlots: {
+          sword: ['mainHand' as CustomSlot],
+          dagger: ['mainHand' as CustomSlot, 'offHand' as CustomSlot],
+          helmet: ['head' as CustomSlot]
+        }
+      };
+
+      const service = new EquipmentService<DefaultStats, CustomSlot, CustomEquipType>({ 
+        slotMapping: customMapping 
+      });
+      const character = createCustomCharacter('char1', 5);
+      const sword = createCustomWeapon('sword1', 'sword', 10);
+      
+      const result = service.equipItem(character, sword, 'mainHand');
+      
+      expect(result.success).toBe(true);
+      expect(character.equipment?.mainHand).toBe(sword);
+    });
+
+    test('カスタムスロットで複数のスロットに装備可能', () => {
+      const customMapping = {
+        defaultSlot: {
+          sword: 'mainHand' as CustomSlot,
+          dagger: 'offHand' as CustomSlot,
+          helmet: 'head' as CustomSlot
+        },
+        validSlots: {
+          sword: ['mainHand' as CustomSlot],
+          dagger: ['mainHand' as CustomSlot, 'offHand' as CustomSlot],
+          helmet: ['head' as CustomSlot]
+        }
+      };
+
+      const service = new EquipmentService<DefaultStats, CustomSlot, CustomEquipType>({ 
+        slotMapping: customMapping 
+      });
+      const character = createCustomCharacter('char1', 5);
+      const dagger = createCustomWeapon('dagger1', 'dagger', 5);
+      
+      // daggerはmainHandにもoffHandにも装備可能
+      const result1 = service.equipItem(character, dagger, 'mainHand');
+      expect(result1.success).toBe(true);
+      
+      service.unequipItem(character, 'mainHand');
+      
+      const result2 = service.equipItem(character, dagger, 'offHand');
+      expect(result2.success).toBe(true);
+    });
+
+    test('カスタムスロットで無効なスロットには装備できない', () => {
+      const customMapping = {
+        defaultSlot: {
+          sword: 'mainHand' as CustomSlot,
+          dagger: 'offHand' as CustomSlot,
+          helmet: 'head' as CustomSlot
+        },
+        validSlots: {
+          sword: ['mainHand' as CustomSlot],
+          dagger: ['mainHand' as CustomSlot, 'offHand' as CustomSlot],
+          helmet: ['head' as CustomSlot]
+        }
+      };
+
+      const service = new EquipmentService<DefaultStats, CustomSlot, CustomEquipType>({ 
+        slotMapping: customMapping 
+      });
+      const character = createCustomCharacter('char1', 5);
+      const sword = createCustomWeapon('sword1', 'sword', 10);
+      
+      // swordはoffHandには装備できない
+      const result = service.equipItem(character, sword, 'offHand');
+      
+      expect(result.success).toBe(false);
+      expect(result.reason).toContain('スロット');
+    });
+  });
 });
