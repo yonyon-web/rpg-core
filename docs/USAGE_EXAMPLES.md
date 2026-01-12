@@ -351,6 +351,120 @@ npm install rpg-core
 npx ts-node examples.ts
 ```
 
+## Example 8: カスタムステータスの使用
+
+rpg-coreは、ゲームごとに自由にステータスを定義できます。
+
+```typescript
+import { 
+  Combatant, 
+  BaseStats, 
+  calculateFinalStats,
+  StatusEffect 
+} from 'rpg-core';
+
+// 独自のステータス型を定義
+interface MyGameStats extends BaseStats {
+  // 基本能力値
+  strength: number;      // 力
+  intelligence: number;  // 知力
+  dexterity: number;     // 器用さ
+  vitality: number;      // 体力
+  
+  // 戦闘用ステータス
+  maxHp: number;
+  maxMp: number;
+  physicalAttack: number;
+  magicalAttack: number;
+  defense: number;
+  speed: number;
+}
+
+// カスタムステータスを持つキャラクター
+const customHero: Combatant<MyGameStats> = {
+  id: 'custom-hero-1',
+  name: 'カスタム勇者',
+  level: 10,
+  stats: {
+    strength: 75,
+    intelligence: 45,
+    dexterity: 60,
+    vitality: 80,
+    maxHp: 180,    // vitality * 2 + level * 5
+    maxMp: 90,     // intelligence * 2
+    physicalAttack: 90,  // strength * 1.2
+    magicalAttack: 54,   // intelligence * 1.2
+    defense: 70,   // vitality * 0.8 + strength * 0.2
+    speed: 65,     // dexterity * 1.0 + 5
+  },
+  currentHp: 180,
+  currentMp: 90,
+  statusEffects: [],
+  position: 0,
+};
+
+// 装備によるステータス修飾子
+const swordBonus: Partial<MyGameStats> = {
+  strength: 15,
+  physicalAttack: 20,
+};
+
+const armorBonus: Partial<MyGameStats> = {
+  vitality: 10,
+  defense: 15,
+  maxHp: 25,
+};
+
+// 最終ステータスを計算
+const finalStats = calculateFinalStats<MyGameStats>(
+  customHero.stats,
+  [swordBonus, armorBonus]
+);
+
+console.log('カスタムステータス:');
+console.log(`力: ${finalStats.strength} (+15 from sword)`);
+console.log(`体力: ${finalStats.vitality} (+10 from armor)`);
+console.log(`物理攻撃: ${finalStats.physicalAttack} (+20 from sword)`);
+console.log(`防御: ${finalStats.defense} (+15 from armor)`);
+console.log(`最大HP: ${finalStats.maxHp} (+25 from armor)`);
+
+// 別のゲーム用のステータス定義
+interface StrategyGameStats extends BaseStats {
+  hp: number;
+  movement: number;
+  shortRangeAttack: number;
+  longRangeAttack: number;
+  defense: number;
+  magicDefense: number;
+}
+
+const knight: Combatant<StrategyGameStats> = {
+  id: 'knight-1',
+  name: 'ナイト',
+  level: 5,
+  stats: {
+    hp: 45,
+    movement: 5,
+    shortRangeAttack: 12,
+    longRangeAttack: 0,
+    defense: 10,
+    magicDefense: 3,
+  },
+  currentHp: 45,
+  currentMp: 0,
+  statusEffects: [],
+  position: 0,
+};
+
+console.log('戦略ゲーム用ステータス:');
+console.log(`HP: ${knight.stats.hp}`);
+console.log(`移動力: ${knight.stats.movement}`);
+console.log(`近接攻撃: ${knight.stats.shortRangeAttack}`);
+console.log(`遠距離攻撃: ${knight.stats.longRangeAttack}`);
+```
+
+詳細な説明とベストプラクティスについては、[カスタムステータス設計ガイド](./CUSTOM_STATS_GUIDE.md)を参照してください。
+
 ## Next Steps
 
 Phase 1 provides the foundation for combat calculations. Future phases will add:

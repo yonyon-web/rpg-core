@@ -3,18 +3,34 @@
  */
 
 import { UniqueId } from './common';
-import { Stats } from './stats';
+import { BaseStats, DefaultStats } from './stats';
 import { StatusEffect } from './statusEffect';
 
 /**
  * 戦闘者基本インターフェース
  * - キャラクターと敵の共通属性
+ * - ジェネリック型TStatsでカスタムステータスをサポート
+ * 
+ * @template TStats - ステータスの型（デフォルト: DefaultStats）
+ * 
+ * @example
+ * // デフォルトのステータスを使用
+ * const combatant: Combatant = { ... };
+ * 
+ * @example
+ * // カスタムステータスを使用
+ * interface MyStats extends BaseStats {
+ *   strength: number;
+ *   intelligence: number;
+ *   dexterity: number;
+ * }
+ * const combatant: Combatant<MyStats> = { ... };
  */
-export interface Combatant {
+export interface Combatant<TStats extends BaseStats = DefaultStats> {
   id: UniqueId;              // ユニークID
   name: string;              // 名前
   level: number;             // レベル
-  stats: Stats;              // ステータス
+  stats: TStats;             // ステータス
   currentHp: number;         // 現在のHP
   currentMp: number;         // 現在のMP
   statusEffects: StatusEffect[]; // 現在の状態異常

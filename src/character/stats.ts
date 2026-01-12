@@ -2,56 +2,48 @@
  * キャラクターステータス計算モジュール
  */
 
-import { Stats } from '../types';
+import { BaseStats } from '../types';
 
 /**
  * 修飾子を適用した最終ステータスを計算
+ * 
+ * ジェネリック関数でカスタムステータス型をサポート
+ * 
+ * @template TStats - ステータスの型
  * @param baseStats - 基礎ステータス
  * @param modifiers - 適用するステータス修飾子の配列
  * @returns 計算された最終ステータス
+ * 
+ * @example
+ * // デフォルトステータスを使用
+ * const finalStats = calculateFinalStats(baseStats, [equipmentBonus, buffBonus]);
+ * 
+ * @example
+ * // カスタムステータスを使用
+ * interface MyStats extends BaseStats {
+ *   strength: number;
+ *   intelligence: number;
+ * }
+ * const finalStats = calculateFinalStats<MyStats>(baseStats, modifiers);
  */
-export function calculateFinalStats(
-  baseStats: Stats,
-  modifiers: Array<Partial<Stats>>
-): Stats {
+export function calculateFinalStats<TStats extends BaseStats>(
+  baseStats: TStats,
+  modifiers: Array<Partial<TStats>>
+): TStats {
   // 基礎ステータスから開始
-  const finalStats: Stats = { ...baseStats };
+  const finalStats: TStats = { ...baseStats };
 
   // 各修飾子を適用
   for (const modifier of modifiers) {
     // 修飾子に存在する各ステータスを適用
-    if (modifier.maxHp !== undefined) {
-      finalStats.maxHp = applyStatModifiers(finalStats.maxHp, modifier.maxHp);
-    }
-    if (modifier.maxMp !== undefined) {
-      finalStats.maxMp = applyStatModifiers(finalStats.maxMp, modifier.maxMp);
-    }
-    if (modifier.attack !== undefined) {
-      finalStats.attack = applyStatModifiers(finalStats.attack, modifier.attack);
-    }
-    if (modifier.defense !== undefined) {
-      finalStats.defense = applyStatModifiers(finalStats.defense, modifier.defense);
-    }
-    if (modifier.magic !== undefined) {
-      finalStats.magic = applyStatModifiers(finalStats.magic, modifier.magic);
-    }
-    if (modifier.magicDefense !== undefined) {
-      finalStats.magicDefense = applyStatModifiers(finalStats.magicDefense, modifier.magicDefense);
-    }
-    if (modifier.speed !== undefined) {
-      finalStats.speed = applyStatModifiers(finalStats.speed, modifier.speed);
-    }
-    if (modifier.luck !== undefined) {
-      finalStats.luck = applyStatModifiers(finalStats.luck, modifier.luck);
-    }
-    if (modifier.accuracy !== undefined) {
-      finalStats.accuracy = applyStatModifiers(finalStats.accuracy, modifier.accuracy);
-    }
-    if (modifier.evasion !== undefined) {
-      finalStats.evasion = applyStatModifiers(finalStats.evasion, modifier.evasion);
-    }
-    if (modifier.criticalRate !== undefined) {
-      finalStats.criticalRate = applyStatModifiers(finalStats.criticalRate, modifier.criticalRate);
+    for (const key in modifier) {
+      if (modifier[key] !== undefined) {
+        // BaseStatsはRecord<string, number>なので、すべての値はnumber型
+        (finalStats as Record<string, number>)[key] = applyStatModifiers(
+          (finalStats as Record<string, number>)[key],
+          modifier[key] as number
+        );
+      }
     }
   }
 
