@@ -5,12 +5,16 @@
  * and rule judgments in JRPG-style games.
  */
 
-/**
- * Example function to demonstrate the setup
- * This will be replaced with actual game logic
- */
-export function greet(name: string): string {
-  return `Hello, ${name}! Welcome to rpg-core.`;
-}
+// Export types
+export * from './types';
+
+// Export configuration
+export * from './config';
+
+// Export combat modules
+export * from './combat';
+
+// Export character modules
+export * from './character';
 
 export const version = '1.0.0';
