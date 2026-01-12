@@ -465,6 +465,160 @@ console.log(`遠距離攻撃: ${knight.stats.longRangeAttack}`);
 
 詳細な説明とベストプラクティスについては、[カスタムステータス設計ガイド](./CUSTOM_STATS_GUIDE.md)を参照してください。
 
+## Example 9: カスタム状態異常の使用
+
+rpg-coreは、状態異常の種類とカテゴリも自由に定義できます。
+
+```typescript
+import { 
+  Combatant, 
+  Skill,
+  DefaultStats,
+  BaseStatusEffectType,
+  BaseStatusEffectCategory 
+} from 'rpg-core';
+
+// SF風の独自状態異常タイプを定義
+type SciFiEffectType = 
+  | 'emp-stunned'     // EMP麻痺
+  | 'shield-boost'    // シールド強化
+  | 'overheated'      // オーバーヒート
+  | 'cloaked'         // ステルス
+  | 'system-hacked';  // システムハッキング
+
+type SciFiEffectCategory = 
+  | 'malfunction'     // 機能障害
+  | 'enhancement'     // 強化
+  | 'tactical';       // 戦術的
+
+// カスタム状態異常を持つキャラクター
+const cyberWarrior: Combatant<
+  DefaultStats,           // ステータスはデフォルト
+  SciFiEffectType,        // 状態異常タイプはカスタム
+  SciFiEffectCategory     // カテゴリもカスタム
+> = {
+  id: 'cyber-1',
+  name: 'サイバー戦士',
+  level: 15,
+  stats: {
+    maxHp: 120,
+    maxMp: 80,
+    attack: 55,
+    defense: 45,
+    magic: 60,
+    magicDefense: 40,
+    speed: 70,
+    luck: 20,
+    accuracy: 15,
+    evasion: 12,
+    criticalRate: 0.08,
+  },
+  currentHp: 120,
+  currentMp: 80,
+  statusEffects: [
+    {
+      id: 'effect-1',
+      type: 'shield-boost',     // カスタムタイプ
+      category: 'enhancement',  // カスタムカテゴリ
+      name: 'シールド強化',
+      description: '防御力が50%上昇',
+      power: 50,
+      duration: 3,
+      maxDuration: 3,
+      stackCount: 1,
+      maxStack: 1,
+      canBeDispelled: true,
+      appliedAt: Date.now(),
+    }
+  ],
+  position: 0,
+};
+
+// カスタム状態異常を付与するスキル
+const empBlast: Skill<SciFiEffectType> = {
+  id: 'skill-emp',
+  name: 'EMP爆弾',
+  type: 'special',
+  targetType: 'single-enemy',
+  element: 'lightning',
+  power: 0.8,
+  mpCost: 20,
+  accuracy: 0.95,
+  criticalBonus: 0,
+  isGuaranteedHit: false,
+  statusEffects: [
+    {
+      effectType: 'emp-stunned',  // カスタム状態異常
+      probability: 0.8,
+      duration: 2,
+      power: 0,
+    }
+  ],
+  description: 'EMP爆弾で敵の電子機器を無効化',
+};
+
+console.log('SF風カスタム状態異常:');
+console.log(`キャラクター: ${cyberWarrior.name}`);
+console.log(`状態異常: ${cyberWarrior.statusEffects[0].name}`);
+console.log(`カテゴリ: ${cyberWarrior.statusEffects[0].category}`);
+console.log(`スキル: ${empBlast.name} - ${empBlast.description}`);
+
+// ホラーゲーム風の状態異常
+type HorrorEffectType = 
+  | 'sanity-drain'    // 正気度低下
+  | 'possessed'       // 憑依
+  | 'hallucination';  // 幻覚
+
+type HorrorEffectCategory = 
+  | 'psychological'   // 精神的
+  | 'supernatural';   // 超常的
+
+const investigator: Combatant<DefaultStats, HorrorEffectType, HorrorEffectCategory> = {
+  id: 'investigator-1',
+  name: '探偵',
+  level: 8,
+  stats: {
+    maxHp: 80,
+    maxMp: 60,
+    attack: 30,
+    defense: 25,
+    magic: 40,
+    magicDefense: 50,
+    speed: 55,
+    luck: 25,
+    accuracy: 12,
+    evasion: 10,
+    criticalRate: 0.05,
+  },
+  currentHp: 80,
+  currentMp: 60,
+  statusEffects: [
+    {
+      id: 'effect-2',
+      type: 'sanity-drain',
+      category: 'psychological',
+      name: '正気度低下',
+      description: '精神的な恐怖により正気度が低下',
+      power: 10,
+      duration: 5,
+      maxDuration: 10,
+      stackCount: 2,
+      maxStack: 5,
+      canBeDispelled: false,
+      appliedAt: Date.now(),
+    }
+  ],
+  position: 0,
+};
+
+console.log('ホラー風カスタム状態異常:');
+console.log(`キャラクター: ${investigator.name}`);
+console.log(`状態異常: ${investigator.statusEffects[0].name}`);
+console.log(`スタック数: ${investigator.statusEffects[0].stackCount}/${investigator.statusEffects[0].maxStack}`);
+```
+
+詳細な説明とベストプラクティスについては、[カスタマイズ可能な型システム設計ガイド](./CUSTOMIZATION_GUIDE.md)を参照してください。
+
 ## Next Steps
 
 Phase 1 provides the foundation for combat calculations. Future phases will add:

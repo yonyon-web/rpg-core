@@ -3,7 +3,7 @@
  */
 
 import { UniqueId, Element, Probability } from './common';
-import { StatusEffectType } from './statusEffect';
+import { BaseStatusEffectType, DefaultStatusEffectType } from './statusEffect';
 
 /**
  * スキルタイプ
@@ -30,9 +30,13 @@ export type TargetType =
 
 /**
  * 状態異常付与情報
+ * 
+ * @template TEffectType - 状態異常タイプ（デフォルト: DefaultStatusEffectType）
  */
-export interface StatusEffectApplication {
-  effectType: StatusEffectType; // 状態異常タイプ
+export interface StatusEffectApplication<
+  TEffectType extends BaseStatusEffectType = DefaultStatusEffectType
+> {
+  effectType: TEffectType;      // 状態異常タイプ
   probability: Probability;     // 付与確率
   duration: number;             // 持続ターン数
   power: number;                // 効果の強さ
@@ -40,8 +44,29 @@ export interface StatusEffectApplication {
 
 /**
  * スキル定義
+ * 
+ * @template TEffectType - 状態異常タイプ（デフォルト: DefaultStatusEffectType）
+ * 
+ * @example
+ * // デフォルトの状態異常を使用
+ * const skill: Skill = {
+ *   id: 'skill-1',
+ *   statusEffects: [{ effectType: 'poison', ... }],
+ *   // ...
+ * };
+ * 
+ * @example
+ * // カスタム状態異常を使用
+ * type MyEffectType = 'freeze' | 'shock';
+ * const skill: Skill<MyEffectType> = {
+ *   id: 'skill-1',
+ *   statusEffects: [{ effectType: 'freeze', ... }],
+ *   // ...
+ * };
  */
-export interface Skill {
+export interface Skill<
+  TEffectType extends BaseStatusEffectType = DefaultStatusEffectType
+> {
   id: UniqueId;             // スキルID
   name: string;             // スキル名
   type: SkillType;          // スキルタイプ
@@ -52,6 +77,6 @@ export interface Skill {
   accuracy: number;         // 命中率（1.0 = 100%）
   criticalBonus: number;    // クリティカル率ボーナス
   isGuaranteedHit: boolean; // 必中フラグ
-  statusEffects?: StatusEffectApplication[]; // 付与する状態異常
+  statusEffects?: StatusEffectApplication<TEffectType>[]; // 付与する状態異常
   description: string;      // スキル説明
 }

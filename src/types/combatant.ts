@@ -4,17 +4,26 @@
 
 import { UniqueId } from './common';
 import { BaseStats, DefaultStats } from './stats';
-import { StatusEffect } from './statusEffect';
+import { 
+  StatusEffect, 
+  BaseStatusEffectType, 
+  DefaultStatusEffectType,
+  BaseStatusEffectCategory,
+  DefaultStatusEffectCategory 
+} from './statusEffect';
 
 /**
  * 戦闘者基本インターフェース
  * - キャラクターと敵の共通属性
  * - ジェネリック型TStatsでカスタムステータスをサポート
+ * - ジェネリック型TEffectType, TEffectCategoryでカスタム状態異常をサポート
  * 
  * @template TStats - ステータスの型（デフォルト: DefaultStats）
+ * @template TEffectType - 状態異常タイプ（デフォルト: DefaultStatusEffectType）
+ * @template TEffectCategory - 状態異常カテゴリ（デフォルト: DefaultStatusEffectCategory）
  * 
  * @example
- * // デフォルトのステータスを使用
+ * // デフォルトのステータスと状態異常を使用
  * const combatant: Combatant = { ... };
  * 
  * @example
@@ -22,17 +31,26 @@ import { StatusEffect } from './statusEffect';
  * interface MyStats extends BaseStats {
  *   strength: number;
  *   intelligence: number;
- *   dexterity: number;
  * }
  * const combatant: Combatant<MyStats> = { ... };
+ * 
+ * @example
+ * // カスタム状態異常を使用
+ * type MyEffectType = 'freeze' | 'shock';
+ * type MyEffectCategory = 'elemental' | 'physical';
+ * const combatant: Combatant<DefaultStats, MyEffectType, MyEffectCategory> = { ... };
  */
-export interface Combatant<TStats extends BaseStats = DefaultStats> {
+export interface Combatant<
+  TStats extends BaseStats = DefaultStats,
+  TEffectType extends BaseStatusEffectType = DefaultStatusEffectType,
+  TEffectCategory extends BaseStatusEffectCategory = DefaultStatusEffectCategory
+> {
   id: UniqueId;              // ユニークID
   name: string;              // 名前
   level: number;             // レベル
   stats: TStats;             // ステータス
   currentHp: number;         // 現在のHP
   currentMp: number;         // 現在のMP
-  statusEffects: StatusEffect[]; // 現在の状態異常
+  statusEffects: StatusEffect<TEffectType, TEffectCategory>[]; // 現在の状態異常
   position: number;          // 隊列位置（0=前列、1=後列）
 }

@@ -5,9 +5,16 @@
 import { UniqueId, Timestamp } from './common';
 
 /**
- * 状態異常タイプ
+ * 状態異常タイプの基本型
+ * - ゲームごとにカスタマイズ可能
  */
-export type StatusEffectType = 
+export type BaseStatusEffectType = string;
+
+/**
+ * デフォルト状態異常タイプ
+ * - 標準的なJRPGで使用される状態異常
+ */
+export type DefaultStatusEffectType = 
   | 'poison'        // 毒
   | 'burn'          // 炎上
   | 'paralysis'     // 麻痺
@@ -25,9 +32,22 @@ export type StatusEffectType =
   | 'speed-down';   // 素早さダウン
 
 /**
- * 状態異常カテゴリ
+ * 後方互換性のためのエイリアス
+ * @deprecated DefaultStatusEffectTypeを使用してください。将来のバージョンで削除される可能性があります。
  */
-export type StatusEffectCategory = 
+export type StatusEffectType = DefaultStatusEffectType;
+
+/**
+ * 状態異常カテゴリの基本型
+ * - ゲームごとにカスタマイズ可能
+ */
+export type BaseStatusEffectCategory = string;
+
+/**
+ * デフォルト状態異常カテゴリ
+ * - 標準的なJRPGで使用されるカテゴリ
+ */
+export type DefaultStatusEffectCategory = 
   | 'debuff'        // デバフ
   | 'buff'          // バフ
   | 'dot'           // 継続ダメージ
@@ -35,12 +55,44 @@ export type StatusEffectCategory =
   | 'disable';      // 行動制限
 
 /**
- * 状態異常
+ * 後方互換性のためのエイリアス
+ * @deprecated DefaultStatusEffectCategoryを使用してください。将来のバージョンで削除される可能性があります。
  */
-export interface StatusEffect {
+export type StatusEffectCategory = DefaultStatusEffectCategory;
+
+/**
+ * 状態異常
+ * 
+ * ジェネリック型でカスタム状態異常タイプとカテゴリをサポート
+ * 
+ * @template TType - 状態異常タイプ（デフォルト: DefaultStatusEffectType）
+ * @template TCategory - 状態異常カテゴリ（デフォルト: DefaultStatusEffectCategory）
+ * 
+ * @example
+ * // デフォルトの状態異常を使用
+ * const effect: StatusEffect = { 
+ *   type: 'poison',
+ *   category: 'dot',
+ *   // ...
+ * };
+ * 
+ * @example
+ * // カスタム状態異常を使用
+ * type MyEffectType = 'freeze' | 'shock' | 'bleeding';
+ * type MyEffectCategory = 'elemental' | 'physical';
+ * const effect: StatusEffect<MyEffectType, MyEffectCategory> = {
+ *   type: 'freeze',
+ *   category: 'elemental',
+ *   // ...
+ * };
+ */
+export interface StatusEffect<
+  TType extends BaseStatusEffectType = DefaultStatusEffectType,
+  TCategory extends BaseStatusEffectCategory = DefaultStatusEffectCategory
+> {
   id: UniqueId;                     // 状態異常ID
-  type: StatusEffectType;           // タイプ
-  category: StatusEffectCategory;   // カテゴリ
+  type: TType;                      // タイプ
+  category: TCategory;              // カテゴリ
   name: string;                     // 名前
   description: string;              // 説明
   power: number;                    // 効果の強さ
