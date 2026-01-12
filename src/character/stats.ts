@@ -1,25 +1,25 @@
 /**
- * Character stats calculation module
+ * キャラクターステータス計算モジュール
  */
 
 import { Stats } from '../types';
 
 /**
- * Calculate final stats with modifiers
- * @param baseStats - Base stats
- * @param modifiers - Array of stat modifiers to apply
- * @returns Final calculated stats
+ * 修飾子を適用した最終ステータスを計算
+ * @param baseStats - 基礎ステータス
+ * @param modifiers - 適用するステータス修飾子の配列
+ * @returns 計算された最終ステータス
  */
 export function calculateFinalStats(
   baseStats: Stats,
   modifiers: Array<Partial<Stats>>
 ): Stats {
-  // Start with base stats
+  // 基礎ステータスから開始
   const finalStats: Stats = { ...baseStats };
 
-  // Apply each modifier
+  // 各修飾子を適用
   for (const modifier of modifiers) {
-    // Apply each stat that exists in the modifier
+    // 修飾子に存在する各ステータスを適用
     if (modifier.maxHp !== undefined) {
       finalStats.maxHp = applyStatModifiers(finalStats.maxHp, modifier.maxHp);
     }
@@ -59,10 +59,10 @@ export function calculateFinalStats(
 }
 
 /**
- * Apply a single stat modifier
- * @param baseStat - Base stat value
- * @param modifier - Modifier to apply
- * @returns Modified stat value (minimum 0)
+ * 単一のステータス修飾子を適用
+ * @param baseStat - 基礎ステータス値
+ * @param modifier - 適用する修飾子
+ * @returns 修正されたステータス値（最小値0）
  */
 export function applyStatModifiers(baseStat: number, modifier: number): number {
   const result = baseStat + modifier;

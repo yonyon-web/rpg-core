@@ -1,87 +1,87 @@
 /**
- * Accuracy and critical hit calculation module
+ * 命中率とクリティカル判定モジュール
  */
 
 import { Combatant, Skill, GameConfig } from '../types';
 
 /**
- * Calculate hit rate
- * @param attacker - Attacking combatant
- * @param target - Target combatant
- * @param skill - Skill being used
- * @returns Hit rate (0.0~1.0)
+ * 命中率を計算
+ * @param attacker - 攻撃者
+ * @param target - 対象
+ * @param skill - 使用スキル
+ * @returns 命中率（0.0〜1.0）
  */
 export function calculateHitRate(
   attacker: Combatant,
   target: Combatant,
   skill: Skill
 ): number {
-  // Guaranteed hit skills always hit
+  // 必中スキルは常に命中
   if (skill.isGuaranteedHit) {
     return 1.0;
   }
 
-  // Base hit rate from skill accuracy
+  // スキルの基本命中率
   let hitRate = skill.accuracy;
 
-  // Add attacker's accuracy stat (converted to percentage)
+  // 攻撃者の命中ステータスを加算（パーセンテージに変換）
   hitRate += attacker.stats.accuracy / 100;
 
-  // Subtract target's evasion stat (converted to percentage)
+  // 対象の回避ステータスを減算（パーセンテージに変換）
   hitRate -= target.stats.evasion / 100;
 
-  // Ensure minimum 5% hit rate
+  // 最低5%の命中率を保証
   hitRate = Math.max(0.05, hitRate);
 
-  // Cap at 100%
+  // 100%を上限とする
   hitRate = Math.min(1.0, hitRate);
 
   return hitRate;
 }
 
 /**
- * Check if attack hits
- * @param hitRate - Hit rate (0.0~1.0)
- * @returns true if hit, false if miss
+ * 攻撃が命中するか判定
+ * @param hitRate - 命中率（0.0〜1.0）
+ * @returns 命中した場合true、外れた場合false
  */
 export function checkHit(hitRate: number): boolean {
   return Math.random() < hitRate;
 }
 
 /**
- * Calculate critical hit rate
- * @param attacker - Attacking combatant
- * @param skill - Skill being used
- * @param config - Game configuration
- * @returns Critical rate (0.0~1.0)
+ * クリティカル率を計算
+ * @param attacker - 攻撃者
+ * @param skill - 使用スキル
+ * @param config - ゲーム設定
+ * @returns クリティカル率（0.0〜1.0）
  */
 export function calculateCriticalRate(
   attacker: Combatant,
   skill: Skill,
   config: GameConfig
 ): number {
-  // Start with base critical rate from config
+  // 設定の基本クリティカル率から開始
   let critRate = config.combat.baseCriticalRate;
 
-  // Add luck-based critical rate (1 luck = 0.1% crit)
+  // 運によるクリティカル率を加算（運1 = 0.1%クリティカル）
   critRate += attacker.stats.luck * 0.001;
 
-  // Add combatant's critical rate stat
+  // 戦闘者のクリティカル率ステータスを加算
   critRate += attacker.stats.criticalRate;
 
-  // Add skill's critical bonus
+  // スキルのクリティカルボーナスを加算
   critRate += skill.criticalBonus;
 
-  // Cap at 100%
+  // 100%を上限とする
   critRate = Math.min(1.0, critRate);
 
   return critRate;
 }
 
 /**
- * Check if attack is critical
- * @param criticalRate - Critical rate (0.0~1.0)
- * @returns true if critical, false otherwise
+ * 攻撃がクリティカルになるか判定
+ * @param criticalRate - クリティカル率（0.0〜1.0）
+ * @returns クリティカルの場合true、それ以外false
  */
 export function checkCritical(criticalRate: number): boolean {
   return Math.random() < criticalRate;

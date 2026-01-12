@@ -1,34 +1,34 @@
 /**
- * Damage and combat result type definitions
+ * ダメージと戦闘結果の型定義
  */
 
 /**
- * Damage modifier information
+ * ダメージ修飾子情報
  */
 export interface DamageModifier {
-  source: string;   // Modifier source (e.g., "Critical", "Element")
-  multiplier: number; // Modifier multiplier
+  source: string;   // 修飾子の出所（例：「クリティカル」「属性」）
+  multiplier: number; // 修飾子倍率
 }
 
 /**
- * Damage calculation result
- * - Contains detailed information about damage calculation
+ * ダメージ計算結果
+ * - ダメージ計算の詳細情報を含む
  */
 export interface DamageResult {
-  finalDamage: number;          // Final damage
-  baseDamage: number;           // Base damage
-  isCritical: boolean;          // Critical hit flag
-  isHit: boolean;               // Hit flag
-  elementalModifier: number;    // Elemental modifier
-  variance: number;             // Damage variance
-  appliedModifiers: DamageModifier[]; // Applied modifiers
+  finalDamage: number;          // 最終ダメージ
+  baseDamage: number;           // 基礎ダメージ
+  isCritical: boolean;          // クリティカルヒットフラグ
+  isHit: boolean;               // 命中フラグ
+  elementalModifier: number;    // 属性倍率
+  variance: number;             // ダメージ分散値
+  appliedModifiers: DamageModifier[]; // 適用された修飾子
 }
 
 /**
- * Heal result
+ * 回復結果
  */
 export interface HealResult {
-  healAmount: number;       // Heal amount
-  overheal: number;         // Overheal amount
-  isCritical: boolean;      // Critical heal flag
+  healAmount: number;       // 回復量
+  overheal: number;         // オーバーヒール量
+  isCritical: boolean;      // クリティカル回復フラグ
 }

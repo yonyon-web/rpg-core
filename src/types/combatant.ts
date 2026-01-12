@@ -1,5 +1,5 @@
 /**
- * Combatant-related type definitions
+ * 戦闘者関連の型定義
  */
 
 import { UniqueId } from './common';
@@ -7,16 +7,16 @@ import { Stats } from './stats';
 import { StatusEffect } from './statusEffect';
 
 /**
- * Combatant base interface
- * - Common attributes for characters and enemies
+ * 戦闘者基本インターフェース
+ * - キャラクターと敵の共通属性
  */
 export interface Combatant {
-  id: UniqueId;              // Unique ID
-  name: string;              // Name
-  level: number;             // Level
-  stats: Stats;              // Stats
-  currentHp: number;         // Current HP
-  currentMp: number;         // Current MP
-  statusEffects: StatusEffect[]; // Current status effects
-  position: number;          // Formation position (0=front, 1=back)
+  id: UniqueId;              // ユニークID
+  name: string;              // 名前
+  level: number;             // レベル
+  stats: Stats;              // ステータス
+  currentHp: number;         // 現在のHP
+  currentMp: number;         // 現在のMP
+  statusEffects: StatusEffect[]; // 現在の状態異常
+  position: number;          // 隊列位置（0=前列、1=後列）
 }

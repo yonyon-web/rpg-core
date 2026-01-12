@@ -1,32 +1,32 @@
 /**
- * Game configuration type definitions
+ * ゲーム設定の型定義
  */
 
 import { Probability } from './common';
 
 /**
- * Combat configuration
+ * 戦闘設定
  */
 export interface CombatConfig {
-  baseCriticalRate: Probability;    // Base critical rate (0.05 = 5%)
-  criticalMultiplier: number;       // Critical multiplier (2.0 = 2x)
-  damageVariance: number;           // Damage variance (0.1 = ±10%)
-  escapeBaseRate: Probability;      // Base escape rate (0.5 = 50%)
-  escapeRateIncrement: number;      // Escape rate increment per attempt (0.1 = +10%)
-  preemptiveStrikeThreshold: number; // Speed difference threshold for preemptive strike
-  speedVariance: number;            // Turn order random variance
+  baseCriticalRate: Probability;    // 基本クリティカル率（0.05 = 5%）
+  criticalMultiplier: number;       // クリティカル倍率（2.0 = 2倍）
+  damageVariance: number;           // ダメージ分散（0.1 = ±10%）
+  escapeBaseRate: Probability;      // 基本逃走成功率（0.5 = 50%）
+  escapeRateIncrement: number;      // 逃走試行毎の成功率上昇（0.1 = +10%）
+  preemptiveStrikeThreshold: number; // 先制攻撃の素早さ差閾値
+  speedVariance: number;            // 行動順のランダム幅
 }
 
 /**
- * Experience curve type
+ * 経験値曲線タイプ
  */
 export type ExpCurveType = 
-  | 'linear'        // Linear (level × base)
-  | 'exponential'   // Exponential (base × level ^ growth rate)
-  | 'custom';       // Custom
+  | 'linear'        // 線形（レベル × 基本値）
+  | 'exponential'   // 指数（基本値 × レベル ^ 成長率）
+  | 'custom';       // カスタム
 
 /**
- * Stat growth rates
+ * ステータス成長率
  */
 export interface StatGrowthRates {
   maxHp: number;
@@ -40,30 +40,30 @@ export interface StatGrowthRates {
 }
 
 /**
- * Growth configuration
+ * 成長設定
  */
 export interface GrowthConfig {
-  expCurve: ExpCurveType;           // Experience curve type
-  baseExpRequired: number;          // Base experience required (100)
-  expGrowthRate: number;            // Experience growth rate (1.2)
-  statGrowthRates: StatGrowthRates; // Stat growth rates
-  maxLevel: number;                 // Maximum level (99)
+  expCurve: ExpCurveType;           // 経験値曲線タイプ
+  baseExpRequired: number;          // 基本必要経験値（100）
+  expGrowthRate: number;            // 経験値成長率（1.2）
+  statGrowthRates: StatGrowthRates; // ステータス成長率
+  maxLevel: number;                 // 最大レベル（99）
 }
 
 /**
- * Balance configuration
+ * バランス設定
  */
 export interface BalanceConfig {
-  maxPartySize: number;             // Maximum party size
-  dropRateModifier: number;         // Drop rate modifier (1.0 = 100%)
+  maxPartySize: number;             // 最大パーティサイズ
+  dropRateModifier: number;         // ドロップ率修飾子（1.0 = 100%）
 }
 
 /**
- * Game configuration
- * - Overall game parameters and settings
+ * ゲーム設定
+ * - ゲーム全体のパラメータと設定
  */
 export interface GameConfig {
-  combat: CombatConfig;     // Combat parameters
-  growth: GrowthConfig;     // Growth parameters
-  balance: BalanceConfig;   // Balance adjustments
+  combat: CombatConfig;     // 戦闘パラメータ
+  growth: GrowthConfig;     // 成長パラメータ
+  balance: BalanceConfig;   // バランス調整
 }

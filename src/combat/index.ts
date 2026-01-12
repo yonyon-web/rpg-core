@@ -1,5 +1,5 @@
 /**
- * Combat module exports
+ * 戦闘モジュールのエクスポート
  */
 
 export * from './accuracy';

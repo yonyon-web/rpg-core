@@ -1,21 +1,21 @@
 /**
- * Stats-related type definitions
+ * ステータス関連の型定義
  */
 
 /**
- * Stats structure
- * - Character or enemy stats
+ * ステータス構造体
+ * - キャラクターまたは敵のステータス
  */
 export interface Stats {
-  maxHp: number;            // Maximum HP
-  maxMp: number;            // Maximum MP
-  attack: number;           // Attack power
-  defense: number;          // Defense power
-  magic: number;            // Magic power
-  magicDefense: number;     // Magic defense
-  speed: number;            // Speed/Agility
-  luck: number;             // Luck
-  accuracy: number;         // Accuracy modifier
-  evasion: number;          // Evasion modifier
-  criticalRate: number;     // Critical rate modifier
+  maxHp: number;            // 最大HP
+  maxMp: number;            // 最大MP
+  attack: number;           // 攻撃力
+  defense: number;          // 防御力
+  magic: number;            // 魔力
+  magicDefense: number;     // 魔法防御
+  speed: number;            // 素早さ
+  luck: number;             // 運
+  accuracy: number;         // 命中率補正
+  evasion: number;          // 回避率補正
+  criticalRate: number;     // クリティカル率補正
 }

@@ -1,5 +1,5 @@
 /**
- * Character module exports
+ * キャラクターモジュールのエクスポート
  */
 
 export * from './stats';

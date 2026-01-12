@@ -1,5 +1,5 @@
 /**
- * Type definitions exports
+ * 型定義のエクスポート
  */
 
 export * from './common';

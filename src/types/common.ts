@@ -1,50 +1,50 @@
 /**
- * Common type definitions for rpg-core
+ * rpg-coreの共通型定義
  */
 
 /**
- * Unique ID type
- * - Used for identifying all entities
+ * ユニークID型
+ * - すべてのエンティティの識別に使用
  */
 export type UniqueId = string;
 
 /**
- * Timestamp type
- * - UNIX timestamp in milliseconds
+ * タイムスタンプ型
+ * - ミリ秒単位のUNIXタイムスタンプ
  */
 export type Timestamp = number;
 
 /**
- * Probability type
- * - Range from 0.0 (0%) to 1.0 (100%)
+ * 確率型
+ * - 0.0（0%）から1.0（100%）の範囲
  */
 export type Probability = number;
 
 /**
- * Percentage type
- * - Range from 0 to 100
+ * パーセンテージ型
+ * - 0から100の範囲
  */
 export type Percentage = number;
 
 /**
- * Element type
- * - Represents various elemental types in the game
+ * 属性タイプ
+ * - ゲーム内の各種属性を表現
  */
 export type Element = 
-  | 'none'      // No element
-  | 'fire'      // Fire
-  | 'water'     // Water
-  | 'earth'     // Earth
-  | 'wind'      // Wind
-  | 'lightning' // Lightning
-  | 'ice'       // Ice
-  | 'light'     // Light
-  | 'dark';     // Dark
+  | 'none'      // 無属性
+  | 'fire'      // 炎
+  | 'water'     // 水
+  | 'earth'     // 土
+  | 'wind'      // 風
+  | 'lightning' // 雷
+  | 'ice'       // 氷
+  | 'light'     // 光
+  | 'dark';     // 闇
 
 /**
- * Element resistance map
- * - Resistance value for each element (0.0~2.0)
- * - 1.0 = normal, 0.5 = half damage, 2.0 = double damage, 0 = immune
+ * 属性耐性マップ
+ * - 各属性に対する耐性値（0.0〜2.0）
+ * - 1.0 = 通常、0.5 = 半減、2.0 = 2倍ダメージ、0 = 無効
  */
 export interface ElementResistance {
   fire: number;
