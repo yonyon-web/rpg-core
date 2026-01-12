@@ -22,13 +22,13 @@ import type { GameConfig as BaseGameConfig } from './config';
  * - プロジェクト全体で使用する型を一元的に定義
  * - この設定を使用することで、各所で個別に型パラメータを指定する必要がなくなる
  * 
- * @template TStats - ステータスの型
- * @template TStatusEffectType - 状態異常タイプ
- * @template TStatusEffectCategory - 状態異常カテゴリ
- * @template TElement - 属性タイプ
- * @template TSkillType - スキルタイプ
- * @template TTargetType - 対象タイプ
- * @template TExpCurveType - 経験値曲線タイプ
+ * @template TStats - ステータスの型（例: HP、攻撃力など）
+ * @template TStatusEffectType - 状態異常タイプ（例: 'poison', 'paralysis'など）
+ * @template TStatusEffectCategory - 状態異常カテゴリ（例: 'debuff', 'buff'など）
+ * @template TElement - 属性タイプ（例: 'fire', 'water'など）
+ * @template TSkillType - スキルタイプ（例: 'physical', 'magic'など）
+ * @template TTargetType - 対象タイプ（例: 'single-enemy', 'all-enemies'など）
+ * @template TExpCurveType - 経験値曲線タイプ（例: 'linear', 'exponential'など）
  * 
  * @example
  * // デフォルトのJRPG設定
