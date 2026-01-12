@@ -40,7 +40,7 @@ interface CraftRecipe {
   name: string;
   materials: { itemId: UniqueId; quantity: number }[];
   result: { itemId: UniqueId; quantity: number };
-  successRate: Probability;
+  successRate: Probability; // Success rate for crafting (0.0 - 1.0)
   requirements?: {
     level?: number;
     skillId?: UniqueId;
@@ -89,7 +89,7 @@ interface CraftResult {
 interface EnhanceConfig {
   maxLevel: number;
   baseSuccessRate: Probability;
-  successRateDecay: number; // レベルごとの成功率減少
+  successRateDecay: number; // Success rate decrease per level
   failurePenalty: 'none' | 'downgrade' | 'destroy';
 }
 
@@ -134,12 +134,12 @@ interface EnhanceResult {
 **型定義:**
 ```typescript
 interface GameState {
-  version: string;
-  timestamp: number;
+  version: string; // Semantic version format (e.g., "1.0.0")
+  timestamp: number; // Unix timestamp in milliseconds
   player: {
-    party: Combatant[];
-    inventory: Item[];
-    gold: number;
+    party: Combatant[]; // Max 4 members
+    inventory: Item[]; // Max items depends on game config
+    gold: number; // Non-negative integer
   };
   progress: {
     completedQuests: string[];
@@ -149,13 +149,13 @@ interface GameState {
 }
 
 interface SaveSlot {
-  id: number;
-  name: string;
+  id: number; // Unique slot ID (1-N)
+  name: string; // User-defined save name
   gameState: GameState;
   metadata: {
-    playtime: number;
+    playtime: number; // Total playtime in seconds
     saveDate: Date;
-    location: string;
+    location: string; // Current location/area name
   };
 }
 ```
@@ -285,7 +285,12 @@ Phase 4でも以下の基準を維持：
   - Phase 4: 4サービス ⏳
 
 **テスト:**
-- 総テスト数: 350+ 見込み
+- 総テスト数: 390-420 見込み（Phase 4で約120-150テスト追加予定）
+  - CraftService: 約30テスト
+  - EnhanceService: 約25テスト
+  - SaveLoadService: 約35テスト
+  - SimulationService: 約30テスト
+  - 統合テスト: 約10-20テスト
 - テストカバレッジ: 85%以上維持
 - すべてのテストがパス
 
