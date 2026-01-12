@@ -50,18 +50,20 @@ export function addItemToInventory(
         };
       } else if (canAdd > 0) {
         // 一部を既存スロットに追加し、残りを新スロットに
-        existingSlot.quantity = maxStack;
         const remaining = quantity - canAdd;
         
-        // 新しいスロットを追加
+        // 新しいスロットを追加できるか確認
         if (inventory.usedSlots >= inventory.maxSlots && !options?.allowOverflow) {
           return {
             success: false,
             slotsUsed: 0,
-            itemsAdded: canAdd, // 部分的に追加された
+            itemsAdded: 0, // 追加できなかった
             failureReason: 'インベントリが満杯です'
           };
         }
+        
+        // ここで既存スロットを更新
+        existingSlot.quantity = maxStack;
         
         const newSlot: InventorySlot = {
           item,

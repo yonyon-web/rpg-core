@@ -140,6 +140,24 @@ describe('InventoryService', () => {
         expect(result.success).toBe(false);
         expect(result.failureReason).toBe('インベントリが満杯です');
       });
+      
+      it('スタック上限を超え新スロットが必要な時にインベントリが満杯の場合、追加に失敗する', () => {
+        const inventory = createEmptyInventory();
+        inventory.maxSlots = 1; // 1スロットのみ
+        const service = new InventoryService(inventory);
+        
+        // 既に98個追加されている
+        service.addItem(potionItem, 98);
+        
+        // 5個追加しようとするが、maxStack=99を超えるため新スロットが必要
+        // しかしインベントリが満杯なので失敗する
+        const result = service.addItem(potionItem, 5);
+        
+        expect(result.success).toBe(false);
+        expect(result.failureReason).toBe('インベントリが満杯です');
+        expect(result.itemsAdded).toBe(0); // 追加されていない
+        expect(inventory.slots[0].quantity).toBe(98); // 元の数量のまま
+      });
     });
     
     describe('removeItem', () => {
