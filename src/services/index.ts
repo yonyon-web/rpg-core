@@ -10,3 +10,4 @@ export * from './RewardService';
 export * from './EquipmentService';
 export * from './PartyService';
 export * from './StatusEffectService';
+export * from './SkillLearnService';
