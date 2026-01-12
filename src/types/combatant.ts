@@ -51,6 +51,7 @@ export interface Combatant<
   stats: TStats;             // ステータス
   currentHp: number;         // 現在のHP
   currentMp: number;         // 現在のMP
+  currentExp?: number;       // 現在の経験値（オプショナル）
   statusEffects: StatusEffect<TEffectType, TEffectCategory>[]; // 現在の状態異常
   position: number;          // 隊列位置（0=前列、1=後列）
 }
