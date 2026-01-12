@@ -420,6 +420,7 @@ export function removeResource(
     return false;
   }
   
+  // currentが0以上の場合、resourcesを初期化して値を設定
   if (!inventory.resources) {
     inventory.resources = {};
   }
