@@ -298,3 +298,128 @@ export function calculateElementalModifier(
   // 攻撃属性に対する耐性値を返す
   return targetResistance[attackElement];
 }
+
+/**
+ * 汎用ダメージ計算
+ * - スキルタイプに基づいて適切なダメージ計算式を選択
+ * - カスタム計算式が定義されている場合はそれを使用
+ * - 未定義のスキルタイプにはデフォルト計算式を使用
+ * 
+ * @param attacker - 攻撃者
+ * @param target - 対象
+ * @param skill - 使用スキル
+ * @param config - ゲーム設定
+ * @returns ダメージ計算結果
+ * 
+ * @example
+ * // デフォルトスキルタイプ（physical, magic）
+ * const damage = calculateDamage(hero, enemy, physicalSkill, config);
+ * 
+ * @example
+ * // カスタムスキルタイプ（laser, plasma等）
+ * const damage = calculateDamage(robot, alien, laserSkill, sciFiConfig);
+ */
+export function calculateDamage(
+  attacker: Combatant,
+  target: Combatant,
+  skill: Skill,
+  config: GameConfig
+): DamageResult {
+  const appliedModifiers: Array<{ source: string; multiplier: number }> = [];
+
+  // 攻撃が命中するか判定
+  const hitRate = calculateHitRate(attacker, target, skill, config);
+  const isHit = checkHit(hitRate);
+
+  if (!isHit) {
+    return {
+      finalDamage: 0,
+      baseDamage: 0,
+      isCritical: false,
+      isHit: false,
+      elementalModifier: 1.0,
+      variance: 0,
+      appliedModifiers: [],
+    };
+  }
+
+  // クリティカルヒット判定
+  const criticalRate = calculateCriticalRate(attacker, skill, config);
+  const isCritical = checkCritical(criticalRate);
+
+  // スキルタイプに基づいてダメージ計算式を選択
+  let baseDamage: number;
+  const skillType = skill.type as string;
+
+  // 1. スキルタイプごとのカスタム計算式を確認
+  if (config.customFormulas?.damageFormulas?.[skillType]) {
+    baseDamage = config.customFormulas.damageFormulas[skillType]!(attacker, target, skill, isCritical, config);
+  }
+  // 2. 後方互換性: 旧形式のphysicalDamage/magicDamageをチェック
+  else if (skillType === 'physical' && config.customFormulas?.physicalDamage) {
+    baseDamage = config.customFormulas.physicalDamage(attacker, target, skill, isCritical, config);
+  }
+  else if (skillType === 'magic' && config.customFormulas?.magicDamage) {
+    baseDamage = config.customFormulas.magicDamage(attacker, target, skill, isCritical, config);
+  }
+  // 3. デフォルト計算式を使用
+  else {
+    if (skillType === 'physical') {
+      baseDamage = defaultPhysicalDamageFormula(
+        attacker as Combatant<DefaultStats, any, any>,
+        target as Combatant<DefaultStats, any, any>,
+        skill,
+        isCritical,
+        config
+      );
+    } else if (skillType === 'magic') {
+      baseDamage = defaultMagicDamageFormula(
+        attacker as Combatant<DefaultStats, any, any>,
+        target as Combatant<DefaultStats, any, any>,
+        skill,
+        isCritical,
+        config
+      );
+    } else {
+      // 未定義のスキルタイプには汎用計算式を使用（攻撃力ベース）
+      baseDamage = Math.max(1, (attacker.stats as any).attack * skill.power - (target.stats as any).defense);
+    }
+  }
+
+  // クリティカル補正を適用
+  let finalDamage = baseDamage;
+  if (isCritical) {
+    const critMultiplier = config.combat.criticalMultiplier;
+    finalDamage *= critMultiplier;
+    appliedModifiers.push({ source: 'critical', multiplier: critMultiplier });
+  }
+
+  // 属性倍率を適用（属性が定義されている場合）
+  let elementalModifier = 1.0;
+  if (skill.element && skill.element !== 'none' && (target.stats as any).elementalResistance) {
+    elementalModifier = calculateElementalModifier(
+      skill.element as DefaultElement,
+      (target.stats as any).elementalResistance as DefaultElementResistance
+    );
+    finalDamage *= elementalModifier;
+    appliedModifiers.push({ source: 'elemental', multiplier: elementalModifier });
+  }
+
+  // ランダム分散を適用
+  const varianceRange = config.combat.damageVariance;
+  const variance = 1.0 + (Math.random() * 2 - 1) * varianceRange;
+  finalDamage *= variance;
+
+  // 最低ダメージを1に設定
+  finalDamage = Math.max(1, Math.floor(finalDamage));
+
+  return {
+    finalDamage,
+    baseDamage,
+    isCritical,
+    isHit: true,
+    elementalModifier,
+    variance,
+    appliedModifiers,
+  };
+}

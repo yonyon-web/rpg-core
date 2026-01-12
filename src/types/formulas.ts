@@ -151,25 +151,83 @@ export type HealFormula<
 /**
  * カスタム計算式のコレクション
  * - ゲーム全体で使用する計算式をまとめて定義
+ * - スキルタイプごとにダメージ計算式を定義可能
  * 
  * @template TStats - カスタムステータス型
+ * @template TSkillType - スキルタイプ（デフォルト: string）
  * 
  * @example
- * // カスタム計算式を定義
+ * // デフォルトのスキルタイプを使用
  * const myFormulas: CustomFormulas<MyStats> = {
  *   hitRate: (attacker, target, skill) => { ... },
  *   criticalRate: (attacker, skill, config) => { ... },
- *   physicalDamage: (attacker, target, skill, isCritical, config) => { ... },
- *   magicDamage: (attacker, target, skill, isCritical, config) => { ... },
+ *   damageFormulas: {
+ *     physical: (attacker, target, skill, isCritical, config) => { ... },
+ *     magic: (attacker, target, skill, isCritical, config) => { ... },
+ *   },
  *   heal: (caster, target, skill, config) => { ... },
+ * };
+ * 
+ * @example
+ * // カスタムスキルタイプを使用（アクションRPG）
+ * type ActionSkillType = 'light-attack' | 'heavy-attack' | 'special-move';
+ * const actionFormulas: CustomFormulas<MyStats, ActionSkillType> = {
+ *   damageFormulas: {
+ *     'light-attack': (attacker, target, skill, isCritical, config) => {
+ *       return attacker.stats.speed * skill.power;
+ *     },
+ *     'heavy-attack': (attacker, target, skill, isCritical, config) => {
+ *       return attacker.stats.strength * skill.power * 2;
+ *     },
+ *     'special-move': (attacker, target, skill, isCritical, config) => {
+ *       return attacker.stats.technique * skill.power * 3;
+ *     },
+ *   },
+ * };
+ * 
+ * @example
+ * // SF向けスキルタイプ
+ * type SciFiSkillType = 'laser' | 'plasma' | 'kinetic';
+ * const sciFiFormulas: CustomFormulas<MyStats, SciFiSkillType> = {
+ *   damageFormulas: {
+ *     laser: (attacker, target, skill, isCritical, config) => {
+ *       const energyDamage = attacker.stats.energyWeapons * skill.power;
+ *       return energyDamage - (target.stats.shielding * 0.5);
+ *     },
+ *     plasma: (attacker, target, skill, isCritical, config) => {
+ *       return attacker.stats.plasmaCore * skill.power * 1.5;
+ *     },
+ *     kinetic: (attacker, target, skill, isCritical, config) => {
+ *       return attacker.stats.ballisticWeapons * skill.power - target.stats.armor;
+ *     },
+ *   },
  * };
  */
 export interface CustomFormulas<
-  TStats extends BaseStats = BaseStats
+  TStats extends BaseStats = BaseStats,
+  TSkillType extends string = string
 > {
   hitRate?: HitRateFormula<TStats>;
   criticalRate?: CriticalRateFormula<TStats>;
+  
+  /**
+   * スキルタイプごとのダメージ計算式マップ
+   * - 各スキルタイプに対応する計算式を定義
+   * - 未定義のスキルタイプには汎用計算式またはデフォルト計算式が使用される
+   */
+  damageFormulas?: Partial<Record<TSkillType, DamageFormula<TStats>>>;
+  
+  /**
+   * 後方互換性のための個別ダメージ計算式
+   * @deprecated damageFormulasを使用してください
+   */
   physicalDamage?: DamageFormula<TStats>;
+  
+  /**
+   * 後方互換性のための個別ダメージ計算式
+   * @deprecated damageFormulasを使用してください
+   */
   magicDamage?: DamageFormula<TStats>;
+  
   heal?: HealFormula<TStats>;
 }

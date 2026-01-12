@@ -17,7 +17,7 @@ import {
   BattleResult
 } from '../types';
 import { calculateTurnOrder, checkPreemptiveStrike } from '../combat/turnOrder';
-import { calculatePhysicalDamage, calculateMagicDamage } from '../combat/damage';
+import { calculateDamage } from '../combat/damage';
 import { checkHit, checkCritical, calculateHitRate, calculateCriticalRate } from '../combat/accuracy';
 import { defaultGameConfig } from '../config/defaultConfig';
 
@@ -157,40 +157,31 @@ export class BattleService {
       isGuaranteedHit: false,
       power: 1.0,
       criticalBonus: 0,
-      type: 'physical'
+      type: 'physical',
+      element: 'none'
     };
 
-    // 命中率計算
-    const hitRate = calculateHitRate(attacker, target, basicAttackSkill, defaultGameConfig);
-    const hitCheck = checkHit(hitRate);
-    
-    if (!hitCheck) {
-      return { success: true, missed: true, message: 'Miss!' };
-    }
-
-    // クリティカル率計算
-    const critRate = calculateCriticalRate(attacker, basicAttackSkill, defaultGameConfig);
-    const isCritical = checkCritical(critRate);
-
-    // ダメージ計算
-    const damageResult = calculatePhysicalDamage(
+    // 汎用ダメージ計算を使用
+    const damageResult = calculateDamage(
       attacker,
       target,
       basicAttackSkill,
       defaultGameConfig
     );
 
-    // クリティカル補正は既にダメージ計算に含まれている
-    const finalDamage = damageResult.finalDamage;
+    // ミスの場合
+    if (!damageResult.isHit) {
+      return { success: true, missed: true, message: 'Miss!' };
+    }
 
     // ダメージを適用
-    target.currentHp = Math.max(0, target.currentHp - finalDamage);
+    target.currentHp = Math.max(0, target.currentHp - damageResult.finalDamage);
 
     return {
       success: true,
-      damage: finalDamage,
-      critical: isCritical,
-      message: isCritical ? 'Critical hit!' : 'Hit!'
+      damage: damageResult.finalDamage,
+      critical: damageResult.isCritical,
+      message: damageResult.isCritical ? 'Critical hit!' : 'Hit!'
     };
   }
 
@@ -214,36 +205,8 @@ export class BattleService {
     // MP消費
     attacker.currentMp -= skill.mpCost;
 
-    // 命中率計算
-    const hitRate = calculateHitRate(attacker, target, skill, defaultGameConfig);
-    const hitCheck = checkHit(hitRate);
-    
-    if (!hitCheck) {
-      return { success: true, missed: true, message: 'Miss!' };
-    }
-
-    // クリティカル率計算
-    const critRate = calculateCriticalRate(attacker, skill, defaultGameConfig);
-    const isCritical = checkCritical(critRate);
-
-    // ダメージ計算（スキルタイプによる）
-    let damageResult;
-    if (skill.type === 'physical') {
-      damageResult = calculatePhysicalDamage(
-        attacker,
-        target,
-        skill,
-        defaultGameConfig
-      );
-    } else if (skill.type === 'magic') {
-      damageResult = calculateMagicDamage(
-        attacker,
-        target,
-        skill,
-        defaultGameConfig
-      );
-    } else if (skill.type === 'heal') {
-      // 回復処理
+    // 回復スキルの場合
+    if (skill.type === 'heal') {
       const healAmount = Math.floor(attacker.stats.magic * skill.power);
       target.currentHp = Math.min(target.stats.maxHp, target.currentHp + healAmount);
       return {
@@ -251,8 +214,20 @@ export class BattleService {
         heal: healAmount,
         message: `Healed ${healAmount} HP!`
       };
-    } else {
-      return { success: false, message: 'Unknown skill type' };
+    }
+
+    // ダメージスキルの場合：汎用ダメージ計算を使用
+    // これにより任意のスキルタイプ（physical, magic, laser, plasma等）に対応
+    const damageResult = calculateDamage(
+      attacker,
+      target,
+      skill,
+      defaultGameConfig
+    );
+
+    // ミスの場合
+    if (!damageResult.isHit) {
+      return { success: true, missed: true, message: 'Miss!' };
     }
 
     // ダメージを適用
@@ -261,8 +236,8 @@ export class BattleService {
     return {
       success: true,
       damage: damageResult.finalDamage,
-      critical: isCritical,
-      message: isCritical ? 'Critical hit!' : 'Hit!'
+      critical: damageResult.isCritical,
+      message: damageResult.isCritical ? 'Critical hit!' : 'Hit!'
     };
   }
 
