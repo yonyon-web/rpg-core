@@ -12,23 +12,22 @@ import {
   BattleState,
   Combatant
 } from '../types';
-import { GameTypeConfig } from '../types/gameTypes';
 import { Skill } from '../types/skill';
 import { UniqueId } from '../types/common';
 
 /**
  * CommandServiceクラス
  */
-export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
-  private state: CommandState<TConfig> | null = null;
-  private battleState: BattleState<TConfig> | null = null;
+export class CommandService {
+  private state: CommandState | null = null;
+  private battleState: BattleState | null = null;
 
   /**
    * コマンド選択を開始する
    * @param actor 行動するキャラクター
    * @param battleState 戦闘状態
    */
-  startCommandSelection(actor: Character<TConfig>, battleState: BattleState<TConfig>): CommandState<TConfig> {
+  startCommandSelection(actor: Character, battleState: BattleState): CommandState {
     this.battleState = battleState;
     this.state = {
       stage: 'selecting-action',
@@ -50,7 +49,7 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * 利用可能なコマンドを取得する
    * @param actor キャラクター
    */
-  getAvailableCommands(actor: Character<TConfig>): CommandOption[] {
+  getAvailableCommands(actor: Character): CommandOption[] {
     const commands: CommandOption[] = [];
 
     // 攻撃は常に可能
@@ -71,14 +70,6 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
         description: 'スキルを使用する'
       });
     }
-
-    // アイテムは後で実装
-    // commands.push({
-    //   type: 'item',
-    //   label: 'アイテム',
-    //   enabled: false,
-    //   description: 'アイテムを使用する'
-    // });
 
     // 防御は常に可能
     commands.push({
@@ -123,7 +114,6 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
 
       case 'item':
         this.state.stage = 'selecting-item';
-        // アイテムは後で実装
         this.state.availableItems = [];
         break;
 
@@ -138,7 +128,7 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * スキルを選択する
    * @param skill スキル
    */
-  selectSkill(skill: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>): void {
+  selectSkill(skill: Skill): void {
     if (!this.state) {
       throw new Error('Command selection not started');
     }
@@ -159,7 +149,6 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
 
     this.state.selectedItemId = itemId;
     this.state.stage = 'selecting-target';
-    // アイテムターゲットは後で実装
     this.state.availableTargets = [];
   }
 
@@ -167,7 +156,7 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * ターゲットを選択する
    * @param target ターゲット
    */
-  selectTarget(target: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>): void {
+  selectTarget(target: Combatant): void {
     if (!this.state) {
       throw new Error('Command selection not started');
     }
@@ -179,7 +168,7 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * 複数ターゲットを選択する
    * @param targets ターゲットリスト
    */
-  selectTargets(targets: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]): void {
+  selectTargets(targets: Combatant[]): void {
     if (!this.state) {
       throw new Error('Command selection not started');
     }
@@ -190,12 +179,12 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
   /**
    * コマンドを確定する
    */
-  confirm(): BattleAction<TConfig> {
+  confirm(): BattleAction {
     if (!this.state || !this.state.actor) {
       throw new Error('Command selection not started');
     }
 
-    const action: BattleAction<TConfig> = {
+    const action: BattleAction = {
       actor: this.state.actor,
       type: this.state.selectedCommand as any,
       skill: this.state.selectedSkill || undefined,
@@ -245,7 +234,7 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
   /**
    * 現在の状態を取得する
    */
-  getState(): CommandState<TConfig> | null {
+  getState(): CommandState | null {
     return this.state;
   }
 
@@ -253,19 +242,18 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * 使用可能なスキルを取得する
    * @param actor キャラクター
    */
-  private getUsableSkills(actor: Character<TConfig>): Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>[] {
+  private getUsableSkills(actor: Character): Skill[] {
     return actor.skills.filter(skill => actor.currentMp >= skill.mpCost);
   }
 
   /**
    * 攻撃対象を取得する
    */
-  private getAttackTargets(): Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[] {
+  private getAttackTargets(): Combatant[] {
     if (!this.battleState) {
       return [];
     }
 
-    // 敵グループから生存している敵を返す
     return this.battleState.enemyGroup.filter(e => e.currentHp > 0);
   }
 
@@ -273,12 +261,11 @@ export class CommandService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * スキルの対象を取得する
    * @param skill スキル
    */
-  private getSkillTargets(skill: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>): Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[] {
+  private getSkillTargets(skill: Skill): Combatant[] {
     if (!this.battleState) {
       return [];
     }
 
-    // ターゲットタイプに応じて対象を返す
     switch (skill.targetType) {
       case 'single-enemy':
         return this.battleState.enemyGroup.filter(e => e.currentHp > 0);

@@ -16,23 +16,23 @@ import {
   BattleRewards,
   BattleResult
 } from '../types';
-import { GameTypeConfig } from '../types/gameTypes';
 import { calculateTurnOrder, checkPreemptiveStrike } from '../combat/turnOrder';
 import { calculatePhysicalDamage, calculateMagicDamage } from '../combat/damage';
-import { checkHit, checkCritical } from '../combat/accuracy';
+import { checkHit, checkCritical, calculateHitRate, calculateCriticalRate } from '../combat/accuracy';
+import { defaultGameConfig } from '../config/defaultConfig';
 
 /**
  * BattleServiceクラス
  */
-export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
-  private state: BattleState<TConfig> | null = null;
+export class BattleService {
+  private state: BattleState | null = null;
 
   /**
    * 戦闘を開始する
    * @param party プレイヤーパーティ
    * @param enemies 敵グループ
    */
-  async startBattle(party: Character<TConfig>[], enemies: Enemy<TConfig>[]): Promise<void> {
+  async startBattle(party: Character[], enemies: Enemy[]): Promise<void> {
     // 戦闘状態を初期化
     this.state = {
       phase: 'initializing' as BattlePhase,
@@ -46,13 +46,14 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
 
     // 先制攻撃判定
     const preemptive = checkPreemptiveStrike(
-      party.map(c => c.stats.speed),
-      enemies.map(e => e.stats.speed)
+      party,
+      enemies,
+      defaultGameConfig
     );
 
     // 行動順を計算
     const allCombatants = [...party, ...enemies];
-    this.state.turnOrder = calculateTurnOrder(allCombatants);
+    this.state.turnOrder = calculateTurnOrder(allCombatants, defaultGameConfig);
 
     // フェーズを設定
     this.state.phase = 'player-turn' as BattlePhase;
@@ -80,7 +81,7 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
         ...this.state.playerParty.filter(c => c.currentHp > 0),
         ...this.state.enemyGroup.filter(e => e.currentHp > 0)
       ];
-      this.state.turnOrder = calculateTurnOrder(allCombatants);
+      this.state.turnOrder = calculateTurnOrder(allCombatants, defaultGameConfig);
     }
 
     const actor = this.getCurrentActor();
@@ -106,7 +107,7 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * @param actor 行動者
    * @param action 行動
    */
-  async executeAction(actor: any, action: BattleAction<TConfig>): Promise<ActionResult> {
+  async executeAction(actor: any, action: BattleAction): Promise<ActionResult> {
     if (!this.state) {
       throw new Error('Battle not started');
     }
@@ -142,7 +143,7 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
   /**
    * 通常攻撃を実行する
    */
-  private executeAttack(action: BattleAction<TConfig>): ActionResult {
+  private executeAttack(action: BattleAction): ActionResult {
     const attacker = action.actor;
     const target = action.targets[0];
 
@@ -150,30 +151,44 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
       return { success: false, message: 'No target' };
     }
 
-    // 命中判定
-    const hitCheck = checkHit(attacker.stats.speed, target.stats.speed);
-    if (!hitCheck.isHit) {
+    // 簡易的な通常攻撃スキルを作成
+    const basicAttackSkill: any = {
+      accuracy: 0.95,
+      isGuaranteedHit: false,
+      power: 1.0,
+      criticalBonus: 0,
+      type: 'physical'
+    };
+
+    // 命中率計算
+    const hitRate = calculateHitRate(attacker, target, basicAttackSkill, defaultGameConfig);
+    const hitCheck = checkHit(hitRate);
+    
+    if (!hitCheck) {
       return { success: true, missed: true, message: 'Miss!' };
     }
 
-    // クリティカル判定
-    const criticalCheck = checkCritical(0.05); // 5% critical rate
-    const isCritical = criticalCheck.isCritical;
+    // クリティカル率計算
+    const critRate = calculateCriticalRate(attacker, basicAttackSkill, defaultGameConfig);
+    const isCritical = checkCritical(critRate);
 
     // ダメージ計算
-    const damageResult = calculatePhysicalDamage({
-      attacker: attacker.stats,
-      target: target.stats,
-      power: 1.0,
-      criticalMultiplier: isCritical ? 1.5 : 1.0
-    });
+    const damageResult = calculatePhysicalDamage(
+      attacker,
+      target,
+      basicAttackSkill,
+      defaultGameConfig
+    );
+
+    // クリティカル補正は既にダメージ計算に含まれている
+    const finalDamage = damageResult.finalDamage;
 
     // ダメージを適用
-    target.currentHp = Math.max(0, target.currentHp - damageResult.finalDamage);
+    target.currentHp = Math.max(0, target.currentHp - finalDamage);
 
     return {
       success: true,
-      damage: damageResult.finalDamage,
+      damage: finalDamage,
       critical: isCritical,
       message: isCritical ? 'Critical hit!' : 'Hit!'
     };
@@ -182,7 +197,7 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
   /**
    * スキルを実行する
    */
-  private executeSkill(action: BattleAction<TConfig>): ActionResult {
+  private executeSkill(action: BattleAction): ActionResult {
     const attacker = action.actor;
     const skill = action.skill;
     const target = action.targets[0];
@@ -199,37 +214,37 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
     // MP消費
     attacker.currentMp -= skill.mpCost;
 
-    // 必中チェック
-    if (!skill.isGuaranteedHit) {
-      const hitCheck = checkHit(attacker.stats.speed, target.stats.speed, skill.accuracy);
-      if (!hitCheck.isHit) {
-        return { success: true, missed: true, message: 'Miss!' };
-      }
+    // 命中率計算
+    const hitRate = calculateHitRate(attacker, target, skill, defaultGameConfig);
+    const hitCheck = checkHit(hitRate);
+    
+    if (!hitCheck) {
+      return { success: true, missed: true, message: 'Miss!' };
     }
 
-    // クリティカル判定
-    const criticalCheck = checkCritical(skill.criticalBonus);
-    const isCritical = criticalCheck.isCritical;
+    // クリティカル率計算
+    const critRate = calculateCriticalRate(attacker, skill, defaultGameConfig);
+    const isCritical = checkCritical(critRate);
 
     // ダメージ計算（スキルタイプによる）
     let damageResult;
     if (skill.type === 'physical') {
-      damageResult = calculatePhysicalDamage({
-        attacker: attacker.stats,
-        target: target.stats,
-        power: skill.power,
-        criticalMultiplier: isCritical ? 1.5 : 1.0
-      });
+      damageResult = calculatePhysicalDamage(
+        attacker,
+        target,
+        skill,
+        defaultGameConfig
+      );
     } else if (skill.type === 'magic') {
-      damageResult = calculateMagicDamage({
-        attacker: attacker.stats,
-        target: target.stats,
-        power: skill.power,
-        criticalMultiplier: isCritical ? 1.5 : 1.0
-      });
+      damageResult = calculateMagicDamage(
+        attacker,
+        target,
+        skill,
+        defaultGameConfig
+      );
     } else if (skill.type === 'heal') {
       // 回復処理
-      const healAmount = Math.floor(attacker.stats.magicAttack * skill.power);
+      const healAmount = Math.floor(attacker.stats.magic * skill.power);
       target.currentHp = Math.min(target.stats.maxHp, target.currentHp + healAmount);
       return {
         success: true,
@@ -254,7 +269,7 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
   /**
    * 防御を実行する
    */
-  private executeDefend(action: BattleAction<TConfig>): ActionResult {
+  private executeDefend(action: BattleAction): ActionResult {
     // 防御はステータス効果として実装する必要があるが、
     // 現時点では簡易実装
     return {
@@ -352,7 +367,7 @@ export class BattleService<TConfig extends GameTypeConfig = GameTypeConfig> {
   /**
    * 現在の戦闘状態を取得する
    */
-  getState(): BattleState<TConfig> {
+  getState(): BattleState {
     if (!this.state) {
       throw new Error('Battle not started');
     }

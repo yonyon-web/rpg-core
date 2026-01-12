@@ -14,20 +14,19 @@ import {
   AIDecision,
   AIStrategy
 } from '../types';
-import { GameTypeConfig } from '../types/gameTypes';
 import { Skill } from '../types/skill';
 import { Combatant } from '../types/combatant';
 
 /**
  * EnemyAIServiceクラス
  */
-export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
+export class EnemyAIService {
   /**
    * 行動を決定する
    * @param enemy 敵
    * @param battleState 戦闘状態
    */
-  async decideAction(enemy: Enemy<TConfig>, battleState: BattleState<TConfig>): Promise<BattleAction<TConfig>> {
+  async decideAction(enemy: Enemy, battleState: BattleState): Promise<BattleAction> {
     // 戦闘状況を構築
     const situation = this.buildBattleSituation(battleState);
 
@@ -79,10 +78,10 @@ export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * @param situation 戦闘状況
    */
   evaluateSkills(
-    enemy: Enemy<TConfig>,
-    skills: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>[],
-    situation: BattleSituation<TConfig>
-  ): SkillEvaluation<TConfig>[] {
+    enemy: Enemy,
+    skills: Skill[],
+    situation: BattleSituation
+  ): SkillEvaluation[] {
     return skills.map(skill => {
       let score = 0;
 
@@ -91,10 +90,8 @@ export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
 
       // スキルタイプによる評価
       if (skill.type === 'heal' && situation.averageAllyHpRate < 0.5) {
-        // 味方のHPが低い場合は回復スキルを高く評価
         score += 50;
       } else if (skill.type === 'physical' || skill.type === 'magic') {
-        // 攻撃スキルは敵のHP率が高いほど有効
         score += situation.averageEnemyHpRate * 30;
       }
 
@@ -108,7 +105,6 @@ export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
       if (skill.mpCost > 0) {
         const mpRatio = enemy.currentMp / enemy.stats.maxMp;
         if (mpRatio < 0.3) {
-          // MPが少ない場合は低コストスキルを優先
           score -= skill.mpCost * 2;
         }
       }
@@ -128,25 +124,22 @@ export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
    * @param targets ターゲットリスト
    */
   evaluateTargets(
-    enemy: Enemy<TConfig>,
-    skill: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>,
-    targets: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]
-  ): TargetEvaluation<TConfig>[] {
+    enemy: Enemy,
+    skill: Skill,
+    targets: Combatant[]
+  ): TargetEvaluation[] {
     return targets.map(target => {
       let score = 0;
 
-      // HP率が低いターゲットを優先（倒しやすい）
       const hpRate = target.currentHp / target.stats.maxHp;
       score += (1 - hpRate) * 50;
 
-      // 防御力の低いターゲットを優先
       if (skill.type === 'physical') {
         score += (100 - target.stats.defense) / 2;
       } else if (skill.type === 'magic') {
         score += (100 - target.stats.magicDefense) / 2;
       }
 
-      // 予想ダメージを計算（簡易版）
       let expectedDamage = 0;
       if (skill.type === 'physical') {
         expectedDamage = Math.max(1, (enemy.stats.attack - target.stats.defense) * skill.power);
@@ -167,81 +160,49 @@ export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
 
   /**
    * 最適なスキルを選択する
-   * @param evaluations スキル評価リスト
-   * @param strategy AI戦略
    */
   selectBestSkill(
-    evaluations: SkillEvaluation<TConfig>[],
+    evaluations: SkillEvaluation[],
     strategy: AIStrategy
-  ): Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']> {
+  ): Skill {
     if (evaluations.length === 0) {
       throw new Error('No skills available');
     }
 
     if (strategy === 'random') {
-      // ランダム選択
       const randomIndex = Math.floor(Math.random() * evaluations.length);
       return evaluations[randomIndex].skill;
     }
 
-    // 最高スコアのスキルを選択
     const sorted = [...evaluations].sort((a, b) => b.score - a.score);
     return sorted[0].skill;
   }
 
   /**
    * 最適なターゲットを選択する
-   * @param evaluations ターゲット評価リスト
-   * @param strategy AI戦略
    */
   selectBestTarget(
-    evaluations: TargetEvaluation<TConfig>[],
+    evaluations: TargetEvaluation[],
     strategy: AIStrategy
-  ): Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']> {
+  ): Combatant {
     if (evaluations.length === 0) {
       throw new Error('No targets available');
     }
 
     if (strategy === 'random') {
-      // ランダム選択
       const randomIndex = Math.floor(Math.random() * evaluations.length);
       return evaluations[randomIndex].target;
     }
 
-    // AI戦略に応じた選択
-    switch (strategy) {
-      case 'aggressive':
-        // 最もダメージを与えられるターゲット
-        const sorted = [...evaluations].sort((a, b) => b.score - a.score);
-        return sorted[0].target;
-
-      case 'defensive':
-        // ランダム（防御戦略は味方を守るため、対象選択は通常）
-        return evaluations[0].target;
-
-      case 'balanced':
-      default:
-        // バランス型：最高スコア
-        const balancedSorted = [...evaluations].sort((a, b) => b.score - a.score);
-        return balancedSorted[0].target;
-    }
+    const sorted = [...evaluations].sort((a, b) => b.score - a.score);
+    return sorted[0].target;
   }
 
-  /**
-   * 使用可能なスキルを取得する
-   * @param enemy 敵
-   */
-  private getAvailableSkills(
-    enemy: Enemy<TConfig>
-  ): Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>[] {
+  private getAvailableSkills(enemy: Enemy): Skill[] {
     return enemy.skills.filter(skill => enemy.currentMp >= skill.mpCost);
   }
 
-  /**
-   * 戦闘状況を構築する
-   * @param battleState 戦闘状態
-   */
-  private buildBattleSituation(battleState: BattleState<TConfig>): BattleSituation<TConfig> {
+  private buildBattleSituation(battleState: BattleState): BattleSituation {
     const aliveAllies = battleState.enemyGroup.filter(e => e.currentHp > 0);
     const aliveEnemies = battleState.playerParty.filter(c => c.currentHp > 0);
 
@@ -264,15 +225,10 @@ export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
     };
   }
 
-  /**
-   * 可能なターゲットを取得する
-   * @param skill スキル
-   * @param battleState 戦闘状態
-   */
   private getPossibleTargets(
-    skill: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>,
-    battleState: BattleState<TConfig>
-  ): Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[] {
+    skill: Skill,
+    battleState: BattleState
+  ): Combatant[] {
     switch (skill.targetType) {
       case 'single-enemy':
       case 'all-enemies':
@@ -286,18 +242,11 @@ export class EnemyAIService<TConfig extends GameTypeConfig = GameTypeConfig> {
     }
   }
 
-  /**
-   * デフォルトのターゲットを選択する（通常攻撃用）
-   * @param targets ターゲットリスト
-   */
-  private selectDefaultTarget(
-    targets: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]
-  ): Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']> {
+  private selectDefaultTarget(targets: Combatant[]): Combatant {
     if (targets.length === 0) {
       throw new Error('No targets available');
     }
 
-    // ランダムに選択
     return targets[Math.floor(Math.random() * targets.length)];
   }
 }

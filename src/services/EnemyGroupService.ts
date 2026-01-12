@@ -4,17 +4,17 @@
  * 戦闘に登場する敵グループの生成、管理、ドロップアイテムの決定を行う
  */
 
-import { Enemy, DropItem, BattleRewards } from '../types';
-import { GameTypeConfig } from '../types/gameTypes';
+import { Enemy, DropItem } from '../types';
 import { UniqueId } from '../types/common';
+import { DefaultStats } from '../types/stats';
 
 /**
  * 敵タイプ定義
  */
-export interface EnemyType<TConfig extends GameTypeConfig = GameTypeConfig> {
+export interface EnemyType {
   id: UniqueId;                          // 敵タイプID
   name: string;                          // 敵の名前
-  baseStats: TConfig['TStats'];          // 基本ステータス
+  baseStats: DefaultStats;               // 基本ステータス
   skills: any[];                         // スキルリスト
   aiStrategy: 'aggressive' | 'defensive' | 'balanced' | 'random' | 'support'; // AI戦略
   expReward: number;                     // 基本経験値
@@ -38,14 +38,14 @@ export interface EnemyGroupType {
 /**
  * EnemyGroupServiceクラス
  */
-export class EnemyGroupService<TConfig extends GameTypeConfig = GameTypeConfig> {
-  private enemyTypes: Map<UniqueId, EnemyType<TConfig>> = new Map();
+export class EnemyGroupService {
+  private enemyTypes: Map<UniqueId, EnemyType> = new Map();
 
   /**
    * 敵タイプを登録する
    * @param enemyType 敵タイプ
    */
-  registerEnemyType(enemyType: EnemyType<TConfig>): void {
+  registerEnemyType(enemyType: EnemyType): void {
     this.enemyTypes.set(enemyType.id, enemyType);
   }
 
@@ -54,8 +54,8 @@ export class EnemyGroupService<TConfig extends GameTypeConfig = GameTypeConfig> 
    * @param groupType グループタイプ
    * @param level レベル
    */
-  generateEnemyGroup(groupType: EnemyGroupType, level: number): Enemy<TConfig>[] {
-    const enemies: Enemy<TConfig>[] = [];
+  generateEnemyGroup(groupType: EnemyGroupType, level: number): Enemy[] {
+    const enemies: Enemy[] = [];
 
     for (const composition of groupType.enemies) {
       const enemyType = this.enemyTypes.get(composition.typeId);
@@ -77,7 +77,7 @@ export class EnemyGroupService<TConfig extends GameTypeConfig = GameTypeConfig> 
    * @param enemyType 敵タイプ
    * @param level レベル
    */
-  initializeEnemy(enemyType: EnemyType<TConfig>, level: number): Enemy<TConfig> {
+  initializeEnemy(enemyType: EnemyType, level: number): Enemy {
     // ステータスをレベルに応じてスケーリング
     const levelMultiplier = 1 + (level - 1) * 0.1; // レベルごとに10%増加
     const stats = this.scaleStats(enemyType.baseStats, levelMultiplier);
@@ -107,7 +107,7 @@ export class EnemyGroupService<TConfig extends GameTypeConfig = GameTypeConfig> 
    * ドロップアイテムを判定する
    * @param defeatedEnemies 倒した敵リスト
    */
-  rollDrops(defeatedEnemies: Enemy<TConfig>[]): DropItem[] {
+  rollDrops(defeatedEnemies: Enemy[]): DropItem[] {
     const droppedItems: DropItem[] = [];
 
     for (const enemy of defeatedEnemies) {
@@ -116,7 +116,6 @@ export class EnemyGroupService<TConfig extends GameTypeConfig = GameTypeConfig> 
       }
 
       for (const drop of enemy.dropItems) {
-        // ドロップ判定
         if (Math.random() < drop.probability) {
           droppedItems.push({
             itemId: drop.itemId,
@@ -134,7 +133,7 @@ export class EnemyGroupService<TConfig extends GameTypeConfig = GameTypeConfig> 
    * 報酬を計算する
    * @param defeatedEnemies 倒した敵リスト
    */
-  calculateRewards(defeatedEnemies: Enemy<TConfig>[]): { exp: number; money: number } {
+  calculateRewards(defeatedEnemies: Enemy[]): { exp: number; money: number } {
     let totalExp = 0;
     let totalMoney = 0;
 
@@ -154,31 +153,34 @@ export class EnemyGroupService<TConfig extends GameTypeConfig = GameTypeConfig> 
    * @param baseStats 基本ステータス
    * @param multiplier 倍率
    */
-  private scaleStats(baseStats: TConfig['TStats'], multiplier: number): TConfig['TStats'] {
-    const scaled: any = { ...baseStats };
-
-    // 数値プロパティをスケーリング
-    for (const key in scaled) {
-      if (typeof scaled[key] === 'number') {
-        scaled[key] = Math.floor(scaled[key] * multiplier);
-      }
-    }
-
-    return scaled;
+  private scaleStats(baseStats: DefaultStats, multiplier: number): DefaultStats {
+    return {
+      maxHp: Math.floor(baseStats.maxHp * multiplier),
+      maxMp: Math.floor(baseStats.maxMp * multiplier),
+      attack: Math.floor(baseStats.attack * multiplier),
+      defense: Math.floor(baseStats.defense * multiplier),
+      magic: Math.floor(baseStats.magic * multiplier),
+      magicDefense: Math.floor(baseStats.magicDefense * multiplier),
+      speed: Math.floor(baseStats.speed * multiplier),
+      luck: Math.floor(baseStats.luck * multiplier),
+      accuracy: Math.floor(baseStats.accuracy * multiplier),
+      evasion: Math.floor(baseStats.evasion * multiplier),
+      criticalRate: baseStats.criticalRate * multiplier
+    };
   }
 
   /**
    * 敵タイプを取得する
    * @param typeId 敵タイプID
    */
-  getEnemyType(typeId: UniqueId): EnemyType<TConfig> | undefined {
+  getEnemyType(typeId: UniqueId): EnemyType | undefined {
     return this.enemyTypes.get(typeId);
   }
 
   /**
    * 全ての敵タイプを取得する
    */
-  getAllEnemyTypes(): EnemyType<TConfig>[] {
+  getAllEnemyTypes(): EnemyType[] {
     return Array.from(this.enemyTypes.values());
   }
 }

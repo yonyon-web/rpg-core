@@ -5,25 +5,22 @@
 import { UniqueId } from './common';
 import { Combatant } from './combatant';
 import { Skill } from './skill';
-import { GameTypeConfig } from './gameTypes';
 
 /**
  * キャラクター（プレイヤー側の戦闘者）
  */
-export interface Character<TConfig extends GameTypeConfig = GameTypeConfig> 
-  extends Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']> {
+export interface Character extends Combatant {
   job?: string;          // ジョブ名（オプション）
-  skills: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>[];
+  skills: Skill[];
   currentExp?: number;   // 現在の経験値（オプション）
 }
 
 /**
  * 敵（エネミー側の戦闘者）
  */
-export interface Enemy<TConfig extends GameTypeConfig = GameTypeConfig> 
-  extends Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']> {
+export interface Enemy extends Combatant {
   enemyType: string;     // 敵の種類
-  skills: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>[];
+  skills: Skill[];
   aiStrategy: AIStrategy; // AI戦略
   dropItems?: DropItem[]; // ドロップアイテム
   expReward?: number;     // 経験値報酬
@@ -62,16 +59,16 @@ export type BattlePhase =
 /**
  * 戦闘状態
  */
-export interface BattleState<TConfig extends GameTypeConfig = GameTypeConfig> {
+export interface BattleState {
   phase: BattlePhase;                          // 現在のフェーズ
   turnNumber: number;                          // ターン数
-  playerParty: Character<TConfig>[];           // プレイヤーパーティ
-  enemyGroup: Enemy<TConfig>[];                // 敵グループ
-  turnOrder: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]; // 行動順
+  playerParty: Character[];                    // プレイヤーパーティ
+  enemyGroup: Enemy[];                         // 敵グループ
+  turnOrder: Combatant[];                      // 行動順
   currentActorIndex: number;                   // 現在の行動者インデックス
   result?: BattleResult;                       // 戦闘結果
   rewards?: BattleRewards;                     // 戦闘報酬
-  actionHistory: BattleAction<TConfig>[];      // 行動履歴
+  actionHistory: BattleAction[];               // 行動履歴
 }
 
 /**
@@ -91,12 +88,12 @@ export interface BattleRewards {
 /**
  * 戦闘アクション
  */
-export interface BattleAction<TConfig extends GameTypeConfig = GameTypeConfig> {
-  actor: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>; // 行動者
+export interface BattleAction {
+  actor: Combatant;       // 行動者
   type: BattleActionType; // アクションタイプ
-  skill?: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>; // スキル（スキル使用時）
+  skill?: Skill;          // スキル（スキル使用時）
   itemId?: UniqueId;      // アイテムID（アイテム使用時）
-  targets: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]; // 対象
+  targets: Combatant[];   // 対象
 }
 
 /**
@@ -140,10 +137,10 @@ export interface EscapeResult {
 /**
  * 戦闘状況（AI用）
  */
-export interface BattleSituation<TConfig extends GameTypeConfig = GameTypeConfig> {
+export interface BattleSituation {
   turn: number;                                // ターン数
-  allyParty: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]; // 味方パーティ
-  enemyParty: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]; // 敵パーティ
+  allyParty: Combatant[];                      // 味方パーティ
+  enemyParty: Combatant[];                     // 敵パーティ
   averageAllyHpRate: number;                   // 味方の平均HP率
   averageEnemyHpRate: number;                  // 敵の平均HP率
   defeatedAllies: number;                      // 倒れた味方の数
@@ -153,8 +150,8 @@ export interface BattleSituation<TConfig extends GameTypeConfig = GameTypeConfig
 /**
  * スキル評価
  */
-export interface SkillEvaluation<TConfig extends GameTypeConfig = GameTypeConfig> {
-  skill: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>; // スキル
+export interface SkillEvaluation {
+  skill: Skill;           // スキル
   score: number;          // 評価スコア
   reason?: string;        // 理由
 }
@@ -162,8 +159,8 @@ export interface SkillEvaluation<TConfig extends GameTypeConfig = GameTypeConfig
 /**
  * ターゲット評価
  */
-export interface TargetEvaluation<TConfig extends GameTypeConfig = GameTypeConfig> {
-  target: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>; // ターゲット
+export interface TargetEvaluation {
+  target: Combatant;      // ターゲット
   score: number;          // 評価スコア
   expectedDamage?: number; // 予想ダメージ
   reason?: string;        // 理由
@@ -172,8 +169,8 @@ export interface TargetEvaluation<TConfig extends GameTypeConfig = GameTypeConfi
 /**
  * AI決定
  */
-export interface AIDecision<TConfig extends GameTypeConfig = GameTypeConfig> {
-  skill: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>; // 選択されたスキル
-  target: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>; // 選択されたターゲット
+export interface AIDecision {
+  skill: Skill;           // 選択されたスキル
+  target: Combatant;      // 選択されたターゲット
   score: number;          // 決定スコア
 }

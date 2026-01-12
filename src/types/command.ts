@@ -6,7 +6,6 @@ import { UniqueId } from './common';
 import { Character, BattleAction } from './battle';
 import { Combatant } from './combatant';
 import { Skill } from './skill';
-import { GameTypeConfig } from './gameTypes';
 
 /**
  * コマンド選択段階
@@ -20,17 +19,17 @@ export type CommandStage =
 /**
  * コマンド状態
  */
-export interface CommandState<TConfig extends GameTypeConfig = GameTypeConfig> {
+export interface CommandState {
   stage: CommandStage;                         // 現在の段階
-  actor: Character<TConfig> | null;            // 行動中のキャラクター
+  actor: Character | null;                     // 行動中のキャラクター
   selectedCommand: string | null;              // 選択されたコマンド
-  selectedSkill: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']> | null; // 選択されたスキル
+  selectedSkill: Skill | null;                 // 選択されたスキル
   selectedItemId: UniqueId | null;             // 選択されたアイテムID
-  selectedTargets: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]; // 選択されたターゲット
+  selectedTargets: Combatant[];                // 選択されたターゲット
   availableCommands: CommandOption[];          // 利用可能なコマンド
-  availableSkills: Skill<TConfig['TElement'], TConfig['TSkillType'], TConfig['TTargetType'], TConfig['TEffectType']>[]; // 利用可能なスキル
+  availableSkills: Skill[];                    // 利用可能なスキル
   availableItems: UniqueId[];                  // 利用可能なアイテム
-  availableTargets: Combatant<TConfig['TStats'], TConfig['TEffectType'], TConfig['TEffectCategory']>[]; // 利用可能なターゲット
+  availableTargets: Combatant[];               // 利用可能なターゲット
 }
 
 /**
