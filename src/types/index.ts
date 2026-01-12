@@ -13,3 +13,5 @@ export * from './formulas';
 export * from './gameTypes';
 export * from './battle';
 export * from './command';
+export * from './reward';
+export * from './equipment';
