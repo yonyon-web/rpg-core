@@ -7,21 +7,22 @@ import type { BaseStats, DefaultStats } from '../types/stats';
 import type { Combatant } from '../types/combatant';
 
 /**
- * デフォルトのレベルごとの必要経験値を計算
+ * 指定レベルに到達するために必要な累積経験値を計算
  * 線形成長: level * 100
  * 
  * @param level - 目標レベル
- * @returns レベルアップに必要な経験値
+ * @returns そのレベルに到達するために必要な累積経験値（レベル1からの合計）
  */
 export function getExpForLevel(level: number): number {
   if (level <= 1) return 0;
-  return level * 100;
+  // レベル2: 200, レベル3: 500, レベル4: 900 のように累積
+  return ((level * (level + 1)) / 2) * 100 - 100;
 }
 
 /**
  * レベルアップ判定
  * 
- * @param currentExp - 現在の経験値
+ * @param currentExp - 現在の累積経験値
  * @param currentLevel - 現在のレベル
  * @returns レベルアップ可能かどうか
  */
@@ -43,7 +44,7 @@ export function calculateStatGrowth<TStats extends BaseStats = DefaultStats>(
 ): Partial<TStats> {
   // デフォルトの成長値
   // レベルに応じてランダムな成長を与える
-  const baseGrowth = {
+  const baseGrowth: Partial<DefaultStats> = {
     maxHp: Math.floor(8 + Math.random() * 5),       // 8-12
     maxMp: Math.floor(3 + Math.random() * 3),       // 3-5
     attack: Math.floor(2 + Math.random() * 2),      // 2-3
@@ -57,7 +58,7 @@ export function calculateStatGrowth<TStats extends BaseStats = DefaultStats>(
     criticalRate: 0
   };
   
-  return baseGrowth as unknown as Partial<TStats>;
+  return baseGrowth as Partial<TStats>;
 }
 
 /**

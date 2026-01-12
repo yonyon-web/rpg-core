@@ -99,7 +99,7 @@ describe('RewardService', () => {
       const service = new RewardService();
       const char = createCharacter('char1', 1, 0);
       
-      // レベル2に必要な経験値: 200 (level * 100 = 2 * 100)
+      // レベル2に必要な累積経験値: 200
       char.currentExp = 200;
       
       const results = service.processLevelUps(char);
@@ -107,13 +107,15 @@ describe('RewardService', () => {
       expect(results.length).toBe(1);
       expect(results[0].newLevel).toBe(2);
       expect(char.level).toBe(2);
+      // 累積経験値なのでそのまま保持
+      expect(char.currentExp).toBe(200);
     });
 
     test('複数レベル分の経験値がある場合、連続してレベルアップする', () => {
       const service = new RewardService();
       const char = createCharacter('char1', 1, 0);
       
-      // レベル2: 200, レベル3: 300 = 合計500
+      // レベル3に必要な累積経験値: 500
       char.currentExp = 500;
       
       const results = service.processLevelUps(char);
@@ -122,6 +124,7 @@ describe('RewardService', () => {
       expect(results[0].newLevel).toBe(2);
       expect(results[1].newLevel).toBe(3);
       expect(char.level).toBe(3);
+      expect(char.currentExp).toBe(500);
     });
 
     test('レベルアップ時にステータスが成長する', () => {
@@ -186,11 +189,11 @@ describe('RewardService', () => {
 
     test('報酬処理後、レベルアップ結果が含まれる', () => {
       const service = new RewardService();
-      const char = createCharacter('char1', 1, 50);
+      const char = createCharacter('char1', 1, 0);
       const party = [char];
       
       const rewards: BattleRewards = {
-        exp: 200, // これでレベルアップに達する (50 + 200 = 250 >= 200)
+        exp: 200, // これでレベルアップに達する (0 + 200 = 200)
         money: 30,
         items: []
       };

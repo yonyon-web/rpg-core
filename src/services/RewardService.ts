@@ -55,11 +55,8 @@ export class RewardService<TStats extends BaseStats = DefaultStats> {
     
     // レベルアップ判定を繰り返す
     while (growth.canLevelUp(character.currentExp || 0, character.level)) {
-      const expRequired = growth.getExpForLevel(character.level + 1);
-      
       // レベルアップ
       character.level++;
-      character.currentExp = (character.currentExp || 0) - expRequired;
       
       // ステータス成長
       const statGrowth = growth.calculateStatGrowth<TStats>(character.level);
@@ -68,7 +65,7 @@ export class RewardService<TStats extends BaseStats = DefaultStats> {
       for (const [key, value] of Object.entries(statGrowth)) {
         const statKey = key as keyof TStats;
         if (typeof character.stats[statKey] === 'number' && typeof value === 'number') {
-          (character.stats[statKey] as number) += value;
+          character.stats[statKey] = (character.stats[statKey] as number) + value as TStats[keyof TStats];
         }
       }
       

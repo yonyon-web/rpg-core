@@ -4,6 +4,7 @@
 
 import type { UniqueId } from './common';
 import type { BaseStats, DefaultStats } from './stats';
+import type { DropItem } from './battle';
 
 /**
  * レベルアップ結果
@@ -31,5 +32,5 @@ export interface RewardDistributionResult<TStats extends BaseStats = DefaultStat
   expDistribution: ExpDistribution[];
   levelUpResults: Map<UniqueId, LevelUpResult<TStats>[]>;
   goldTotal: number;
-  itemsReceived: any[];  // Use any[] for compatibility with DropItem[]
+  itemsReceived: DropItem[];
 }
