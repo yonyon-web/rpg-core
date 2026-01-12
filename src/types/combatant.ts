@@ -11,6 +11,7 @@ import {
   BaseStatusEffectCategory,
   DefaultStatusEffectCategory 
 } from './statusEffect';
+import type { EquippedItems } from './equipment';
 
 /**
  * 戦闘者基本インターフェース
@@ -52,6 +53,7 @@ export interface Combatant<
   currentHp: number;         // 現在のHP
   currentMp: number;         // 現在のMP
   currentExp?: number;       // 現在の経験値（オプショナル）
+  equipment?: EquippedItems<TStats>; // 装備（オプショナル）
   statusEffects: StatusEffect<TEffectType, TEffectCategory>[]; // 現在の状態異常
   position: number;          // 隊列位置（0=前列、1=後列）
 }

@@ -7,3 +7,4 @@ export * from './CommandService';
 export * from './EnemyAIService';
 export * from './EnemyGroupService';
 export * from './RewardService';
+export * from './EquipmentService';
