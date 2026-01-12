@@ -31,11 +31,7 @@ export type DefaultSkillType =
   | 'debuff'    // デバフ
   | 'special';  // 特殊
 
-/**
- * スキルタイプ（後方互換性のためのエイリアス）
- * @deprecated DefaultSkillTypeを使用してください
- */
-export type SkillType = DefaultSkillType;
+
 
 /**
  * 対象タイプの基底型
@@ -64,11 +60,7 @@ export type DefaultTargetType =
   | 'random-enemies'  // 敵ランダム
   | 'random-allies';  // 味方ランダム
 
-/**
- * 対象タイプ（後方互換性のためのエイリアス）
- * @deprecated DefaultTargetTypeを使用してください
- */
-export type TargetType = DefaultTargetType;
+
 
 /**
  * 状態異常付与情報

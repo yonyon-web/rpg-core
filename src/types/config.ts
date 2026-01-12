@@ -3,7 +3,7 @@
  */
 
 import { Probability } from './common';
-import type { BaseStats } from './stats';
+import type { BaseStats, DefaultStats } from './stats';
 import type { CustomFormulas } from './formulas';
 
 /**
@@ -42,11 +42,7 @@ export type DefaultExpCurveType =
   | 'exponential'   // 指数（基本値 × レベル ^ 成長率）
   | 'custom';       // カスタム
 
-/**
- * 経験値曲線タイプ（後方互換性のためのエイリアス）
- * @deprecated DefaultExpCurveTypeを使用してください
- */
-export type ExpCurveType = DefaultExpCurveType;
+
 
 /**
  * ステータス成長率
@@ -166,7 +162,7 @@ export interface BalanceConfig {
  */
 export interface GameConfig<
   TExpCurve extends BaseExpCurveType = DefaultExpCurveType,
-  TStats extends BaseStats = BaseStats
+  TStats extends BaseStats = DefaultStats
 > {
   combat: CombatConfig;                      // 戦闘パラメータ
   growth: GrowthConfig<TExpCurve, TStats>;   // 成長パラメータ

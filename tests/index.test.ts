@@ -1,20 +1,20 @@
 import { version, defaultGameConfig, calculatePhysicalDamage } from '../src/index';
 
-describe('rpg-core', () => {
-  describe('exports', () => {
-    it('should export version string', () => {
+describe('rpg-core（パッケージ）', () => {
+  describe('エクスポート', () => {
+    it('バージョン文字列をエクスポートする', () => {
       expect(version).toBe('1.0.0');
       expect(typeof version).toBe('string');
     });
 
-    it('should export default game config', () => {
+    it('デフォルトゲーム設定をエクスポートする', () => {
       expect(defaultGameConfig).toBeDefined();
       expect(defaultGameConfig.combat).toBeDefined();
       expect(defaultGameConfig.growth).toBeDefined();
       expect(defaultGameConfig.balance).toBeDefined();
     });
 
-    it('should export combat functions', () => {
+    it('戦闘関数をエクスポートする', () => {
       expect(typeof calculatePhysicalDamage).toBe('function');
     });
   });

@@ -57,11 +57,7 @@ export type DefaultElement =
   | 'light'     // 光
   | 'dark';     // 闇
 
-/**
- * 属性タイプ（後方互換性のためのエイリアス）
- * @deprecated DefaultElementを使用してください
- */
-export type Element = DefaultElement;
+
 
 /**
  * 属性耐性マップの基底型
@@ -88,8 +84,4 @@ export interface DefaultElementResistance {
   dark: number;
 }
 
-/**
- * 属性耐性マップ（後方互換性のためのエイリアス）
- * @deprecated DefaultElementResistanceを使用してください
- */
-export type ElementResistance = DefaultElementResistance;
+

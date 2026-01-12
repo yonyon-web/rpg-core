@@ -3,10 +3,10 @@
  */
 
 import { calculateFinalStats, applyStatModifiers } from '../../src/character/stats';
-import { Stats } from '../../src/types';
+import { DefaultStats } from '../../src/types';
 
-describe('character stats module', () => {
-  const baseStats: Stats = {
+describe('キャラクターステータスモジュール', () => {
+  const baseStats: DefaultStats = {
     maxHp: 100,
     maxMp: 50,
     attack: 50,
@@ -21,14 +21,14 @@ describe('character stats module', () => {
   };
 
   describe('calculateFinalStats', () => {
-    it('should return base stats when no modifiers', () => {
+    it('修飾子がない場合はベースステータスを返す', () => {
       const finalStats = calculateFinalStats(baseStats, []);
       
       expect(finalStats).toEqual(baseStats);
     });
 
-    it('should apply single stat modifier', () => {
-      const modifier: Partial<Stats> = {
+    it('単一のステータス修飾子を適用する', () => {
+      const modifier: Partial<DefaultStats> = {
         attack: 10,
         defense: 5,
       };
@@ -40,12 +40,12 @@ describe('character stats module', () => {
       expect(finalStats.maxHp).toBe(100); // unchanged
     });
 
-    it('should apply multiple stat modifiers', () => {
-      const modifier1: Partial<Stats> = {
+    it('複数のステータス修飾子を適用する', () => {
+      const modifier1: Partial<DefaultStats> = {
         attack: 10,
         defense: 5,
       };
-      const modifier2: Partial<Stats> = {
+      const modifier2: Partial<DefaultStats> = {
         attack: 5,
         speed: 10,
       };
@@ -57,8 +57,8 @@ describe('character stats module', () => {
       expect(finalStats.speed).toBe(70); // 60 + 10
     });
 
-    it('should handle negative modifiers', () => {
-      const modifier: Partial<Stats> = {
+    it('マイナス修飾子を処理する', () => {
+      const modifier: Partial<DefaultStats> = {
         attack: -20,
         defense: -10,
       };
@@ -69,8 +69,8 @@ describe('character stats module', () => {
       expect(finalStats.defense).toBe(20); // 30 - 10
     });
 
-    it('should not allow stats to go below 0', () => {
-      const modifier: Partial<Stats> = {
+    it('ステータスが0未満にならないようにする', () => {
+      const modifier: Partial<DefaultStats> = {
         attack: -100,
         defense: -100,
       };
@@ -81,8 +81,8 @@ describe('character stats module', () => {
       expect(finalStats.defense).toBeGreaterThanOrEqual(0);
     });
 
-    it('should handle all stat types', () => {
-      const modifier: Partial<Stats> = {
+    it('全てのステータスタイプを処理する', () => {
+      const modifier: Partial<DefaultStats> = {
         maxHp: 50,
         maxMp: 20,
         attack: 10,
@@ -113,26 +113,26 @@ describe('character stats module', () => {
   });
 
   describe('applyStatModifiers', () => {
-    it('should add modifier to base stat', () => {
+    it('ベース値に修飾子を加算する', () => {
       expect(applyStatModifiers(50, 10)).toBe(60);
       expect(applyStatModifiers(30, 5)).toBe(35);
     });
 
-    it('should handle negative modifiers', () => {
+    it('マイナス修飾子を処理する', () => {
       expect(applyStatModifiers(50, -20)).toBe(30);
       expect(applyStatModifiers(30, -10)).toBe(20);
     });
 
-    it('should not allow result below 0', () => {
+    it('結果が0未満にならないようにする', () => {
       expect(applyStatModifiers(50, -100)).toBeGreaterThanOrEqual(0);
       expect(applyStatModifiers(10, -20)).toBeGreaterThanOrEqual(0);
     });
 
-    it('should handle zero modifier', () => {
+    it('ゼロ修飾子を処理する', () => {
       expect(applyStatModifiers(50, 0)).toBe(50);
     });
 
-    it('should handle decimal values for rates', () => {
+    it('率の小数値を処理する', () => {
       expect(applyStatModifiers(0.05, 0.1)).toBeCloseTo(0.15);
       expect(applyStatModifiers(0.2, -0.05)).toBeCloseTo(0.15);
     });

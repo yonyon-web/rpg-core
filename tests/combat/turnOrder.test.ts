@@ -6,7 +6,7 @@ import { calculateTurnOrder, checkPreemptiveStrike } from '../../src/combat/turn
 import { Combatant } from '../../src/types';
 import { defaultGameConfig } from '../../src/config';
 
-describe('turnOrder module', () => {
+describe('行動順モジュール', () => {
   const createCombatant = (id: string, name: string, speed: number): Combatant => ({
     id,
     name,
@@ -30,8 +30,8 @@ describe('turnOrder module', () => {
     position: 0,
   });
 
-  describe('calculateTurnOrder', () => {
-    it('should order combatants by speed (highest first)', () => {
+  describe('calculateTurnOrder（行動順計算）', () => {
+    it('速度順に戦闘員を並べる（最速が先頭）', () => {
       const fast = createCombatant('fast', 'Fast', 100);
       const medium = createCombatant('medium', 'Medium', 50);
       const slow = createCombatant('slow', 'Slow', 20);
@@ -47,7 +47,7 @@ describe('turnOrder module', () => {
       expect(turnOrder).toContain(slow);
     });
 
-    it('should handle same speed combatants', () => {
+    it('同速度の戦闘員を処理する', () => {
       const combatant1 = createCombatant('1', 'First', 50);
       const combatant2 = createCombatant('2', 'Second', 50);
       const combatant3 = createCombatant('3', 'Third', 50);
@@ -62,19 +62,19 @@ describe('turnOrder module', () => {
       expect(turnOrder).toContain(combatant3);
     });
 
-    it('should return empty array for empty input', () => {
+    it('空の入力の場合空配列を返す', () => {
       const turnOrder = calculateTurnOrder([], defaultGameConfig);
       expect(turnOrder).toEqual([]);
     });
 
-    it('should handle single combatant', () => {
+    it('単一の戦闘員を処理する', () => {
       const single = createCombatant('single', 'Single', 50);
       const turnOrder = calculateTurnOrder([single], defaultGameConfig);
       
       expect(turnOrder).toEqual([single]);
     });
 
-    it('should apply speed variance', () => {
+    it('速度分散を適用する', () => {
       // Create combatants with significantly different speeds
       const fast = createCombatant('fast', 'Fast', 100);
       const slow = createCombatant('slow', 'Slow', 10);
@@ -93,7 +93,7 @@ describe('turnOrder module', () => {
       expect(fastFirstCount).toBeGreaterThan(80);
     });
 
-    it('should produce different orders with variance enabled', () => {
+    it('分散が有効な場合異なる順序を生成する', () => {
       const combatant1 = createCombatant('1', 'First', 50);
       const combatant2 = createCombatant('2', 'Second', 51);
 
@@ -110,8 +110,8 @@ describe('turnOrder module', () => {
     });
   });
 
-  describe('checkPreemptiveStrike', () => {
-    it('should return true when party speed greatly exceeds enemy speed', () => {
+  describe('checkPreemptiveStrike（先制攻撃判定）', () => {
+    it('パーティの速度が敵の速度を大きく上回る場合trueを返す', () => {
       const fastParty = [
         createCombatant('hero1', 'Hero1', 100),
         createCombatant('hero2', 'Hero2', 90),
@@ -131,7 +131,7 @@ describe('turnOrder module', () => {
       expect(preemptiveCount).toBeGreaterThan(0);
     });
 
-    it('should return false when speeds are similar', () => {
+    it('速度が同じ程度の場合falseを返す', () => {
       const party = [
         createCombatant('hero1', 'Hero1', 50),
         createCombatant('hero2', 'Hero2', 52),
@@ -151,7 +151,7 @@ describe('turnOrder module', () => {
       expect(preemptiveCount).toBeLessThan(15);
     });
 
-    it('should handle empty arrays', () => {
+    it('空配列を処理する', () => {
       const party = [createCombatant('hero', 'Hero', 50)];
       
       expect(() => checkPreemptiveStrike([], [], defaultGameConfig)).not.toThrow();
@@ -159,7 +159,7 @@ describe('turnOrder module', () => {
       expect(() => checkPreemptiveStrike([], party, defaultGameConfig)).not.toThrow();
     });
 
-    it('should use average party speed vs average enemy speed', () => {
+    it('パーティの平均速度と敵の平均速度を使用する', () => {
       const mixedParty = [
         createCombatant('hero1', 'Hero1', 100),
         createCombatant('hero2', 'Hero2', 20),  // Average: 60

@@ -8,10 +8,10 @@ import {
   calculateHealAmount,
   calculateElementalModifier,
 } from '../../src/combat/damage';
-import { Combatant, Skill, ElementResistance } from '../../src/types';
+import { Combatant, Skill, DefaultElementResistance } from '../../src/types';
 import { defaultGameConfig } from '../../src/config';
 
-describe('damage module', () => {
+describe('ダメージ計算モジュール', () => {
   const attacker: Combatant = {
     id: 'attacker-1',
     name: 'Hero',
@@ -100,8 +100,8 @@ describe('damage module', () => {
     description: 'Heal spell',
   };
 
-  describe('calculatePhysicalDamage', () => {
-    it('should calculate basic physical damage', () => {
+  describe('calculatePhysicalDamage（物理ダメージ計算）', () => {
+    it('基本物理ダメージを計算する', () => {
       const result = calculatePhysicalDamage(attacker, target, physicalSkill, defaultGameConfig);
       
       expect(result.finalDamage).toBeGreaterThan(0);
@@ -112,7 +112,7 @@ describe('damage module', () => {
       expect(result.appliedModifiers).toBeInstanceOf(Array);
     });
 
-    it('should deal more damage with higher attack', () => {
+    it('攻撃力が高いほど多くのダメージを与える', () => {
       const strongAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, attack: 100 },
@@ -124,7 +124,7 @@ describe('damage module', () => {
       expect(result2.baseDamage).toBeGreaterThan(result1.baseDamage);
     });
 
-    it('should deal less damage against higher defense', () => {
+    it('防御力が高いほどダメージが少なくなる', () => {
       const weakTarget: Combatant = {
         ...target,
         stats: { ...target.stats, defense: 5 },
@@ -140,7 +140,7 @@ describe('damage module', () => {
       expect(result1.baseDamage).toBeGreaterThan(result2.baseDamage);
     });
 
-    it('should apply skill power multiplier', () => {
+    it('スキルの威力倍率を適用する', () => {
       const weakSkill: Skill = { ...physicalSkill, power: 0.5 };
       const strongSkill: Skill = { ...physicalSkill, power: 2.0 };
 
@@ -150,7 +150,7 @@ describe('damage module', () => {
       expect(result2.baseDamage).toBeGreaterThan(result1.baseDamage);
     });
 
-    it('should apply critical multiplier when critical', () => {
+    it('クリティカル時にクリティカル倍率を適用する', () => {
       // Run multiple times to get at least one critical
       const results = Array.from({ length: 100 }, () =>
         calculatePhysicalDamage(attacker, target, physicalSkill, defaultGameConfig)
@@ -164,7 +164,7 @@ describe('damage module', () => {
       }
     });
 
-    it('should ensure minimum damage of 1', () => {
+    it('最低ダメージを1に保証する', () => {
       const weakAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, attack: 1 },
@@ -178,7 +178,7 @@ describe('damage module', () => {
       expect(result.finalDamage).toBeGreaterThanOrEqual(1);
     });
 
-    it('should handle miss correctly', () => {
+    it('ミスを正しく処理する', () => {
       const inaccurateSkill: Skill = { ...physicalSkill, accuracy: 0 };
       const result = calculatePhysicalDamage(attacker, target, inaccurateSkill, defaultGameConfig);
 
@@ -188,8 +188,8 @@ describe('damage module', () => {
     });
   });
 
-  describe('calculateMagicDamage', () => {
-    it('should calculate basic magic damage', () => {
+  describe('calculateMagicDamage（魔法ダメージ計算）', () => {
+    it('基本魔法ダメージを計算する', () => {
       const result = calculateMagicDamage(attacker, target, magicSkill, defaultGameConfig);
       
       expect(result.finalDamage).toBeGreaterThan(0);
@@ -197,7 +197,7 @@ describe('damage module', () => {
       expect(result.isHit).toBe(true);
     });
 
-    it('should use magic stat instead of attack', () => {
+    it('攻撃力の代わりに魔力を使用する', () => {
       const highMagicAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, magic: 100 },
@@ -209,7 +209,7 @@ describe('damage module', () => {
       expect(result2.baseDamage).toBeGreaterThan(result1.baseDamage);
     });
 
-    it('should use magic defense instead of defense', () => {
+    it('防御力の代わりに魔法防御を使用する', () => {
       const lowMagicDefTarget: Combatant = {
         ...target,
         stats: { ...target.stats, magicDefense: 5 },
@@ -226,13 +226,13 @@ describe('damage module', () => {
     });
   });
 
-  describe('calculateHealAmount', () => {
-    it('should calculate heal amount', () => {
+  describe('calculateHealAmount（回復量計算）', () => {
+    it('回復量を計算する', () => {
       const healAmount = calculateHealAmount(attacker, target, healSkill, defaultGameConfig);
       expect(healAmount).toBeGreaterThan(0);
     });
 
-    it('should scale with caster magic stat', () => {
+    it('術者の魔力に応じてスケールする', () => {
       const lowMagicCaster: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, magic: 10 },
@@ -248,7 +248,7 @@ describe('damage module', () => {
       expect(heal2).toBeGreaterThan(heal1);
     });
 
-    it('should apply skill power multiplier', () => {
+    it('スキルの威力倍率を適用する', () => {
       const weakHeal: Skill = { ...healSkill, power: 0.5 };
       const strongHeal: Skill = { ...healSkill, power: 2.0 };
 
@@ -259,8 +259,8 @@ describe('damage module', () => {
     });
   });
 
-  describe('calculateElementalModifier', () => {
-    const normalResistance: ElementResistance = {
+  describe('calculateElementalModifier（属性修飾子計算）', () => {
+    const normalResistance: DefaultElementResistance = {
       fire: 1.0,
       water: 1.0,
       earth: 1.0,
@@ -271,23 +271,23 @@ describe('damage module', () => {
       dark: 1.0,
     };
 
-    it('should return 1.0 for normal resistance', () => {
+    it('通常耐性の場合1.0を返す', () => {
       const modifier = calculateElementalModifier('fire', normalResistance);
       expect(modifier).toBe(1.0);
     });
 
-    it('should return resistance value for matching element', () => {
-      const weakToFire: ElementResistance = { ...normalResistance, fire: 2.0 };
-      const resistantToFire: ElementResistance = { ...normalResistance, fire: 0.5 };
-      const immuneToFire: ElementResistance = { ...normalResistance, fire: 0 };
+    it('一致する属性の耐性値を返す', () => {
+      const weakToFire: DefaultElementResistance = { ...normalResistance, fire: 2.0 };
+      const resistantToFire: DefaultElementResistance = { ...normalResistance, fire: 0.5 };
+      const immuneToFire: DefaultElementResistance = { ...normalResistance, fire: 0 };
 
       expect(calculateElementalModifier('fire', weakToFire)).toBe(2.0);
       expect(calculateElementalModifier('fire', resistantToFire)).toBe(0.5);
       expect(calculateElementalModifier('fire', immuneToFire)).toBe(0);
     });
 
-    it('should return 1.0 for none element', () => {
-      const anyResistance: ElementResistance = {
+    it('無属性の場合1.0を返す', () => {
+      const anyResistance: DefaultElementResistance = {
         ...normalResistance,
         fire: 2.0,
         water: 0.5,
@@ -296,7 +296,7 @@ describe('damage module', () => {
       expect(modifier).toBe(1.0);
     });
 
-    it('should handle all element types', () => {
+    it('全ての属性タイプを処理する', () => {
       const elements: Array<'fire' | 'water' | 'earth' | 'wind' | 'lightning' | 'ice' | 'light' | 'dark'> = [
         'fire', 'water', 'earth', 'wind', 'lightning', 'ice', 'light', 'dark'
       ];

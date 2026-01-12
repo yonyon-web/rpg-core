@@ -6,7 +6,7 @@ import { calculateHitRate, checkHit, calculateCriticalRate, checkCritical } from
 import { Combatant, Skill, GameConfig } from '../../src/types';
 import { defaultGameConfig } from '../../src/config';
 
-describe('accuracy module', () => {
+describe('命中率モジュール', () => {
   // Test combatants
   const attacker: Combatant = {
     id: 'attacker-1',
@@ -68,20 +68,20 @@ describe('accuracy module', () => {
     description: 'Basic attack',
   };
 
-  describe('calculateHitRate', () => {
-    it('should calculate base hit rate correctly', () => {
+  describe('calculateHitRate（命中率計算）', () => {
+    it('基本命中率を正しく計算する', () => {
       const hitRate = calculateHitRate(attacker, target, skill);
       expect(hitRate).toBeGreaterThan(0);
       expect(hitRate).toBeLessThanOrEqual(1);
     });
 
-    it('should return 1.0 for guaranteed hit skills', () => {
+    it('必中スキルの場合1.0を返す', () => {
       const guaranteedSkill: Skill = { ...skill, isGuaranteedHit: true };
       const hitRate = calculateHitRate(attacker, target, guaranteedSkill);
       expect(hitRate).toBe(1.0);
     });
 
-    it('should consider attacker accuracy and target evasion', () => {
+    it('攻撃側の命中と対象の回避を考慮する', () => {
       const highAccuracyAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, accuracy: 50 },
@@ -97,7 +97,7 @@ describe('accuracy module', () => {
       expect(hitRate1).toBeGreaterThan(hitRate2);
     });
 
-    it('should cap hit rate at 100%', () => {
+    it('命中率を100%で上限する', () => {
       const superAccurateAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, accuracy: 1000 },
@@ -106,7 +106,7 @@ describe('accuracy module', () => {
       expect(hitRate).toBeLessThanOrEqual(1.0);
     });
 
-    it('should ensure minimum hit rate', () => {
+    it('最低命中率を保証する', () => {
       const lowAccuracyAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, accuracy: -1000 },
@@ -120,18 +120,18 @@ describe('accuracy module', () => {
     });
   });
 
-  describe('checkHit', () => {
-    it('should always hit with 100% hit rate', () => {
+  describe('checkHit（命中判定）', () => {
+    it('100%命中率の場合常に命中する', () => {
       const results = Array.from({ length: 100 }, () => checkHit(1.0));
       expect(results.every(hit => hit === true)).toBe(true);
     });
 
-    it('should never hit with 0% hit rate', () => {
+    it('0%命中率の場合決して命中しない', () => {
       const results = Array.from({ length: 100 }, () => checkHit(0));
       expect(results.every(hit => hit === false)).toBe(true);
     });
 
-    it('should hit approximately half the time with 50% hit rate', () => {
+    it('50%命中率の場合約半分の確率で命中する', () => {
       const sampleSize = 1000;
       const results = Array.from({ length: sampleSize }, () => checkHit(0.5));
       const hitCount = results.filter(hit => hit).length;
@@ -143,13 +143,13 @@ describe('accuracy module', () => {
     });
   });
 
-  describe('calculateCriticalRate', () => {
-    it('should calculate base critical rate from config', () => {
+  describe('calculateCriticalRate（クリティカル率計算）', () => {
+    it('設定から基本クリティカル率を計算する', () => {
       const critRate = calculateCriticalRate(attacker, skill, defaultGameConfig);
       expect(critRate).toBeGreaterThanOrEqual(defaultGameConfig.combat.baseCriticalRate);
     });
 
-    it('should add luck-based critical rate', () => {
+    it('運ベースのクリティカル率を加算する', () => {
       const lowLuckAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, luck: 0 },
@@ -165,7 +165,7 @@ describe('accuracy module', () => {
       expect(critRate2).toBeGreaterThan(critRate1);
     });
 
-    it('should add skill critical bonus', () => {
+    it('スキルのクリティカルボーナスを加算する', () => {
       const normalSkill: Skill = { ...skill, criticalBonus: 0 };
       const bonusSkill: Skill = { ...skill, criticalBonus: 0.2 };
 
@@ -176,7 +176,7 @@ describe('accuracy module', () => {
       expect(critRate2).toBeCloseTo(critRate1 + 0.2);
     });
 
-    it('should add combatant critical rate stat', () => {
+    it('キャラクターのクリティカル率ステータスを加算する', () => {
       const noCritAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, criticalRate: 0 },
@@ -192,7 +192,7 @@ describe('accuracy module', () => {
       expect(critRate2).toBeGreaterThan(critRate1);
     });
 
-    it('should cap critical rate at 100%', () => {
+    it('クリティカル率を100%で上限する', () => {
       const superCritAttacker: Combatant = {
         ...attacker,
         stats: { ...attacker.stats, luck: 1000, criticalRate: 1.0 },
@@ -204,18 +204,18 @@ describe('accuracy module', () => {
     });
   });
 
-  describe('checkCritical', () => {
-    it('should always crit with 100% crit rate', () => {
+  describe('checkCritical（クリティカル判定）', () => {
+    it('100%クリティカル率の場合常にクリティカルする', () => {
       const results = Array.from({ length: 100 }, () => checkCritical(1.0));
       expect(results.every(crit => crit === true)).toBe(true);
     });
 
-    it('should never crit with 0% crit rate', () => {
+    it('0%クリティカル率の場合決してクリティカルしない', () => {
       const results = Array.from({ length: 100 }, () => checkCritical(0));
       expect(results.every(crit => crit === false)).toBe(true);
     });
 
-    it('should crit approximately 5% of the time with 5% crit rate', () => {
+    it('5%クリティカル率の場合約5%の確率でクリティカルする', () => {
       const sampleSize = 1000;
       const results = Array.from({ length: sampleSize }, () => checkCritical(0.05));
       const critCount = results.filter(crit => crit).length;

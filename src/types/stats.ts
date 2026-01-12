@@ -29,8 +29,4 @@ export interface DefaultStats extends BaseStats {
   criticalRate: number;     // クリティカル率補正
 }
 
-/**
- * 後方互換性のためのエイリアス
- * @deprecated DefaultStatsを使用してください。将来のバージョンで削除される可能性があります。
- */
-export type Stats = DefaultStats;
+

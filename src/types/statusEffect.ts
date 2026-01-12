@@ -31,11 +31,7 @@ export type DefaultStatusEffectType =
   | 'speed-up'      // 素早さアップ
   | 'speed-down';   // 素早さダウン
 
-/**
- * 後方互換性のためのエイリアス
- * @deprecated DefaultStatusEffectTypeを使用してください。将来のバージョンで削除される可能性があります。
- */
-export type StatusEffectType = DefaultStatusEffectType;
+
 
 /**
  * 状態異常カテゴリの基本型
@@ -54,11 +50,7 @@ export type DefaultStatusEffectCategory =
   | 'hot'           // 継続回復
   | 'disable';      // 行動制限
 
-/**
- * 後方互換性のためのエイリアス
- * @deprecated DefaultStatusEffectCategoryを使用してください。将来のバージョンで削除される可能性があります。
- */
-export type StatusEffectCategory = DefaultStatusEffectCategory;
+
 
 /**
  * 状態異常

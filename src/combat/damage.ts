@@ -2,7 +2,7 @@
  * ダメージ計算モジュール
  */
 
-import { Combatant, Skill, GameConfig, DamageResult, Element, ElementResistance, DefaultStats } from '../types';
+import { Combatant, Skill, GameConfig, DamageResult, DefaultElement, DefaultElementResistance, DefaultStats } from '../types';
 import { calculateHitRate, checkHit, calculateCriticalRate, checkCritical } from './accuracy';
 
 /**
@@ -287,8 +287,8 @@ export function calculateHealAmount(
  * @returns 属性倍率（0.0〜2.0以上）
  */
 export function calculateElementalModifier(
-  attackElement: Element,
-  targetResistance: ElementResistance
+  attackElement: DefaultElement,
+  targetResistance: DefaultElementResistance
 ): number {
   // 無属性は倍率なし
   if (attackElement === 'none') {
