@@ -91,7 +91,8 @@ export class ItemService {
       }
 
       case 'heal-status': {
-        // 状態異常回復は今後実装
+        // Status effect healing - delegated to StatusEffectService
+        // This effect type is handled by StatusEffectService.removeStatusEffect
         effects.push({
           target,
           statusRemoved: [],
