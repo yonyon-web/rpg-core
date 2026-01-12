@@ -230,7 +230,7 @@ const empBlast: Skill<SciFiElement> = {
 #### カスタムスキルタイプを使用
 
 ```typescript
-import { Skill, BaseSkillType } from 'rpg-core';
+import { Skill, BaseSkillType, DefaultElement, DefaultTargetType } from 'rpg-core';
 
 // アクションRPG風のスキルタイプ
 type ActionSkillType = 
@@ -241,7 +241,7 @@ type ActionSkillType =
   | 'special-move'   // 必殺技
   | 'counter';       // カウンター
 
-const rushAttack: Skill<any, ActionSkillType> = {
+const rushAttack: Skill<DefaultElement, ActionSkillType, DefaultTargetType> = {
   id: 'skill-rush',
   name: 'ラッシュアタック',
   type: 'light-attack',  // カスタムスキルタイプ
@@ -275,7 +275,7 @@ type TacticsTargetType =
   | 'cross-shape'      // 十字形
   | 'entire-field';    // 全体
 
-const areaAttack: Skill<any, any, TacticsTargetType> = {
+const areaAttack: Skill<DefaultElement, DefaultSkillType, TacticsTargetType> = {
   id: 'skill-area',
   name: 'エリア攻撃',
   type: 'physical',
