@@ -15,3 +15,4 @@ export * from './battle';
 export * from './command';
 export * from './reward';
 export * from './equipment';
+export * from './job';
