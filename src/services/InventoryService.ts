@@ -25,7 +25,12 @@ import {
   sortInventory,
   stackItems,
   getAvailableSlots,
-  getInventoryStats
+  getInventoryStats,
+  getResource,
+  addResource,
+  removeResource,
+  hasResource,
+  setResource
 } from '../item/inventory';
 
 /**
@@ -264,6 +269,117 @@ export class InventoryService {
    */
   hasMoney(amount: number): boolean {
     return this.inventory.money >= amount;
+  }
+  
+  // ===== リソース管理 =====
+  
+  /**
+   * リソース量を取得
+   * 
+   * @param resourceId - リソースID（例: 'sp', 'craft-points', 'tokens'）
+   * @returns リソース量（存在しない場合は0）
+   * 
+   * @example
+   * ```typescript
+   * // スキルポイント取得
+   * const sp = service.getResource('sp');
+   * 
+   * // クラフトポイント取得
+   * const craftPoints = service.getResource('craft-points');
+   * ```
+   */
+  getResource(resourceId: string): number {
+    return getResource(this.inventory, resourceId);
+  }
+  
+  /**
+   * リソースを追加
+   * 
+   * @param resourceId - リソースID
+   * @param amount - 追加する量
+   * 
+   * @example
+   * ```typescript
+   * // スキルポイントを5追加
+   * service.addResource('sp', 5);
+   * 
+   * // クラフトポイントを10追加
+   * service.addResource('craft-points', 10);
+   * ```
+   */
+  addResource(resourceId: string, amount: number): void {
+    addResource(this.inventory, resourceId, amount);
+  }
+  
+  /**
+   * リソースを減らす
+   * 
+   * @param resourceId - リソースID
+   * @param amount - 減らす量
+   * @returns 成功したか（リソース不足の場合はfalse）
+   * 
+   * @example
+   * ```typescript
+   * // スキル習得にSP消費
+   * if (service.removeResource('sp', 10)) {
+   *   console.log('スキルを習得しました');
+   * } else {
+   *   console.log('SPが不足しています');
+   * }
+   * ```
+   */
+  removeResource(resourceId: string, amount: number): boolean {
+    return removeResource(this.inventory, resourceId, amount);
+  }
+  
+  /**
+   * リソースが十分にあるか確認
+   * 
+   * @param resourceId - リソースID
+   * @param amount - 必要な量
+   * @returns 十分にあるか
+   * 
+   * @example
+   * ```typescript
+   * // クラフト実行前のチェック
+   * if (service.hasResource('craft-points', 50)) {
+   *   // クラフト実行
+   * }
+   * ```
+   */
+  hasResource(resourceId: string, amount: number): boolean {
+    return hasResource(this.inventory, resourceId, amount);
+  }
+  
+  /**
+   * リソースを設定
+   * 
+   * @param resourceId - リソースID
+   * @param amount - 設定する量
+   * 
+   * @example
+   * ```typescript
+   * // 初期SPを設定
+   * service.setResource('sp', 100);
+   * ```
+   */
+  setResource(resourceId: string, amount: number): void {
+    setResource(this.inventory, resourceId, amount);
+  }
+  
+  /**
+   * 全リソースを取得
+   * 
+   * @returns リソースのレコード（存在しない場合は空オブジェクト）
+   * 
+   * @example
+   * ```typescript
+   * const resources = service.getAllResources();
+   * // { sp: 50, 'craft-points': 100, tokens: 25 }
+   * ```
+   */
+  getAllResources(): Record<string, number> {
+    return this.inventory.resources || {};
   }
   
   // ===== 判定ロジック =====

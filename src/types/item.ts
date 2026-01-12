@@ -151,8 +151,9 @@ export interface InventorySlot {
 export interface Inventory {
   slots: InventorySlot[];          // スロットリスト
   maxSlots: number;                // 最大スロット数
-  money: number;                   // 所持金
+  money: number;                   // 所持金（後方互換性のため維持）
   usedSlots: number;               // 使用中のスロット数
+  resources?: Record<string, number>; // 汎用リソース（SP、クラフトポイント等、ゲーム毎に定義可能）
 }
 
 /**
@@ -220,4 +221,5 @@ export interface InventoryStats {
   totalValue: number;              // 総価値
   equippedCount: number;           // 装備中アイテム数
   money: number;                   // 所持金
+  resources?: Record<string, number>; // 汎用リソース
 }

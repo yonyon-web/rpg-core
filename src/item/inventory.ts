@@ -365,6 +365,98 @@ export function getInventoryStats(inventory: Inventory): InventoryStats {
     itemsByCategory,
     totalValue,
     equippedCount,
-    money: inventory.money
+    money: inventory.money,
+    resources: inventory.resources
   };
+}
+
+/**
+ * リソース量を取得
+ * 
+ * @param inventory - インベントリ
+ * @param resourceId - リソースID（例: 'sp', 'craft-points', 'tokens'）
+ * @returns リソース量（存在しない場合は0）
+ */
+export function getResource(
+  inventory: Inventory,
+  resourceId: string
+): number {
+  return inventory.resources?.[resourceId] || 0;
+}
+
+/**
+ * リソースを追加
+ * 
+ * @param inventory - インベントリ
+ * @param resourceId - リソースID
+ * @param amount - 追加する量
+ */
+export function addResource(
+  inventory: Inventory,
+  resourceId: string,
+  amount: number
+): void {
+  if (!inventory.resources) {
+    inventory.resources = {};
+  }
+  inventory.resources[resourceId] = (inventory.resources[resourceId] || 0) + amount;
+}
+
+/**
+ * リソースを減らす
+ * 
+ * @param inventory - インベントリ
+ * @param resourceId - リソースID
+ * @param amount - 減らす量
+ * @returns 成功したか（リソース不足の場合はfalse）
+ */
+export function removeResource(
+  inventory: Inventory,
+  resourceId: string,
+  amount: number
+): boolean {
+  const current = getResource(inventory, resourceId);
+  if (current < amount) {
+    return false;
+  }
+  
+  if (!inventory.resources) {
+    inventory.resources = {};
+  }
+  inventory.resources[resourceId] = current - amount;
+  return true;
+}
+
+/**
+ * リソースが十分にあるか確認
+ * 
+ * @param inventory - インベントリ
+ * @param resourceId - リソースID
+ * @param amount - 必要な量
+ * @returns 十分にあるか
+ */
+export function hasResource(
+  inventory: Inventory,
+  resourceId: string,
+  amount: number
+): boolean {
+  return getResource(inventory, resourceId) >= amount;
+}
+
+/**
+ * リソースを設定
+ * 
+ * @param inventory - インベントリ
+ * @param resourceId - リソースID
+ * @param amount - 設定する量
+ */
+export function setResource(
+  inventory: Inventory,
+  resourceId: string,
+  amount: number
+): void {
+  if (!inventory.resources) {
+    inventory.resources = {};
+  }
+  inventory.resources[resourceId] = amount;
 }

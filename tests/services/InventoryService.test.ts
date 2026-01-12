@@ -620,6 +620,211 @@ describe('InventoryService', () => {
     });
   });
   
+  describe('リソース管理', () => {
+    describe('getResource', () => {
+      it('リソース量を取得できる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        // 初期状態は0
+        expect(service.getResource('sp')).toBe(0);
+        
+        // リソースを追加
+        service.addResource('sp', 50);
+        expect(service.getResource('sp')).toBe(50);
+      });
+      
+      it('存在しないリソースは0を返す', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        expect(service.getResource('nonexistent')).toBe(0);
+      });
+    });
+    
+    describe('addResource', () => {
+      it('リソースを追加できる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        service.addResource('sp', 30);
+        expect(service.getResource('sp')).toBe(30);
+        
+        // 追加で加算される
+        service.addResource('sp', 20);
+        expect(service.getResource('sp')).toBe(50);
+      });
+      
+      it('複数種類のリソースを管理できる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        service.addResource('sp', 100);
+        service.addResource('craft-points', 50);
+        service.addResource('tokens', 25);
+        
+        expect(service.getResource('sp')).toBe(100);
+        expect(service.getResource('craft-points')).toBe(50);
+        expect(service.getResource('tokens')).toBe(25);
+      });
+    });
+    
+    describe('removeResource', () => {
+      it('リソースを減らせる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        service.addResource('sp', 100);
+        const result = service.removeResource('sp', 30);
+        
+        expect(result).toBe(true);
+        expect(service.getResource('sp')).toBe(70);
+      });
+      
+      it('リソース不足の場合は失敗する', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        service.addResource('sp', 20);
+        const result = service.removeResource('sp', 50);
+        
+        expect(result).toBe(false);
+        expect(service.getResource('sp')).toBe(20); // 変わらない
+      });
+      
+      it('存在しないリソースの削除は失敗する', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        const result = service.removeResource('nonexistent', 10);
+        
+        expect(result).toBe(false);
+      });
+    });
+    
+    describe('hasResource', () => {
+      it('リソースが十分にあるか確認できる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        service.addResource('sp', 100);
+        
+        expect(service.hasResource('sp', 50)).toBe(true);
+        expect(service.hasResource('sp', 100)).toBe(true);
+        expect(service.hasResource('sp', 150)).toBe(false);
+      });
+      
+      it('存在しないリソースはfalseを返す', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        expect(service.hasResource('nonexistent', 1)).toBe(false);
+      });
+    });
+    
+    describe('setResource', () => {
+      it('リソースを設定できる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        service.setResource('sp', 100);
+        expect(service.getResource('sp')).toBe(100);
+        
+        // 上書きされる
+        service.setResource('sp', 50);
+        expect(service.getResource('sp')).toBe(50);
+      });
+    });
+    
+    describe('getAllResources', () => {
+      it('全リソースを取得できる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        service.addResource('sp', 100);
+        service.addResource('craft-points', 50);
+        service.addResource('tokens', 25);
+        
+        const resources = service.getAllResources();
+        
+        expect(resources).toEqual({
+          sp: 100,
+          'craft-points': 50,
+          tokens: 25
+        });
+      });
+      
+      it('リソースが存在しない場合は空オブジェクトを返す', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        const resources = service.getAllResources();
+        expect(resources).toEqual({});
+      });
+    });
+    
+    describe('統合シナリオ: スキル習得', () => {
+      it('SPを使用してスキルを習得できる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        // 初期SP設定
+        service.setResource('sp', 100);
+        
+        // スキル習得コスト確認
+        const skillCost = 30;
+        expect(service.hasResource('sp', skillCost)).toBe(true);
+        
+        // SP消費
+        const success = service.removeResource('sp', skillCost);
+        expect(success).toBe(true);
+        expect(service.getResource('sp')).toBe(70);
+        
+        // 2つ目のスキル
+        expect(service.removeResource('sp', 30)).toBe(true);
+        expect(service.getResource('sp')).toBe(40);
+        
+        // 3つ目のスキル（不足）
+        expect(service.hasResource('sp', 50)).toBe(false);
+        expect(service.removeResource('sp', 50)).toBe(false);
+        expect(service.getResource('sp')).toBe(40); // 変わらない
+      });
+    });
+    
+    describe('統合シナリオ: クラフト', () => {
+      it('クラフトポイントとアイテムを使用してクラフトできる', () => {
+        const inventory = createEmptyInventory();
+        const service = new InventoryService(inventory);
+        
+        // クラフトポイント設定
+        service.addResource('craft-points', 100);
+        
+        // 素材追加
+        service.addItem(potionItem, 5);
+        service.addItem(hiPotionItem, 3);
+        
+        // クラフト可能か確認
+        const craftCost = 20;
+        const hasCraftPoints = service.hasResource('craft-points', craftCost);
+        const hasMaterial1 = service.hasItem('potion', 2);
+        const hasMaterial2 = service.hasItem('hi-potion', 1);
+        
+        expect(hasCraftPoints).toBe(true);
+        expect(hasMaterial1).toBe(true);
+        expect(hasMaterial2).toBe(true);
+        
+        // クラフト実行
+        service.removeResource('craft-points', craftCost);
+        service.removeItem('potion', 2);
+        service.removeItem('hi-potion', 1);
+        
+        expect(service.getResource('craft-points')).toBe(80);
+        expect(service.getItemCount('potion')).toBe(3);
+        expect(service.getItemCount('hi-potion')).toBe(2);
+      });
+    });
+  });
+  
   describe('統合テスト', () => {
     it('複雑なシナリオ: ショップでの購入と使用', () => {
       const inventory = createEmptyInventory();
