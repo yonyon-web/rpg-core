@@ -8,3 +8,4 @@ export * from './EnemyAIService';
 export * from './EnemyGroupService';
 export * from './RewardService';
 export * from './EquipmentService';
+export * from './PartyService';
