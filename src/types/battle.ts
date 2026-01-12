@@ -11,6 +11,8 @@ import { Skill } from './skill';
  */
 export interface Character extends Combatant {
   job?: string;          // ジョブ名（オプション）
+  jobLevel?: number;     // 現在のジョブレベル（オプション）
+  jobExp?: number;       // 現在のジョブ経験値（オプション）
   skills: Skill[];
   currentExp?: number;   // 現在の経験値（オプション）
 }
@@ -24,6 +26,7 @@ export interface Enemy extends Combatant {
   aiStrategy: AIStrategy; // AI戦略
   dropItems?: DropItem[]; // ドロップアイテム
   expReward?: number;     // 経験値報酬
+  jobExpReward?: number;  // ジョブ経験値報酬（オプション）
   moneyReward?: number;   // お金報酬
 }
 
@@ -93,6 +96,7 @@ export type BattleResult = 'victory' | 'defeat' | 'escaped';
  */
 export interface BattleRewards {
   exp: number;           // 経験値
+  jobExp?: number;       // ジョブ経験値（オプション）
   money: number;         // お金
   items: DropItem[];     // アイテム
 }

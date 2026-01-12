@@ -67,17 +67,29 @@ export class RewardService<
    * 
    * @param party - パーティメンバー
    * @param totalExp - 配分する総経験値
+   * @param totalJobExp - 配分する総ジョブ経験値（オプション）
    * @returns 配分結果
    */
-  distributeExp(party: Combatant<TStats>[], totalExp: number): ExpDistribution[] {
+  distributeExp(party: Combatant<TStats>[], totalExp: number, totalJobExp?: number): ExpDistribution[] {
     const distribution = growth.distributeExpToParty(party, totalExp);
+    const jobExpDistribution = totalJobExp ? growth.distributeExpToParty(party, totalJobExp) : null;
     const results: ExpDistribution[] = [];
     
     for (const [characterId, exp] of distribution.entries()) {
       const character = party.find(c => c.id === characterId);
       if (character) {
         character.currentExp = (character.currentExp || 0) + exp;
-        results.push({ characterId, exp });
+        
+        const jobExp = jobExpDistribution?.get(characterId) || 0;
+        if (jobExp > 0) {
+          (character as any).jobExp = ((character as any).jobExp || 0) + jobExp;
+        }
+        
+        results.push({ 
+          characterId, 
+          exp,
+          jobExp: jobExp > 0 ? jobExp : undefined
+        });
       }
     }
     
@@ -120,6 +132,24 @@ export class RewardService<
       });
     }
     
+    // ジョブレベルアップ判定
+    const jobExp = (character as any).jobExp || 0;
+    const jobLevel = (character as any).jobLevel || 1;
+    
+    while (growth.canJobLevelUp(jobExp, jobLevel, this.config.expCurve)) {
+      (character as any).jobLevel = jobLevel + 1;
+      
+      results.push({
+        newLevel: character.level,
+        statGrowth: {},
+        newSkills: [],
+        jobLevelUp: true,
+        newJobLevel: (character as any).jobLevel
+      });
+      
+      break; // 1回のみジョブレベルアップ処理
+    }
+    
     return results;
   }
 
@@ -134,10 +164,10 @@ export class RewardService<
     party: Combatant<TStats>[], 
     rewards: BattleRewards
   ): RewardDistributionResult<TStats> {
-    // 経験値配分
-    const expDistribution = this.distributeExp(party, rewards.exp);
+    // 経験値配分（ジョブ経験値も含む）
+    const expDistribution = this.distributeExp(party, rewards.exp, rewards.jobExp);
     
-    // レベルアップ処理
+    // レベルアップ処理（ジョブレベルアップも含む）
     const levelUpResults = new Map<string, LevelUpResult<TStats>[]>();
     for (const character of party) {
       const levelUps = this.processLevelUps(character);

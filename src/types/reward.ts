@@ -14,6 +14,8 @@ export interface LevelUpResult<TStats extends BaseStats = DefaultStats> {
   newLevel: number;
   statGrowth: Partial<TStats>;
   newSkills: UniqueId[];  // 習得したスキルIDのリスト
+  jobLevelUp?: boolean;   // ジョブレベルアップしたか（オプション）
+  newJobLevel?: number;   // 新しいジョブレベル（オプション）
 }
 
 /**
@@ -22,6 +24,7 @@ export interface LevelUpResult<TStats extends BaseStats = DefaultStats> {
 export interface ExpDistribution {
   characterId: UniqueId;
   exp: number;
+  jobExp?: number;  // ジョブ経験値（オプション）
 }
 
 /**

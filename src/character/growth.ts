@@ -218,3 +218,52 @@ export function distributeExpToParty<TStats extends BaseStats = DefaultStats>(
   
   return distribution;
 }
+
+/**
+ * ジョブレベルアップに必要な経験値を計算
+ * 
+ * @param jobLevel - 目標ジョブレベル
+ * @param config - 経験値曲線設定（オプション）
+ * @returns そのジョブレベルに到達するために必要な累積経験値
+ * 
+ * @example
+ * getJobExpForLevel(2); // ジョブレベル2に必要な経験値
+ */
+export function getJobExpForLevel<TExpCurve extends BaseExpCurveType = DefaultExpCurveType>(
+  jobLevel: number,
+  config?: ExpCurveConfig<TExpCurve>
+): number {
+  // ジョブレベルは通常レベルと同じ曲線を使用するが、baseExpは少なめ
+  const baseExp = config?.baseExpRequired ?? 80;
+  const growthRate = config?.expGrowthRate ?? 1.15;
+  
+  if (jobLevel <= 1) return 0;
+  
+  // カスタム曲線が指定されている場合はそれを使用
+  if (config?.customCurve) {
+    return config.customCurve(jobLevel, baseExp, growthRate);
+  }
+  
+  // デフォルトは線形曲線
+  const curveType = (config?.type ?? 'linear') as DefaultExpCurveType;
+  const curveFunc = defaultExpCurves[curveType] || defaultExpCurves.linear;
+  
+  return curveFunc(jobLevel, baseExp, growthRate);
+}
+
+/**
+ * ジョブレベルアップ判定
+ * 
+ * @param currentJobExp - 現在のジョブ経験値
+ * @param currentJobLevel - 現在のジョブレベル
+ * @param config - 経験値曲線設定（オプション）
+ * @returns ジョブレベルアップ可能かどうか
+ */
+export function canJobLevelUp<TExpCurve extends BaseExpCurveType = DefaultExpCurveType>(
+  currentJobExp: number,
+  currentJobLevel: number,
+  config?: ExpCurveConfig<TExpCurve>
+): boolean {
+  const expRequired = getJobExpForLevel(currentJobLevel + 1, config);
+  return currentJobExp >= expRequired;
+}
