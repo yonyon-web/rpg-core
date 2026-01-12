@@ -136,7 +136,6 @@ export interface Skill<
   element: TElement;        // 属性
   power: number;            // 威力（倍率）
   cost?: SkillCost;         // 消費コスト（カスタマイズ可能）
-  mpCost: number;           // 消費MP（後方互換性のため維持）
   accuracy: number;         // 命中率（1.0 = 100%）
   criticalBonus: number;    // クリティカル率ボーナス
   isGuaranteedHit: boolean; // 必中フラグ

@@ -278,7 +278,7 @@ export class CommandService {
    */
   private getUsableSkills(actor: Character): Skill[] {
     return actor.skills.filter(skill => {
-      // 新しいcost形式をチェック
+      // cost形式をチェック
       if (skill.cost) {
         if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {
           return false;
@@ -297,8 +297,8 @@ export class CommandService {
         }
         return true;
       }
-      // 後方互換性: mpCost
-      return actor.currentMp >= skill.mpCost;
+      // costが未定義の場合はコスト無しとして扱う
+      return true;
     });
   }
 

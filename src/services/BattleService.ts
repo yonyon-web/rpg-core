@@ -382,7 +382,7 @@ export class BattleService {
    * スキルコストをチェックする
    */
   private checkSkillCost(actor: any, skill: any): { canUse: boolean; message?: string } {
-    // 新しいcost形式をチェック
+    // cost形式をチェック
     if (skill.cost) {
       if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {
         return { canUse: false, message: 'Not enough MP' };
@@ -400,10 +400,6 @@ export class BattleService {
         }
       }
     }
-    // 後方互換性: mpCost
-    else if (skill.mpCost > 0 && actor.currentMp < skill.mpCost) {
-      return { canUse: false, message: 'Not enough MP' };
-    }
     
     return { canUse: true };
   }
@@ -412,7 +408,7 @@ export class BattleService {
    * スキルコストを消費する
    */
   private consumeSkillCost(actor: any, skill: any): void {
-    // 新しいcost形式を消費
+    // cost形式を消費
     if (skill.cost) {
       if (skill.cost.mp !== undefined) {
         actor.currentMp -= skill.cost.mp;
@@ -429,10 +425,6 @@ export class BattleService {
           }
         }
       }
-    }
-    // 後方互換性: mpCost
-    else if (skill.mpCost > 0) {
-      actor.currentMp -= skill.mpCost;
     }
   }
 }

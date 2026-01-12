@@ -102,10 +102,11 @@ export class EnemyAIService {
       }
 
       // MP効率を考慮
-      if (skill.mpCost > 0) {
+      const mpCost = skill.cost?.mp || 0;
+      if (mpCost > 0) {
         const mpRatio = enemy.currentMp / enemy.stats.maxMp;
         if (mpRatio < 0.3) {
-          score -= skill.mpCost * 2;
+          score -= mpCost * 2;
         }
       }
 
@@ -199,7 +200,10 @@ export class EnemyAIService {
   }
 
   private getAvailableSkills(enemy: Enemy): Skill[] {
-    return enemy.skills.filter(skill => enemy.currentMp >= skill.mpCost);
+    return enemy.skills.filter(skill => {
+      const mpCost = skill.cost?.mp || 0;
+      return enemy.currentMp >= mpCost;
+    });
   }
 
   private buildBattleSituation(battleState: BattleState): BattleSituation {
