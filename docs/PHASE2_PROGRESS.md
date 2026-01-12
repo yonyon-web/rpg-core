@@ -1,6 +1,6 @@
-# Phase 2 Implementation Progress - RewardService Complete
+# Phase 2 Complete - RewardService, EquipmentService, PartyService, StatusEffectService
 
-## Completed: RewardService (1/4)
+## ✅ Phase 2完了 (4/4 services complete)
 
 ### Implementation Summary
 
@@ -52,140 +52,40 @@ Successfully implemented **RewardService** following strict TDD methodology:
 3. **Service Responsibility**: Service modifies character state, Core Engine provides calculations
 4. **Type Safety**: Full TypeScript support with generics for custom stats
 
-## Remaining Phase 2 Services (3/4)
+## Phase 2完了サマリー
 
-### 2. EquipmentService
-**Purpose**: Manage equipment changes and equipment effects
+Phase 2のすべてのサービスが実装完了しました：
 
-**Required Core Engine Modules**:
-- `item/equipment.ts`:
-  - `canEquip(character, equipment)` - Check if character can equip item
-  - `getEquipmentEffects(equipment)` - Get stat modifiers from equipment
-  - `validateEquipmentSlot(slot, equipmentType)` - Validate equipment fits slot
+### ✅ 1. RewardService
+**目的**: 報酬処理とレベルアップ管理
 
-**Service Methods**:
-- `equipItem(character, equipment, slot)`
-- `unequipItem(character, slot)`
-- `getEquippedItems(character)`
-- `getEquipmentStats(character)`
+**実装済みCore Engine**: `character/growth.ts`
 
-**Test Scenarios**:
-- Equip valid item
-- Prevent invalid equipment (wrong type, level requirement)
-- Calculate equipment stat bonuses
-- Swap equipment
-- Unequip items
+### ✅ 2. EquipmentService
+**目的**: 装備変更と装備効果の管理
 
-### 3. PartyService
-**Purpose**: Manage party composition and formation
+**実装済みCore Engine**: `item/equipment.ts`
 
-**Required Core Engine Modules**:
-- `party/formation.ts`:
-  - `validatePartySize(members, config)` - Check party size limits
-  - `isValidFormation(formation)` - Validate formation rules
-  - `calculateFormationBonus(formation, position)` - Get position bonuses
+### ✅ 3. PartyService
+**目的**: パーティ編成とフォーメーション管理
 
-**Service Methods**:
-- `addMember(party, character)`
-- `removeMember(party, characterId)`
-- `swapMembers(party, index1, index2)`
-- `changeFormation(party, formation)`
-- `saveFormation(formation, name)`
+**実装済みCore Engine**: `party/formation.ts`
 
-**Test Scenarios**:
-- Add/remove party members
-- Enforce party size limits
-- Change member positions
-- Save/load formations
-- Formation position effects
+### ✅ 4. StatusEffectService
+**目的**: 状態異常の管理（付与、解除、更新）
 
-### 4. StatusEffectService
-**Purpose**: Manage status effects (poison, sleep, buffs, etc.)
+**実装済みCore Engine**: `status/effects.ts`
 
-**Required Core Engine Modules**:
-- `status/effects.ts`:
-  - `canApplyEffect(target, effect)` - Check resistance/immunity
-  - `calculateEffectDamage(target, effect)` - Calculate effect damage
-  - `tickEffect(effect)` - Decrease duration
-  - `isEffectExpired(effect)` - Check if effect should end
+## Phase 2統計
 
-**Service Methods**:
-- `applyStatusEffect(target, effect)`
-- `removeStatusEffect(target, effectId)`
-- `updateStatusEffects(combatants)` - Process all effects per turn
-- `canAct(combatant)` - Check if paralyzed/sleeping
-- `getActiveEffects(combatant)`
+- **実装済みサービス**: 4/4 (100%)
+- **テスト**: すべて合格
+- **品質**: TDD手法で高品質を維持
 
-**Test Scenarios**:
-- Apply status effect with resistance check
-- Stack/overwrite effects
-- Effect duration tracking
-- Continuous damage (poison)
-- Action restrictions (paralysis, sleep)
-- Effect removal
-- Immunity checks
+## 次のフェーズ
 
-## Implementation Guide for Remaining Services
+Phase 3の実装が完了し、Phase 4の計画が進行中です。
 
-Each service should follow this pattern:
-
-1. **Create test file first** (e.g., `tests/services/EquipmentService.test.ts`)
-2. **Write failing tests** for one feature at a time
-3. **Create Core Engine module** if needed
-4. **Implement Service class** to make tests pass
-5. **Export from index files**
-6. **Run all tests** to ensure no regressions
-7. **Commit progress**
-
-## Example TDD Workflow
-
-```typescript
-// 1. Write test (RED)
-test('should equip valid weapon', () => {
-  const service = new EquipmentService();
-  const character = createCharacter();
-  const weapon = createWeapon('sword');
-  
-  const result = service.equipItem(character, weapon, 'mainHand');
-  
-  expect(result.success).toBe(true);
-  expect(character.equipment.mainHand).toBe(weapon);
-});
-
-// 2. Make it pass (GREEN)
-equipItem(character, equipment, slot) {
-  character.equipment[slot] = equipment;
-  return { success: true };
-}
-
-// 3. Refactor while tests stay green
-equipItem(character, equipment, slot) {
-  if (!this.coreEngine.canEquip(character, equipment)) {
-    return { success: false, reason: 'Cannot equip' };
-  }
-  character.equipment[slot] = equipment;
-  return { success: true };
-}
-```
-
-## Quality Standards to Maintain
-
-- ✅ All tests must pass
-- ✅ Code coverage > 85%
-- ✅ No TypeScript errors
-- ✅ Pure functions in Core Engine
-- ✅ Backward compatibility
-- ✅ Comprehensive test cases
-- ✅ Clear documentation
-
-## Current Status
-
-- **Tests**: 168/168 passing (✅ 100%)
-- **Phase 2 Progress**: 1/4 services complete (25%)
-- **Code Quality**: Excellent
-- **Type Safety**: Full TypeScript support
-- **TDD Methodology**: Successfully demonstrated
-
-## Next Action
-
-Continue with EquipmentService implementation following the same TDD approach demonstrated in RewardService.
+詳細は以下のドキュメントを参照：
+- `PHASE3_COMPLETE_SUMMARY.md` - Phase 3完了サマリー
+- `PHASE4_PLANNING.md` - Phase 4計画書
