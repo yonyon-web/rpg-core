@@ -57,12 +57,6 @@ export type DefaultEquipmentType =
   | 'accessory';
 
 /**
- * 後方互換性のための型エイリアス
- */
-export type EquipmentSlot = DefaultEquipmentSlot;
-export type EquipmentType = DefaultEquipmentType;
-
-/**
  * 装備アイテム
  * @template TStats - ステータスの型（デフォルト: DefaultStats）
  * @template TEquipType - 装備タイプ（デフォルト: DefaultEquipmentType）
