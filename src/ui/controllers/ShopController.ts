@@ -1,4 +1,5 @@
 import type { ShopService } from '../../services/ShopService';
+import type { InventoryService } from '../../services/InventoryService';
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type {
@@ -14,14 +15,17 @@ import type {
 /**
  * ショップコントローラー
  * アイテムの購入・売却UIを管理します
+ * InventoryServiceと連携してインベントリ管理を行います
  */
 export class ShopController {
   private state: ObservableState<ShopUIState>;
   private events: EventEmitter<ShopEvents>;
   private service: ShopService;
+  private inventoryService: InventoryService;
 
-  constructor(service: ShopService) {
+  constructor(service: ShopService, inventoryService: InventoryService) {
     this.service = service;
+    this.inventoryService = inventoryService;
     
     this.state = new ObservableState<ShopUIState>({
       stage: 'browsing',
@@ -324,16 +328,16 @@ export class ShopController {
     } else {
       // 売却時のチェック
       
-      // インベントリにアイテムがあるかチェック（簡略化）
-      // const inventory = this.service.getInventory();
-      // const hasItem = inventory.slots.some(slot => 
-      //   slot.item.id === currentState.selectedItem.item.id && 
-      //   slot.quantity >= currentState.quantity
-      // );
-      // if (!hasItem) {
-      //   canTrade = false;
-      //   reasons.push('アイテムが不足しています');
-      // }
+      // インベントリにアイテムがあるかチェック
+      const inventory = this.inventoryService.getInventory();
+      const itemSlot = inventory.slots.find(slot => 
+        slot && slot.item.id === currentState.selectedItem!.item.id
+      );
+      
+      if (!itemSlot || itemSlot.quantity < currentState.quantity) {
+        canTrade = false;
+        reasons.push('アイテムが不足しています');
+      }
     }
 
     this.state.setState({

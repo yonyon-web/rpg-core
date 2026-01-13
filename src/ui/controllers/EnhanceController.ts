@@ -129,14 +129,17 @@ export class EnhanceController<TStats> {
     const equipment = currentState.selectedEquipment;
     const currentStats = equipment.stats || {} as Partial<TStats>;
     
-    // 強化後のステータスを計算（簡略化）
+    // 強化後のステータスを計算
     const afterStats = { ...currentStats };
     const differences: Partial<Record<keyof TStats, number>> = {};
 
-    // 各ステータスに+10%のボーナスを付与（簡略化）
+    // 装備固有の強化率を取得（装備に定義されていなければデフォルト10%）
+    const enhanceRate = (equipment as any).enhanceRate || 0.1;
+
+    // 各ステータスに強化率に応じたボーナスを付与
     for (const key in currentStats) {
       const currentValue = currentStats[key] as number;
-      const increase = Math.floor(currentValue * 0.1);
+      const increase = Math.floor(currentValue * enhanceRate);
       (afterStats as any)[key] = currentValue + increase;
       (differences as any)[key] = increase;
     }
