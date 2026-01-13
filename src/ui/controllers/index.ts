@@ -15,3 +15,6 @@ export { ItemController } from './ItemController';
 export { RewardController } from './RewardController';
 export { SkillLearnController } from './SkillLearnController';
 export { JobChangeController } from './JobChangeController';
+export { CraftController } from './CraftController';
+export { EnhanceController } from './EnhanceController';
+export { ShopController } from './ShopController';
