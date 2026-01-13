@@ -4,10 +4,66 @@
 
 import { CommandController } from '../../../src/ui/controllers/CommandController';
 import { CommandService } from '../../../src/services/CommandService';
+import type { Character, BattleState } from '../../../src/types/battle';
+import type { Enemy } from '../../../src/types/battle';
+import type { Skill } from '../../../src/types/skill';
+import type { DefaultStats } from '../../../src/types/stats';
 
 describe('CommandController', () => {
   let service: CommandService;
   let controller: CommandController;
+
+  const createCharacter = (id: string, name: string): Character => ({
+    id,
+    name,
+    level: 10,
+    stats: {
+      maxHp: 100,
+      maxMp: 50,
+      attack: 50,
+      defense: 30,
+      magic: 40,
+      magicDefense: 25,
+      speed: 60,
+      luck: 15,
+      accuracy: 10,
+      evasion: 5,
+      criticalRate: 0.05,
+    },
+    currentHp: 100,
+    currentMp: 50,
+    statusEffects: [],
+    position: 0,
+    learnedSkills: [],
+  });
+
+  const createEnemy = (id: string, name: string): Enemy => ({
+    id,
+    name,
+    level: 5,
+    stats: {
+      maxHp: 50,
+      maxMp: 20,
+      attack: 30,
+      defense: 20,
+      magic: 25,
+      magicDefense: 15,
+      speed: 40,
+      luck: 10,
+      accuracy: 8,
+      evasion: 3,
+      criticalRate: 0.03,
+    },
+    currentHp: 50,
+    currentMp: 20,
+    statusEffects: [],
+    position: 0,
+    enemyType: 'slime',
+    skills: [],
+    aiStrategy: 'balanced',
+    expReward: 50,
+    moneyReward: 20,
+  });
 
   beforeEach(() => {
     service = new CommandService();
@@ -95,4 +151,85 @@ describe('CommandController', () => {
       expect(state.stage).toBe(initialState.stage);
     });
   });
+
+  describe('calculateDamagePreview', () => {
+    it('actorがnullの場合は何もしない', () => {
+      const target = createEnemy('enemy1', 'Slime');
+      
+      controller.calculateDamagePreview(target);
+      
+      const state = controller.getState();
+      expect(state.damagePreview).toBeNull();
+      expect(state.targetPreview).toBeNull();
+    });
+
+    it('通常攻撃が選択されている場合、実際のダメージ計算を使用する', () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+      
+      const battleState: BattleState = {
+        phase: 'player-turn',
+        turnNumber: 1,
+        playerParty: [actor],
+        enemyGroup: [target],
+        turnOrder: [actor, target],
+        currentActorIndex: 0,
+        actionHistory: [],
+      };
+      
+      controller.startCommandSelection(actor, battleState);
+      controller.selectCommand('attack');
+      controller.calculateDamagePreview(target);
+      
+      const state = controller.getState();
+      expect(state.damagePreview).toBeGreaterThan(0);
+      expect(state.targetPreview).toBe(target);
+    });
+
+    it('スキルが選択されている場合、スキルのダメージ計算を使用する', () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+      
+      const skill: Skill = {
+        id: 'skill1',
+        name: 'Fire',
+        type: 'magic',
+        targetType: 'single-enemy',
+        power: 2.0,
+        accuracy: 1.0,
+        criticalBonus: 0,
+        isGuaranteedHit: true,
+        cost: { mp: 10 },
+        element: 'fire',
+        description: 'Fire magic attack',
+      };
+      
+      // 手動で状態を設定
+      controller['state'].setState({
+        stage: 'selecting-target',
+        actor,
+        availableCommands: [
+          { type: 'attack', label: 'Attack', enabled: true },
+          { type: 'skill', label: 'Skill', enabled: true }
+        ],
+        availableSkills: [skill],
+        availableItems: [],
+        availableTargets: [target],
+        selectedCommand: 'skill',
+        selectedSkill: skill,
+        selectedItem: null,
+        selectedTargets: [],
+        cursorIndex: 0,
+        damagePreview: null,
+        targetPreview: null
+      });
+      
+      controller.calculateDamagePreview(target);
+      
+      const state = controller.getState();
+      expect(state.damagePreview).toBeGreaterThan(0);
+      expect(state.targetPreview).toBe(target);
+    });
+  });
 });
+

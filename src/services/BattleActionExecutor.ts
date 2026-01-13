@@ -167,10 +167,31 @@ export class BattleActionExecutor {
 
   /**
    * 防御を実行する
+   * 防御時に防御力アップの状態異常を付与する
    */
   executeDefend(action: BattleAction): ActionResult {
-    // 防御はステータス効果として実装する必要があるが、
-    // 現時点では簡易実装
+    const actor = action.actor;
+    
+    // 防御状態異常を作成
+    const defendEffect = {
+      id: `defend-${actor.id}-${Date.now()}`,
+      type: 'defense-up' as const,
+      category: 'buff' as const,
+      name: '防御',
+      description: '防御力が上昇している',
+      power: 2.0, // 防御力2倍
+      duration: 1, // 次のターン開始まで
+      maxDuration: 1,
+      stackCount: 1,
+      maxStack: 1,
+      canBeDispelled: true,
+      appliedAt: Date.now(),
+      source: actor.id
+    };
+    
+    // 状態異常を付与
+    actor.statusEffects.push(defendEffect);
+    
     return {
       success: true,
       message: `${action.actor.name} is defending!`
