@@ -20,13 +20,69 @@ export interface BattleAnimation {
 }
 
 /**
+ * 戦闘メッセージの種類
+ */
+export type BattleMessageType =
+  | 'battle-started'
+  | 'battle-ended-victory'
+  | 'battle-ended-defeat'
+  | 'battle-ended-escaped'
+  | 'turn-started'
+  | 'action-attack'
+  | 'action-skill'
+  | 'action-item'
+  | 'action-defend'
+  | 'damage-dealt'
+  | 'damage-received'
+  | 'healing'
+  | 'status-effect-applied'
+  | 'status-effect-removed'
+  | 'character-ko'
+  | 'enemy-ko'
+  | 'custom';
+
+/**
+ * 戦闘メッセージデータ
+ * メッセージの構築に必要な構造化データ
+ */
+export interface BattleMessageData {
+  // アクター情報
+  actorName?: string;
+  actorId?: string;
+  
+  // ターゲット情報
+  targetName?: string;
+  targetId?: string;
+  targets?: Array<{ name: string; id: string }>;
+  
+  // 数値情報
+  damage?: number;
+  healing?: number;
+  turnNumber?: number;
+  
+  // スキル・アイテム情報
+  skillName?: string;
+  skillId?: string;
+  itemName?: string;
+  itemId?: string;
+  
+  // 状態異常情報
+  statusEffectName?: string;
+  statusEffectId?: string;
+  
+  // カスタムデータ
+  [key: string]: any;
+}
+
+/**
  * 戦闘メッセージ
  */
 export interface BattleMessage {
   id: string;
-  text: string;
+  messageType: BattleMessageType;
+  data: BattleMessageData;
   timestamp: number;
-  type?: 'info' | 'success' | 'warning' | 'error';
+  severity?: 'info' | 'success' | 'warning' | 'error';
 }
 
 /**

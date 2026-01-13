@@ -7,7 +7,14 @@
 
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
-import type { BattleUIState, BattleEvents, BattleAnimation, BattleMessage } from '../types/battle';
+import type { 
+  BattleUIState, 
+  BattleEvents, 
+  BattleAnimation, 
+  BattleMessage, 
+  BattleMessageType,
+  BattleMessageData
+} from '../types/battle';
 import type { BattleService } from '../../services/BattleService';
 import type { Character, Enemy, BattleAction } from '../../types/battle';
 import type { Combatant } from '../../types/combatant';
@@ -133,7 +140,9 @@ export class BattleController {
     });
     
     // メッセージを追加
-    this.addMessage('戦闘開始！');
+    this.addMessage('battle-started', {
+      actorName: party.length > 0 ? party[0].name : undefined
+    }, 'info');
     
     // イベント発火
     this.events.emit('battle-started', { party, enemies });
@@ -173,7 +182,18 @@ export class BattleController {
     // メッセージを追加
     if (result.success) {
       const actorName = 'name' in action.actor ? action.actor.name : '???';
-      this.addMessage(`${actorName}の攻撃！`);
+      const messageType: BattleMessageType = 
+        action.type === 'attack' ? 'action-attack' :
+        action.type === 'skill' ? 'action-skill' :
+        action.type === 'item' ? 'action-item' : 'action-defend';
+      
+      this.addMessage(messageType, {
+        actorName,
+        actorId: action.actor.id,
+        skillName: action.skill?.name,
+        skillId: action.skill?.id,
+        damage: result.damage
+      }, 'info');
     }
     
     // アニメーション再生
@@ -231,13 +251,13 @@ export class BattleController {
       isWaitingForInput: false
     }));
     
-    // メッセージを追加
+    // メッセージを追加（構造化データで）
     if (result === 'victory') {
-      this.addMessage('戦闘に勝利した！');
+      this.addMessage('battle-ended-victory', {}, 'success');
     } else if (result === 'defeat') {
-      this.addMessage('敗北した...');
+      this.addMessage('battle-ended-defeat', {}, 'error');
     } else {
-      this.addMessage('逃走に成功した！');
+      this.addMessage('battle-ended-escaped', {}, 'info');
     }
     
     this.events.emit('battle-ended', { result, rewards });
@@ -305,15 +325,21 @@ export class BattleController {
   /**
    * メッセージを追加
    * 
-   * @param text - メッセージテキスト
-   * @param type - メッセージタイプ
+   * @param messageType - メッセージタイプ
+   * @param data - メッセージデータ
+   * @param severity - 重要度
    */
-  addMessage(text: string, type?: 'info' | 'success' | 'warning' | 'error'): void {
+  addMessage(
+    messageType: BattleMessageType, 
+    data: BattleMessageData = {}, 
+    severity?: 'info' | 'success' | 'warning' | 'error'
+  ): void {
     const message: BattleMessage = {
       id: this.generateMessageId(),
-      text,
+      messageType,
+      data,
       timestamp: Date.now(),
-      type
+      severity
     };
     
     this.state.setState(prev => ({

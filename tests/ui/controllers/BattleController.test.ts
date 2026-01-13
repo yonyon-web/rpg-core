@@ -61,16 +61,17 @@ describe('BattleController', () => {
 
   describe('addMessage', () => {
     it('メッセージを追加する', () => {
-      controller.addMessage('テストメッセージ');
+      controller.addMessage('battle-started', { actorName: 'Hero' });
       
       const state = controller.getState();
       expect(state.messages).toHaveLength(1);
-      expect(state.messages[0].text).toBe('テストメッセージ');
+      expect(state.messages[0].messageType).toBe('battle-started');
+      expect(state.messages[0].data.actorName).toBe('Hero');
     });
 
     it('メッセージIDが一意である', () => {
-      controller.addMessage('メッセージ1');
-      controller.addMessage('メッセージ2');
+      controller.addMessage('action-attack', { actorName: 'Player1' });
+      controller.addMessage('action-attack', { actorName: 'Player2' });
       
       const state = controller.getState();
       expect(state.messages[0].id).not.toBe(state.messages[1].id);
@@ -80,10 +81,11 @@ describe('BattleController', () => {
       const listener = jest.fn();
       controller.on('message-added', listener);
       
-      controller.addMessage('テスト');
+      controller.addMessage('battle-ended-victory', {}, 'success');
       
       expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-        text: 'テスト'
+        messageType: 'battle-ended-victory',
+        severity: 'success'
       }));
     });
   });

@@ -8,3 +8,4 @@
 export * from './core';
 export * from './types';
 export * from './controllers';
+export * from './utils/battleMessageFormatter';
