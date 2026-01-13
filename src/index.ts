@@ -20,4 +20,7 @@ export * from './character';
 // Serviceモジュールのエクスポート
 export * from './services';
 
+// Headless UIモジュールのエクスポート
+export * from './ui';
+
 export const version = '1.0.0';
