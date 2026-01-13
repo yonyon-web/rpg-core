@@ -21,6 +21,7 @@ import { calculateDamage } from '../combat/damage';
 import { checkHit, checkCritical, calculateHitRate, calculateCriticalRate } from '../combat/accuracy';
 import { defaultGameConfig } from '../config/defaultConfig';
 import { checkSkillCost, consumeSkillCost } from '../character/skillCost';
+import { filterAlive, isDead, allDead } from '../combat/combatantState';
 
 /**
  * BattleServiceクラス
@@ -79,8 +80,8 @@ export class BattleService {
       
       // 行動順を再計算
       const allCombatants = [
-        ...this.state.playerParty.filter(c => c.currentHp > 0),
-        ...this.state.enemyGroup.filter(e => e.currentHp > 0)
+        ...filterAlive(this.state.playerParty),
+        ...filterAlive(this.state.enemyGroup)
       ];
       this.state.turnOrder = calculateTurnOrder(allCombatants, defaultGameConfig);
     }
@@ -91,7 +92,7 @@ export class BattleService {
     }
 
     // 戦闘不能チェック
-    if (actor.currentHp <= 0) {
+    if (isDead(actor)) {
       return this.advanceTurn();
     }
 
@@ -288,14 +289,12 @@ export class BattleService {
     }
 
     // 勝利条件：全ての敵が倒れた
-    const aliveEnemies = this.state.enemyGroup.filter(e => e.currentHp > 0);
-    if (aliveEnemies.length === 0) {
+    if (allDead(this.state.enemyGroup)) {
       return { isEnded: true, result: 'victory' as BattleResult };
     }
 
     // 敗北条件：全てのプレイヤーが倒れた
-    const aliveParty = this.state.playerParty.filter(c => c.currentHp > 0);
-    if (aliveParty.length === 0) {
+    if (allDead(this.state.playerParty)) {
       return { isEnded: true, result: 'defeat' as BattleResult };
     }
 

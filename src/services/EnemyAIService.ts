@@ -16,6 +16,7 @@ import {
 } from '../types';
 import { Skill } from '../types/skill';
 import { Combatant } from '../types/combatant';
+import { filterAlive, countAlive } from '../combat/combatantState';
 
 /**
  * EnemyAIServiceクラス
@@ -35,7 +36,7 @@ export class EnemyAIService {
 
     if (availableSkills.length === 0) {
       // スキルがない場合は通常攻撃
-      const target = this.selectDefaultTarget(battleState.playerParty.filter(c => c.currentHp > 0));
+      const target = this.selectDefaultTarget(filterAlive(battleState.playerParty));
       return {
         actor: enemy,
         type: 'attack',
@@ -97,7 +98,7 @@ export class EnemyAIService {
 
       // 全体攻撃は複数の敵がいる場合に有効
       if (skill.targetType === 'all-enemies') {
-        const aliveEnemies = situation.enemyParty.filter(c => c.currentHp > 0).length;
+        const aliveEnemies = countAlive(situation.enemyParty);
         score += aliveEnemies * 10;
       }
 
@@ -207,8 +208,8 @@ export class EnemyAIService {
   }
 
   private buildBattleSituation(battleState: BattleState): BattleSituation {
-    const aliveAllies = battleState.enemyGroup.filter(e => e.currentHp > 0);
-    const aliveEnemies = battleState.playerParty.filter(c => c.currentHp > 0);
+    const aliveAllies = filterAlive(battleState.enemyGroup);
+    const aliveEnemies = filterAlive(battleState.playerParty);
 
     const averageAllyHpRate = aliveAllies.length > 0
       ? aliveAllies.reduce((sum, e) => sum + e.currentHp / e.stats.maxHp, 0) / aliveAllies.length
@@ -224,8 +225,8 @@ export class EnemyAIService {
       enemyParty: battleState.playerParty,
       averageAllyHpRate,
       averageEnemyHpRate,
-      defeatedAllies: battleState.enemyGroup.filter(e => e.currentHp <= 0).length,
-      defeatedEnemies: battleState.playerParty.filter(c => c.currentHp <= 0).length
+      defeatedAllies: countAlive(battleState.enemyGroup) - aliveAllies.length,
+      defeatedEnemies: countAlive(battleState.playerParty) - aliveEnemies.length
     };
   }
 
@@ -236,13 +237,13 @@ export class EnemyAIService {
     switch (skill.targetType) {
       case 'single-enemy':
       case 'all-enemies':
-        return battleState.playerParty.filter(c => c.currentHp > 0);
+        return filterAlive(battleState.playerParty);
       case 'single-ally':
       case 'all-allies':
       case 'self':
-        return battleState.enemyGroup.filter(e => e.currentHp > 0);
+        return filterAlive(battleState.enemyGroup);
       default:
-        return battleState.playerParty.filter(c => c.currentHp > 0);
+        return filterAlive(battleState.playerParty);
     }
   }
 

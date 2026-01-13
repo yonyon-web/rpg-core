@@ -6,6 +6,7 @@
 import type { BaseStats, DefaultStats } from '../types/stats';
 import type { Combatant } from '../types/combatant';
 import type { BaseExpCurveType, DefaultExpCurveType, StatGrowthRates } from '../types/config';
+import { filterAlive } from '../combat/combatantState';
 
 /**
  * 経験値曲線関数の型
@@ -203,7 +204,7 @@ export function distributeExpToParty<TStats extends BaseStats = DefaultStats>(
   party: Combatant<TStats>[],
   totalExp: number
 ): Map<string, number> {
-  const aliveMembers = party.filter(c => c.currentHp > 0);
+  const aliveMembers = filterAlive(party);
   
   if (aliveMembers.length === 0) {
     return new Map();
