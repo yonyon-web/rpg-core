@@ -6,6 +6,7 @@
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type { ItemService } from '../../services/ItemService';
+import type { InventoryService } from '../../services/InventoryService';
 import type { 
   ItemUseUIState, 
   ItemUseEvents, 
@@ -21,7 +22,7 @@ import type { Combatant, ConsumableItem, ItemUseConditions } from '../../types';
  * 
  * @example
  * ```typescript
- * const controller = new ItemController(itemService);
+ * const controller = new ItemController(itemService, inventoryService);
  * 
  * // アイテム使用を開始（戦闘中）
  * controller.startItemUse(availableItems, targets, 'battle');
@@ -40,9 +41,11 @@ export class ItemController {
   private state: ObservableState<ItemUseUIState>;
   private events: EventEmitter<ItemUseEvents>;
   private service: ItemService;
+  private inventoryService: InventoryService;
 
-  constructor(service: ItemService) {
+  constructor(service: ItemService, inventoryService: InventoryService) {
     this.service = service;
+    this.inventoryService = inventoryService;
     
     this.state = new ObservableState<ItemUseUIState>({
       stage: 'selecting-item',
@@ -188,6 +191,32 @@ export class ItemController {
       currentState.selectedTarget,
       conditions
     );
+    
+    // 使用成功時、インベントリからアイテムを削除
+    if (result.success) {
+      const removeResult = this.inventoryService.removeItem(currentState.selectedItem.id, 1);
+      
+      if (!removeResult.success) {
+        // アイテムの削除に失敗した場合
+        this.state.setState({
+          stage: 'completed',
+          lastResult: {
+            success: false,
+            message: removeResult.failureReason || 'Failed to remove item from inventory'
+          }
+        });
+        
+        this.events.emit('item-used', {
+          item: currentState.selectedItem,
+          target: currentState.selectedTarget,
+          success: false,
+          message: removeResult.failureReason || 'Failed to remove item from inventory'
+        });
+        this.events.emit('stage-changed', { stage: 'completed' });
+        
+        return false;
+      }
+    }
     
     this.state.setState({
       stage: 'completed',
