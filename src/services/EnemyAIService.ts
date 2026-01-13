@@ -225,8 +225,8 @@ export class EnemyAIService {
       enemyParty: battleState.playerParty,
       averageAllyHpRate,
       averageEnemyHpRate,
-      defeatedAllies: countAlive(battleState.enemyGroup) - aliveAllies.length,
-      defeatedEnemies: countAlive(battleState.playerParty) - aliveEnemies.length
+      defeatedAllies: battleState.enemyGroup.length - aliveAllies.length,
+      defeatedEnemies: battleState.playerParty.length - aliveEnemies.length
     };
   }
 

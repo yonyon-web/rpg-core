@@ -55,7 +55,7 @@ function applyDamageModifiers(
   if (isCritical) {
     const critMultiplier = config.combat.criticalMultiplier;
     finalDamage *= critMultiplier;
-    appliedModifiers.push({ source: 'Critical', multiplier: critMultiplier });
+    appliedModifiers.push({ source: 'critical', multiplier: critMultiplier });
   }
   
   // 属性倍率を適用
@@ -72,7 +72,7 @@ function applyDamageModifiers(
   // ダメージ分散を適用
   const variance = 1.0 + (Math.random() * 2 - 1) * config.combat.damageVariance;
   finalDamage *= variance;
-  appliedModifiers.push({ source: 'Variance', multiplier: variance });
+  appliedModifiers.push({ source: 'variance', multiplier: variance });
   
   // 最低ダメージを1に設定
   finalDamage = Math.max(1, Math.floor(finalDamage));
