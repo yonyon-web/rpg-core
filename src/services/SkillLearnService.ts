@@ -175,6 +175,11 @@ export class SkillLearnService {
    * @example
    * // リソースコストあり
    * const result = service.levelUpSkill(character, 'skill-1', { resourceId: 'sp', amount: 50 });
+   * 
+   * @example
+   * // スキル定義のlevelUpCostを自動使用
+   * const result = service.levelUpSkill(character, 'fireball');
+   * // fireballのlevelDataに定義されたlevelUpCostが自動的に使用される
    */
   levelUpSkill(
     character: Character,
@@ -206,25 +211,44 @@ export class SkillLearnService {
       };
     }
     
+    // レベルアップ先のレベルを取得
+    const learned = skillModule.getLearnedSkill(character, skillId);
+    if (!learned) {
+      return {
+        success: false,
+        message: 'Skill not learned',
+      };
+    }
+    const targetLevel = learned.level + 1;
+    
+    // コストを決定：引数で指定されたcostが優先、なければスキル定義のlevelUpCostを使用
+    let effectiveCost = cost;
+    if (!effectiveCost && this.inventoryService) {
+      const levelUpCost = skillModule.getLevelUpCost(learned.skill, targetLevel);
+      if (levelUpCost) {
+        effectiveCost = levelUpCost;
+      }
+    }
+    
     // コストチェック
-    if (cost && this.inventoryService) {
-      if (cost.resourceId && cost.amount) {
-        if (!this.inventoryService.hasResource(cost.resourceId, cost.amount)) {
+    if (effectiveCost && this.inventoryService) {
+      if (effectiveCost.resourceId && effectiveCost.amount) {
+        if (!this.inventoryService.hasResource(effectiveCost.resourceId, effectiveCost.amount)) {
           return {
             success: false,
-            message: `Insufficient ${cost.resourceId} (need ${cost.amount})`,
+            message: `Insufficient ${effectiveCost.resourceId} (need ${effectiveCost.amount})`,
           };
         }
       }
     }
     
     // コスト消費
-    if (cost && this.inventoryService) {
-      if (cost.resourceId && cost.amount) {
-        if (!this.inventoryService.removeResource(cost.resourceId, cost.amount)) {
+    if (effectiveCost && this.inventoryService) {
+      if (effectiveCost.resourceId && effectiveCost.amount) {
+        if (!this.inventoryService.removeResource(effectiveCost.resourceId, effectiveCost.amount)) {
           return {
             success: false,
-            message: `Failed to consume ${cost.resourceId}`,
+            message: `Failed to consume ${effectiveCost.resourceId}`,
           };
         }
       }
@@ -376,6 +400,23 @@ export class SkillLearnService {
    */
   getSkillDataAtLevel(skill: Skill, level: number) {
     return skillModule.getSkillDataAtLevel(skill, level);
+  }
+  
+  /**
+   * スキルレベルアップに必要なコストを取得
+   * 
+   * @param skill - スキル
+   * @param targetLevel - レベルアップ先のレベル
+   * @returns レベルアップコスト（定義されていない場合はnull）
+   * 
+   * @example
+   * const cost = service.getLevelUpCost(fireballSkill, 3);
+   * if (cost && cost.resourceId && cost.amount) {
+   *   console.log(`Level 3にするには${cost.resourceId}が${cost.amount}必要`);
+   * }
+   */
+  getLevelUpCost(skill: Skill, targetLevel: number) {
+    return skillModule.getLevelUpCost(skill, targetLevel);
   }
   
   /**

@@ -4,7 +4,7 @@
  */
 
 import type { Character } from '../types/battle';
-import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication } from '../types/skill';
+import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication, SkillLevelUpCost } from '../types/skill';
 import type { UniqueId } from '../types/common';
 
 /**
@@ -214,6 +214,39 @@ export function levelUpSkill(
   }
   
   return false;
+}
+
+/**
+ * スキルレベルアップに必要なコストを取得
+ * - levelDataに定義されたlevelUpCostを返す
+ * - 定義されていない場合はnullを返す
+ * 
+ * @param skill - スキル
+ * @param targetLevel - レベルアップ先のレベル
+ * @returns レベルアップコスト（定義されていない場合はnull）
+ * 
+ * @example
+ * const cost = getLevelUpCost(fireballSkill, 3);
+ * if (cost && cost.resourceId && cost.amount) {
+ *   console.log(`Level 3にするには${cost.resourceId}が${cost.amount}必要`);
+ * }
+ */
+export function getLevelUpCost(
+  skill: Skill,
+  targetLevel: number
+): SkillLevelUpCost | null {
+  if (!skill.levelData || skill.levelData.length === 0) {
+    return null;
+  }
+  
+  // targetLevelに対応するlevelDataを探す
+  const levelData = skill.levelData.find(ld => ld.level === targetLevel);
+  
+  if (!levelData || !levelData.levelUpCost) {
+    return null;
+  }
+  
+  return levelData.levelUpCost;
 }
 
 /**

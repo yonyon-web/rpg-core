@@ -185,6 +185,29 @@ export interface SkillLevelData<
   criticalBonus?: number;           // レベル固有のクリティカル率ボーナス（省略時はベーススキルの値）
   statusEffects?: StatusEffectApplication<TEffectType>[]; // レベル固有の状態異常（省略時はベーススキルの値）
   description?: string;             // レベル固有の説明（省略時はベーススキルの説明）
+  levelUpCost?: SkillLevelUpCost;   // このレベルへレベルアップするためのコスト（オプション）
+}
+
+/**
+ * スキルレベルアップコスト
+ * - スキルをこのレベルにレベルアップするために必要なリソース
+ * 
+ * @example
+ * const fireballSkill: Skill = {
+ *   id: 'fireball',
+ *   name: 'Fireball',
+ *   maxLevel: 5,
+ *   levelData: [
+ *     { level: 2, power: 150, levelUpCost: { resourceId: 'sp', amount: 50 } },
+ *     { level: 3, power: 200, levelUpCost: { resourceId: 'sp', amount: 100 } },
+ *     { level: 4, power: 250, levelUpCost: { resourceId: 'sp', amount: 150 } },
+ *     { level: 5, power: 300, levelUpCost: { resourceId: 'sp', amount: 200 } }
+ *   ]
+ * };
+ */
+export interface SkillLevelUpCost {
+  resourceId?: string;  // リソースID（例: 'sp', 'craft-points'）
+  amount?: number;      // 必要量
 }
 
 /**
