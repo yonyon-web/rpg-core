@@ -30,7 +30,7 @@ describe('EnemyAIService', () => {
     currentMp: 50,
     statusEffects: [],
     position: 0,
-    skills: [],
+    learnedSkills: [],
   });
 
   const createEnemy = (id: string, name: string, hp: number = 50, mp: number = 20, attack: number = 30): Enemy => ({

@@ -65,7 +65,7 @@ describe('InventoryService', () => {
     return {
       slots: [],
       maxSlots: 10,
-      money: 1000,
+      resources: { money: 1000 },
       usedSlots: 0
     };
   }
@@ -471,7 +471,7 @@ describe('InventoryService', () => {
         expect(stats.totalItems).toBe(9);
         expect(stats.uniqueItems).toBe(3);
         expect(stats.totalValue).toBe(50 * 5 + 200 * 3 + 500 * 1);
-        expect(stats.money).toBe(1000);
+        expect(stats.resources['money']).toBe(1000);
       });
       
       it('カテゴリ別の統計を返す', () => {
@@ -748,6 +748,7 @@ describe('InventoryService', () => {
         const resources = service.getAllResources();
         
         expect(resources).toEqual({
+          money: 1000,  // createEmptyInventory sets money: 1000
           sp: 100,
           'craft-points': 50,
           tokens: 25
@@ -755,7 +756,12 @@ describe('InventoryService', () => {
       });
       
       it('リソースが存在しない場合は空オブジェクトを返す', () => {
-        const inventory = createEmptyInventory();
+        const inventory: Inventory = {
+          slots: [],
+          maxSlots: 10,
+          resources: {},  // No resources at all
+          usedSlots: 0
+        };
         const service = new InventoryService(inventory);
         
         const resources = service.getAllResources();
@@ -853,7 +859,7 @@ describe('InventoryService', () => {
       const stats = service.getStats();
       expect(stats.totalItems).toBe(4);
       expect(stats.usedSlots).toBe(1); // スタック可能なので1スロット
-      expect(stats.money).toBe(750);
+      expect(stats.resources['money']).toBe(750);
     });
     
     it('複雑なシナリオ: インベントリ整理', () => {

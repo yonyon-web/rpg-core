@@ -30,7 +30,7 @@ describe('CommandService', () => {
     currentMp: mp,
     statusEffects: [],
     position: 0,
-    skills: [],
+    learnedSkills: [],
   });
 
   const createEnemy = (id: string, name: string, hp: number = 50, mp: number = 20): Enemy => ({
@@ -154,7 +154,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
 
       const commands = commandService.getAvailableCommands(character);
 
@@ -165,7 +165,7 @@ describe('CommandService', () => {
 
     it('使用可能なスキルがない場合スキルコマンドが表示されない', () => {
       const character = createCharacter('hero1', 'Hero', 100, 50);
-      character.skills = [];
+      character.learnedSkills = [];
 
       const commands = commandService.getAvailableCommands(character);
 
@@ -204,7 +204,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const battleState = createBattleState([character], [createEnemy('enemy1', 'Slime')]);
 
       commandService.startCommandSelection(character, battleState);
@@ -256,7 +256,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const battleState = createBattleState([character], [createEnemy('enemy1', 'Slime')]);
 
       commandService.startCommandSelection(character, battleState);
@@ -285,7 +285,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const enemy = createEnemy('enemy1', 'Slime');
       const battleState = createBattleState([character], [enemy]);
 
@@ -313,7 +313,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [healSkill];
+      character.learnedSkills = [{ skill: healSkill, level: 1, learnedAt: Date.now() }];
       const battleState = createBattleState([character], [createEnemy('enemy1', 'Slime')]);
 
       commandService.startCommandSelection(character, battleState);
@@ -389,7 +389,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const enemy = createEnemy('enemy1', 'Slime');
       const battleState = createBattleState([character], [enemy]);
 
@@ -424,7 +424,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const battleState = createBattleState([character], [createEnemy('enemy1', 'Slime')]);
 
       commandService.startCommandSelection(character, battleState);
@@ -452,7 +452,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero');
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const battleState = createBattleState([character], [createEnemy('enemy1', 'Slime')]);
 
       commandService.startCommandSelection(character, battleState);
@@ -563,7 +563,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero', 100, 50);
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const battleState = createBattleState([character], [createEnemy('enemy1', 'Slime')]);
 
       commandService.startCommandSelection(character, battleState);
@@ -589,7 +589,7 @@ describe('CommandService', () => {
       };
 
       const character = createCharacter('hero1', 'Hero', 100, 50);
-      character.skills = [skill];
+      character.learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
       const battleState = createBattleState([character], [createEnemy('enemy1', 'Slime')]);
 
       commandService.startCommandSelection(character, battleState);

@@ -55,7 +55,7 @@ describe('CraftService', () => {
     },
     statusEffects: [],
     position: 0,
-    skills: [],
+    learnedSkills: [],
     ...overrides
   });
 
@@ -166,7 +166,7 @@ describe('CraftService', () => {
         requirements: { skillId: 'alchemy' }
       });
       const inventory = createInventory();
-      const character = createCharacter({ skills: [] });
+      const character = createCharacter({ learnedSkills: [] });
       
       const result = service.canCraft(recipe, inventory, character);
       
@@ -179,17 +179,21 @@ describe('CraftService', () => {
       });
       const inventory = createInventory();
       const character = createCharacter({
-        skills: [{ 
-          id: 'alchemy', 
-          name: 'Alchemy', 
-          type: 'special', 
-          targetType: 'self', 
-          element: 'none',
-          power: 0,
-          accuracy: 1.0,
-          criticalBonus: 0,
-          isGuaranteedHit: true,
-          description: 'Alchemy skill'
+        learnedSkills: [{ 
+          skill: {
+            id: 'alchemy', 
+            name: 'Alchemy', 
+            type: 'special', 
+            targetType: 'self', 
+            element: 'none',
+            power: 0,
+            accuracy: 1.0,
+            criticalBonus: 0,
+            isGuaranteedHit: true,
+            description: 'Alchemy skill'
+          },
+          level: 1,
+          learnedAt: Date.now()
         }]
       });
       
