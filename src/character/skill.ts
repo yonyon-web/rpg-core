@@ -215,3 +215,102 @@ export function levelUpSkill(
   
   return false;
 }
+
+/**
+ * スキルの現在レベルでの効果を取得
+ * - levelDataが定義されている場合、現在レベルに応じた値を返す
+ * - levelDataが定義されていない場合、ベーススキルの値を返す
+ * 
+ * @param skill - スキル
+ * @param level - 現在のレベル
+ * @returns レベルに応じたスキルデータ
+ * 
+ * @example
+ * const effectiveSkill = getSkillDataAtLevel(fireball, 3);
+ * console.log(effectiveSkill.power);  // レベル3の威力
+ * console.log(effectiveSkill.description);  // レベル3の説明
+ */
+export function getSkillDataAtLevel(
+  skill: Skill,
+  level: number
+): {
+  name: string;
+  power: number;
+  cost?: import('../types/skill').SkillCost;
+  accuracy: number;
+  criticalBonus: number;
+  statusEffects?: import('../types/skill').StatusEffectApplication[];
+  description: string;
+} {
+  // レベル1または levelData がない場合はベーススキルの値を返す
+  if (level === 1 || !skill.levelData || skill.levelData.length === 0) {
+    return {
+      name: skill.name,
+      power: skill.power,
+      cost: skill.cost,
+      accuracy: skill.accuracy,
+      criticalBonus: skill.criticalBonus,
+      statusEffects: skill.statusEffects,
+      description: skill.description
+    };
+  }
+  
+  // 現在レベルに対応する levelData を探す
+  // レベルは昇順にソート済みと仮定し、指定レベル以下の最大レベルのデータを使用
+  let applicableLevelData = null;
+  for (const levelData of skill.levelData) {
+    if (levelData.level <= level) {
+      applicableLevelData = levelData;
+    } else {
+      break; // レベルを超えたら終了
+    }
+  }
+  
+  // levelData が見つからない場合はベーススキルの値を返す
+  if (!applicableLevelData) {
+    return {
+      name: skill.name,
+      power: skill.power,
+      cost: skill.cost,
+      accuracy: skill.accuracy,
+      criticalBonus: skill.criticalBonus,
+      statusEffects: skill.statusEffects,
+      description: skill.description
+    };
+  }
+  
+  // levelData とベーススキルの値をマージ
+  return {
+    name: applicableLevelData.name ?? skill.name,
+    power: applicableLevelData.power ?? skill.power,
+    cost: applicableLevelData.cost ?? skill.cost,
+    accuracy: applicableLevelData.accuracy ?? skill.accuracy,
+    criticalBonus: applicableLevelData.criticalBonus ?? skill.criticalBonus,
+    statusEffects: applicableLevelData.statusEffects ?? skill.statusEffects,
+    description: applicableLevelData.description ?? skill.description
+  };
+}
+
+/**
+ * 習得済みスキルの現在レベルでの効果を取得
+ * 
+ * @param learnedSkill - 習得済みスキル
+ * @returns レベルに応じたスキルデータ
+ * 
+ * @example
+ * const effectiveSkill = getLearnedSkillEffectiveData(learnedSkill);
+ * console.log(effectiveSkill.power);  // 現在レベルの威力
+ */
+export function getLearnedSkillEffectiveData(
+  learnedSkill: import('../types/skill').LearnedSkill
+): {
+  name: string;
+  power: number;
+  cost?: import('../types/skill').SkillCost;
+  accuracy: number;
+  criticalBonus: number;
+  statusEffects?: import('../types/skill').StatusEffectApplication[];
+  description: string;
+} {
+  return getSkillDataAtLevel(learnedSkill.skill, learnedSkill.level);
+}

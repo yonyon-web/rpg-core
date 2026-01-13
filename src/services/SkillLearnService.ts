@@ -346,4 +346,57 @@ export class SkillLearnService {
   hasSkill(character: Character, skillId: UniqueId): boolean {
     return skillModule.hasSkill(character, skillId);
   }
+  
+  /**
+   * スキルの現在レベルを取得
+   * 
+   * @param character - キャラクター
+   * @param skillId - スキルID
+   * @returns スキルレベル（習得していない場合は0）
+   * 
+   * @example
+   * const level = service.getSkillLevel(character, 'fireball');
+   * console.log(`Fireball level: ${level}`);
+   */
+  getSkillLevel(character: Character, skillId: UniqueId): number {
+    return skillModule.getSkillLevel(character, skillId);
+  }
+  
+  /**
+   * スキルの現在レベルでの効果を取得
+   * 
+   * @param skill - スキル
+   * @param level - レベル
+   * @returns レベルに応じたスキルデータ
+   * 
+   * @example
+   * const effectiveData = service.getSkillDataAtLevel(fireballSkill, 3);
+   * console.log(`Power at level 3: ${effectiveData.power}`);
+   * console.log(`Description: ${effectiveData.description}`);
+   */
+  getSkillDataAtLevel(skill: Skill, level: number) {
+    return skillModule.getSkillDataAtLevel(skill, level);
+  }
+  
+  /**
+   * 習得済みスキルの現在レベルでの効果を取得
+   * 
+   * @param character - キャラクター
+   * @param skillId - スキルID
+   * @returns レベルに応じたスキルデータ（スキル未習得の場合はnull）
+   * 
+   * @example
+   * const effectiveData = service.getLearnedSkillEffectiveData(character, 'fireball');
+   * if (effectiveData) {
+   *   console.log(`Current power: ${effectiveData.power}`);
+   *   console.log(`Current description: ${effectiveData.description}`);
+   * }
+   */
+  getLearnedSkillEffectiveData(character: Character, skillId: UniqueId) {
+    const learned = skillModule.getLearnedSkill(character, skillId);
+    if (!learned) {
+      return null;
+    }
+    return skillModule.getLearnedSkillEffectiveData(learned);
+  }
 }
