@@ -12,3 +12,6 @@ export { EquipmentController } from './EquipmentController';
 export { PartyController } from './PartyController';
 export { PartySelectionController } from './PartySelectionController';
 export { ItemController } from './ItemController';
+export { RewardController } from './RewardController';
+export { SkillLearnController } from './SkillLearnController';
+export { JobChangeController } from './JobChangeController';

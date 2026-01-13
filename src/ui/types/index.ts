@@ -13,3 +13,6 @@ export * from './equipment';
 export * from './party';
 export * from './partySelection';
 export * from './item';
+export * from './reward';
+export * from './skillLearn';
+export * from './jobChange';
