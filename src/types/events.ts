@@ -19,6 +19,21 @@ export type DataChangeEventType =
   | 'job-changed';           // ジョブが変更された
 
 /**
+ * イベントデータの型定義
+ */
+export type EventData = 
+  | { itemId: string; targetId: string }                                      // item-used
+  | { characterId: string; equipmentId: string; slot: string; previousEquipmentId?: string; action?: string } // equipment-changed
+  | { itemId: string; quantity: number; action: 'add' | 'remove' }           // inventory-updated
+  | { memberId: string; action: 'add' | 'remove' }                           // party-updated
+  | { recipeId: string; itemId: string; quantity: number }                   // craft-completed
+  | { equipmentId: string; previousLevel: number; newLevel: number }         // enhancement-completed
+  | { shopId: string; itemId: string; quantity: number; action: 'buy' | 'sell'; price?: number } // shop-transaction
+  | { exp: number; gold: number; itemCount: number }                         // reward-received
+  | { characterId: string; skillId: string }                                 // skill-learned
+  | { characterId: string; previousJob?: string; newJob: string };           // job-changed
+
+/**
  * データ変更イベント
  */
 export interface DataChangeEvent {
@@ -27,7 +42,7 @@ export interface DataChangeEvent {
   /** タイムスタンプ */
   timestamp: number;
   /** イベントに関連する追加データ */
-  data?: any;
+  data?: EventData;
 }
 
 /**
