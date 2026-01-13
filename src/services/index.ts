@@ -3,6 +3,7 @@
  */
 
 export * from './BattleService';
+export * from './BattleActionExecutor';
 export * from './CommandService';
 export * from './EnemyAIService';
 export * from './EnemyGroupService';

@@ -460,7 +460,14 @@ describe('BattleService', () => {
       // 複数回試行して成功を確認
       let succeeded = false;
       for (let i = 0; i < 20; i++) {
-        const result = await battleService.attemptEscape();
+        const actor = party[0];
+        const action = {
+          actor,
+          type: 'escape' as const,
+          targets: [],
+        };
+        
+        const result = await battleService.executeAction(actor, action);
         if (result.success) {
           succeeded = true;
           const state = battleService.getState();
