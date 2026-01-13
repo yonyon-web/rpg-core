@@ -20,3 +20,4 @@ export * from './item';
 export * from './craft';
 export * from './save';
 export * from './simulation';
+export * from './shop';

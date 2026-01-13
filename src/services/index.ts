@@ -18,3 +18,4 @@ export * from './EnhanceService';
 export * from './SaveLoadService';
 export * from './SimulationService';
 export * from './InventoryService';
+export * from './ShopService';

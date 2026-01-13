@@ -13,6 +13,9 @@ import type {
 } from './statusEffect';
 import type { BaseTargetType, DefaultTargetType } from './skill';
 
+// Re-export UniqueId for convenience
+export type { UniqueId };
+
 /**
  * アイテムタイプの基底型
  * - ゲームごとに独自のアイテム分類を定義可能
