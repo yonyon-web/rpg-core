@@ -65,17 +65,17 @@ export class ObservableState<T> {
   /**
    * 状態を更新
    * 
-   * 新しい状態をセットし、すべてのリスナーに通知する。
+   * 新しい状態（部分更新可能）をセットし、すべてのリスナーに通知する。
    * 関数を渡すことで、現在の状態を元に新しい状態を生成できる。
    * 
-   * @param newState - 新しい状態、または状態を生成する関数
+   * @param newState - 新しい状態（部分更新可能）、または状態を生成する関数
    */
-  setState(newState: T | ((prev: T) => T)): void {
-    const nextState = typeof newState === 'function' 
-      ? (newState as (prev: T) => T)(this.state)
+  setState(newState: Partial<T> | ((prev: T) => Partial<T>)): void {
+    const partialState = typeof newState === 'function' 
+      ? (newState as (prev: T) => Partial<T>)(this.state)
       : newState;
     
-    this.state = nextState;
+    this.state = { ...this.state, ...partialState };
     this.notify();
   }
   

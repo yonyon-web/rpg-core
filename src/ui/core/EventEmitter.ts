@@ -98,4 +98,11 @@ export class EventEmitter<Events extends EventMap> {
   removeAllListenersForAllEvents(): void {
     this.listeners.clear();
   }
+  
+  /**
+   * すべてのイベントのすべてのリスナーを削除（エイリアス）
+   */
+  clear(): void {
+    this.removeAllListenersForAllEvents();
+  }
 }
