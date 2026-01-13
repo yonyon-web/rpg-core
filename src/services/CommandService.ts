@@ -14,6 +14,7 @@ import {
 } from '../types';
 import { Skill } from '../types/skill';
 import { UniqueId } from '../types/common';
+import { canUseSkill } from '../character/skillCost';
 
 /**
  * CommandServiceクラス
@@ -277,29 +278,9 @@ export class CommandService {
    * @param actor キャラクター
    */
   private getUsableSkills(actor: Character): Skill[] {
-    return actor.learnedSkills.map(ls => ls.skill).filter((skill: Skill) => {
-      // cost形式をチェック
-      if (skill.cost) {
-        if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {
-          return false;
-        }
-        if (skill.cost.hp !== undefined && actor.currentHp <= skill.cost.hp) {
-          return false;
-        }
-        // カスタムコストのチェック
-        for (const [key, value] of Object.entries(skill.cost)) {
-          if (key !== 'mp' && key !== 'hp' && value !== undefined && value !== null) {
-            const actorResource = (actor as any)[`current${key.charAt(0).toUpperCase()}${key.slice(1)}`];
-            if (actorResource !== undefined && actorResource < (value as number)) {
-              return false;
-            }
-          }
-        }
-        return true;
-      }
-      // costが未定義の場合はコスト無しとして扱う
-      return true;
-    });
+    return actor.learnedSkills
+      .map(ls => ls.skill)
+      .filter((skill: Skill) => canUseSkill(actor, skill));
   }
 
   /**
