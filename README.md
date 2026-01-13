@@ -21,6 +21,47 @@ rpg-coreは、JRPG（日本のロールプレイングゲーム）スタイル�
 npm install rpg-core
 ```
 
+## 基本的な使い方
+
+### 新しい方法（推奨）: RPGCoreクラスを使用
+
+```typescript
+import { RPGCore } from 'rpg-core';
+
+// 1カ所でライブラリ全体を初期化
+const rpg = new RPGCore({
+  config: customGameConfig,  // 省略可能（デフォルト設定を使用）
+  useEventBus: true          // 省略可能（デフォルト: true）
+});
+
+// サービスに簡単にアクセス（依存関係は自動解決）
+const battleService = rpg.services.battle;
+const itemService = rpg.services.item;
+
+// コントローラーも簡単に作成
+const battleController = rpg.controllers.battle();
+```
+
+**メリット:**
+- ✅ 依存関係が自動的に解決される
+- ✅ 1カ所で設定が完結
+- ✅ サービス間の接続が自動化
+- ✅ 保守性と拡張性が向上
+
+詳しくは [依存関係管理ガイド](./docs/DEPENDENCY_MANAGEMENT.md) を参照してください。
+
+### 従来の方法: 個別にインスタンス化
+
+従来の手動インスタンス化も引き続きサポートされています：
+
+```typescript
+import { BattleService, ItemService, defaultGameConfig } from 'rpg-core';
+
+const config = defaultGameConfig;
+const battleService = new BattleService(config);
+const itemService = new ItemService();
+```
+
 ## 開発環境のセットアップ
 
 ### 必要な環境
@@ -82,12 +123,13 @@ rpg-coreを理解するための推奨読書順序：
 
 1. **まず読む** - ライブラリの全体像を把握
    - [実装要素.md](./docs/実装要素.md) - ライブラリが目指すものとスコープ
+   - [依存関係管理.md](./docs/DEPENDENCY_MANAGEMENT.md) - 依存関係の設定と管理（🆕推奨）
    
 2. **次に読む** - アーキテクチャを理解
    - [コアエンジン.md](./docs/コアエンジン.md) - Core Engineの役割と設計思想
    - [サービス設計.md](./docs/サービス設計.md) - Service層の詳細設計
    - [ヘッドレスUI設計.md](./docs/ヘッドレスUI設計.md) - UI層の設計
-   - [ヘッドレスUI実装計画書.md](./docs/ヘッドレスUI実装計画書.md) - ヘッドレスUI実装の具体的な計画 🆕
+   - [ヘッドレスUI実装計画書.md](./docs/ヘッドレスUI実装計画書.md) - ヘッドレスUI実装の具体的な計画
    
 3. **必要に応じて読む** - 実装したい機能の詳細
    - 戦闘・バトル: [戦闘.md](./docs/features/戦闘.md)

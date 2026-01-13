@@ -11,6 +11,9 @@ export * from './types';
 // 設定のエクスポート
 export * from './config';
 
+// コアモジュールのエクスポート（DIコンテナ、RPGCoreクラスなど）
+export * from './core';
+
 // 戦闘モジュールのエクスポート
 export * from './combat';
 
