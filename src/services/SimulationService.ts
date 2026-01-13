@@ -10,6 +10,7 @@ import type {
 } from '../types/simulation';
 import type { Combatant } from '../types/combatant';
 import { filterAlive } from '../combat/combatantState';
+import { MAX_SIMULATION_TURNS } from '../combat/constants';
 
 /**
  * SimulationService
@@ -66,10 +67,9 @@ export class SimulationService {
     let turns = 0;
     let party1Damage = 0;
     let party2Damage = 0;
-    const maxTurns = 100; // 無限ループ防止
 
     // 戦闘が終了するまでターンを進める
-    while (turns < maxTurns) {
+    while (turns < MAX_SIMULATION_TURNS) {
       // 両パーティの生存確認
       const party1Alive = filterAlive(party1Copy);
       const party2Alive = filterAlive(party2Copy);
