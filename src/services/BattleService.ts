@@ -14,7 +14,8 @@ import {
   BattleEndCheck, 
   EscapeResult, 
   BattleRewards,
-  BattleResult
+  BattleResult,
+  GameConfig
 } from '../types';
 import { calculateTurnOrder, checkPreemptiveStrike } from '../combat/turnOrder';
 import { calculateDamage } from '../combat/damage';
@@ -28,6 +29,15 @@ import { filterAlive, isDead, allDead } from '../combat/combatantState';
  */
 export class BattleService {
   private state: BattleState | null = null;
+  private config: GameConfig;
+
+  /**
+   * コンストラクタ
+   * @param config ゲーム設定（省略時はdefaultGameConfigを使用）
+   */
+  constructor(config?: GameConfig) {
+    this.config = config || defaultGameConfig;
+  }
 
   /**
    * 戦闘を開始する
@@ -50,12 +60,12 @@ export class BattleService {
     const preemptive = checkPreemptiveStrike(
       party,
       enemies,
-      defaultGameConfig
+      this.config
     );
 
     // 行動順を計算
     const allCombatants = [...party, ...enemies];
-    this.state.turnOrder = calculateTurnOrder(allCombatants, defaultGameConfig);
+    this.state.turnOrder = calculateTurnOrder(allCombatants, this.config);
 
     // フェーズを設定
     this.state.phase = 'player-turn' as BattlePhase;
@@ -83,7 +93,7 @@ export class BattleService {
         ...filterAlive(this.state.playerParty),
         ...filterAlive(this.state.enemyGroup)
       ];
-      this.state.turnOrder = calculateTurnOrder(allCombatants, defaultGameConfig);
+      this.state.turnOrder = calculateTurnOrder(allCombatants, this.config);
     }
 
     const actor = this.getCurrentActor();
@@ -168,7 +178,7 @@ export class BattleService {
       attacker,
       target,
       basicAttackSkill,
-      defaultGameConfig
+      this.config
     );
 
     // ミスの場合
@@ -225,7 +235,7 @@ export class BattleService {
       attacker,
       target,
       skill,
-      defaultGameConfig
+      this.config
     );
 
     // ミスの場合
