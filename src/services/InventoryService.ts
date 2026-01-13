@@ -239,7 +239,7 @@ export class InventoryService {
    * @returns 所持金
    */
   getMoney(): number {
-    return this.inventory.money;
+    return this.inventory.resources['money'] || 0;
   }
   
   /**
@@ -248,7 +248,7 @@ export class InventoryService {
    * @param amount - 追加する金額
    */
   addMoney(amount: number): void {
-    this.inventory.money += amount;
+    this.inventory.resources['money'] = (this.inventory.resources['money'] || 0) + amount;
   }
   
   /**
@@ -258,10 +258,11 @@ export class InventoryService {
    * @returns 成功したか（所持金不足の場合はfalse）
    */
   removeMoney(amount: number): boolean {
-    if (this.inventory.money < amount) {
+    const money = this.inventory.resources['money'] || 0;
+    if (money < amount) {
       return false;
     }
-    this.inventory.money -= amount;
+    this.inventory.resources['money'] = money - amount;
     return true;
   }
   
@@ -272,7 +273,7 @@ export class InventoryService {
    * @returns 十分にあるか
    */
   hasMoney(amount: number): boolean {
-    return this.inventory.money >= amount;
+    return (this.inventory.resources['money'] || 0) >= amount;
   }
   
   // ===== リソース管理 =====

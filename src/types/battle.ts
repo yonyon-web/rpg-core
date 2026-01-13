@@ -13,8 +13,7 @@ export interface Character extends Combatant {
   job?: string;          // ジョブ名（オプション）
   jobLevel?: number;     // 現在のジョブレベル（オプション）
   jobExp?: number;       // 現在のジョブ経験値（オプション）
-  skills: Skill[];       // 習得済みスキル（後方互換性のため維持、レベルなし）
-  learnedSkills?: LearnedSkill[]; // 習得済みスキル（レベル管理あり、オプション）
+  learnedSkills: LearnedSkill[]; // 習得済みスキル（レベル管理あり）
   currentExp?: number;   // 現在の経験値（オプション）
 }
 
@@ -49,7 +48,7 @@ export type DefaultAIStrategy =
   | 'support';     // サポート型（バフ・デバフを優先）
 
 /**
- * AI戦略（後方互換性のため）
+ * AI戦略
  */
 export type AIStrategy = DefaultAIStrategy;
 

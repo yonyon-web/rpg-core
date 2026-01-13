@@ -177,9 +177,8 @@ export interface CategorySlotLimit {
 export interface Inventory {
   slots: InventorySlot[];          // スロットリスト
   maxSlots: number;                // 最大スロット数（全体）
-  money: number;                   // 所持金（後方互換性のため維持）
   usedSlots: number;               // 使用中のスロット数
-  resources?: Record<string, number>; // 汎用リソース（SP、クラフトポイント等、ゲーム毎に定義可能）
+  resources: Record<string, number>; // 汎用リソース（money, SP、クラフトポイント等、ゲーム毎に定義可能）
   categoryLimits?: CategorySlotLimit[]; // カテゴリ別スロット制限（オプション）
 }
 
@@ -247,6 +246,5 @@ export interface InventoryStats {
   itemsByCategory: Record<string, number>; // カテゴリ別アイテム数
   totalValue: number;              // 総価値
   equippedCount: number;           // 装備中アイテム数
-  money: number;                   // 所持金
-  resources?: Record<string, number>; // 汎用リソース
+  resources: Record<string, number>; // 汎用リソース（moneyを含む）
 }

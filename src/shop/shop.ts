@@ -121,12 +121,13 @@ export function canBuyItem(
       };
     }
   } else {
-    // 通常の金銭チェック
+    // 通常の金銭チェック（moneyリソースを使用）
     const totalPrice = calculateBuyPrice(shopItem, quantity, shop);
-    if (inventory.money < totalPrice) {
+    const money = inventory.resources['money'] || 0;
+    if (money < totalPrice) {
       return { 
         canBuy: false, 
-        reason: `所持金が不足しています（必要: ${totalPrice}, 所持: ${inventory.money}）` 
+        reason: `所持金が不足しています（必要: ${totalPrice}, 所持: ${money}）` 
       };
     }
   }
@@ -235,9 +236,9 @@ export function buyItem(
     
     transaction.resourcesSpent = { [resourceId]: totalCost };
   } else {
-    // 通常の金銭支払い
+    // 通常の金銭支払い（moneyリソースを使用）
     const totalPrice = calculateBuyPrice(shopItem, quantity, shop);
-    inventory.money -= totalPrice;
+    inventory.resources['money'] = (inventory.resources['money'] || 0) - totalPrice;
     transaction.moneySpent = totalPrice;
   }
 
@@ -343,8 +344,8 @@ export function sellItem(
     }
   }
 
-  // 金銭追加
-  inventory.money += totalPrice;
+  // 金銭追加（moneyリソースを使用）
+  inventory.resources['money'] = (inventory.resources['money'] || 0) + totalPrice;
 
   return {
     success: true,

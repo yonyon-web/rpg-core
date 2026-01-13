@@ -131,13 +131,7 @@ export function validateSkillLearnConditions(
  * @returns 習得している場合true
  */
 export function hasSkill(character: Character, skillId: UniqueId): boolean {
-  // learnedSkillsがある場合はそちらもチェック
-  if (character.learnedSkills) {
-    if (character.learnedSkills.some(ls => ls.skill.id === skillId)) {
-      return true;
-    }
-  }
-  return character.skills.some(s => s.id === skillId);
+  return character.learnedSkills.some(ls => ls.skill.id === skillId);
 }
 
 /**

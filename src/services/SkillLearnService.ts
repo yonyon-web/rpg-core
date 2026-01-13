@@ -70,7 +70,6 @@ export class SkillLearnService {
    * @param skill - 習得するスキル
    * @param requirements - 習得要件（オプション）
    * @param cost - 習得コスト（オプション）
-   * @param useLearnedSkills - LearnedSkill形式で管理するか（デフォルト: false、後方互換性のため）
    * @returns 習得結果
    * 
    * @example
@@ -80,10 +79,6 @@ export class SkillLearnService {
    * }
    * 
    * @example
-   * // レベルシステムありで習得
-   * const result = service.learnSkill(character, skill, undefined, undefined, true);
-   * 
-   * @example
    * // リソースコストあり
    * const result = service.learnSkill(character, skill, { levelRequirement: 10 }, { resourceId: 'sp', amount: 30 });
    */
@@ -91,8 +86,7 @@ export class SkillLearnService {
     character: Character,
     skill: Skill,
     requirements?: skillModule.SkillLearnRequirements,
-    cost?: SkillLearnCost,
-    useLearnedSkills: boolean = false
+    cost?: SkillLearnCost
   ): SkillLearnResult {
     // 習得可否を検証
     const validation = skillModule.validateSkillLearnConditions(character, skill, requirements);
@@ -128,37 +122,21 @@ export class SkillLearnService {
       }
     }
 
-    // スキルを追加
-    if (useLearnedSkills || character.learnedSkills !== undefined) {
-      // LearnedSkill形式で管理
-      if (!character.learnedSkills) {
-        character.learnedSkills = [];
-      }
-      
-      const learnedSkill: LearnedSkill = {
-        skill,
-        level: 1,
-        learnedAt: Date.now()
-      };
-      
-      character.learnedSkills.push(learnedSkill);
-      
-      return {
-        success: true,
-        message: `${character.name} learned ${skill.name}!`,
-        skill,
-        level: 1
-      };
-    } else {
-      // 従来のSkill[]形式（後方互換性）
-      character.skills.push(skill);
-
-      return {
-        success: true,
-        message: `${character.name} learned ${skill.name}!`,
-        skill,
-      };
-    }
+    // スキルを追加（LearnedSkill形式のみ）
+    const learnedSkill: LearnedSkill = {
+      skill,
+      level: 1,
+      learnedAt: Date.now()
+    };
+    
+    character.learnedSkills.push(learnedSkill);
+    
+    return {
+      success: true,
+      message: `${character.name} learned ${skill.name}!`,
+      skill,
+      level: 1
+    };
   }
   
   /**
@@ -285,38 +263,22 @@ export class SkillLearnService {
    * const result = service.forgetSkill(character, 'skill-1');
    */
   forgetSkill(character: Character, skillId: UniqueId): SkillLearnResult {
-    // learnedSkillsから削除を試みる
-    if (character.learnedSkills) {
-      const learnedIndex = character.learnedSkills.findIndex(ls => ls.skill.id === skillId);
-      if (learnedIndex !== -1) {
-        const learned = character.learnedSkills[learnedIndex];
-        character.learnedSkills.splice(learnedIndex, 1);
-        
-        return {
-          success: true,
-          message: `${character.name} has forgotten ${learned.skill.name}`,
-          skill: learned.skill,
-        };
-      }
-    }
-    
-    // 従来のskillsから削除
-    const skillIndex = character.skills.findIndex(s => s.id === skillId);
+    const learnedIndex = character.learnedSkills.findIndex(ls => ls.skill.id === skillId);
 
-    if (skillIndex === -1) {
+    if (learnedIndex === -1) {
       return {
         success: false,
         message: 'Skill not found',
       };
     }
 
-    const skill = character.skills[skillIndex];
-    character.skills.splice(skillIndex, 1);
+    const learned = character.learnedSkills[learnedIndex];
+    character.learnedSkills.splice(learnedIndex, 1);
 
     return {
       success: true,
-      message: `${character.name} has forgotten ${skill.name}`,
-      skill,
+      message: `${character.name} has forgotten ${learned.skill.name}`,
+      skill: learned.skill,
     };
   }
 

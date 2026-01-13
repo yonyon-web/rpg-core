@@ -376,7 +376,6 @@ export function getInventoryStats(inventory: Inventory): InventoryStats {
     itemsByCategory,
     totalValue,
     equippedCount,
-    money: inventory.money,
     resources: inventory.resources
   };
 }
