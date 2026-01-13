@@ -528,7 +528,7 @@ export function getCategoryAvailableSlots(
     return -1; // 制限なし
   }
   
-  const limit = inventory.categoryLimits.find(l => l.category === category);
+  let limit = inventory.categoryLimits.find(l => l.category === category);
   if (!limit) {
     // groupIdで検索
     const groupLimit = inventory.categoryLimits.find(l => 
@@ -539,10 +539,7 @@ export function getCategoryAvailableSlots(
     if (!groupLimit) {
       return -1; // 制限なし
     }
-  }
-  
-  if (!limit) {
-    return -1;
+    limit = groupLimit;
   }
   
   const used = getCategorySlotUsage(inventory, category);
