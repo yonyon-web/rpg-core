@@ -146,14 +146,38 @@ export interface InventorySlot {
 }
 
 /**
+ * カテゴリ別スロット制限設定
+ * - カテゴリごとに最大スロット数を設定
+ * - 複数カテゴリで共有する場合は同じgroupIdを指定
+ * 
+ * @example
+ * // 単一カテゴリの制限
+ * { category: 'consumable', maxSlots: 50 }
+ * 
+ * @example
+ * // 複数カテゴリで制限を共有
+ * [
+ *   { category: 'weapon', maxSlots: 30, groupId: 'equipment' },
+ *   { category: 'armor', maxSlots: 30, groupId: 'equipment' }
+ * ]
+ * // weapon + armor 合計で30スロットまで
+ */
+export interface CategorySlotLimit {
+  category: string;         // カテゴリ名
+  maxSlots: number;         // 最大スロット数
+  groupId?: string;         // グループID（複数カテゴリで共有する場合）
+}
+
+/**
  * インベントリ
  */
 export interface Inventory {
   slots: InventorySlot[];          // スロットリスト
-  maxSlots: number;                // 最大スロット数
+  maxSlots: number;                // 最大スロット数（全体）
   money: number;                   // 所持金（後方互換性のため維持）
   usedSlots: number;               // 使用中のスロット数
   resources?: Record<string, number>; // 汎用リソース（SP、クラフトポイント等、ゲーム毎に定義可能）
+  categoryLimits?: CategorySlotLimit[]; // カテゴリ別スロット制限（オプション）
 }
 
 /**

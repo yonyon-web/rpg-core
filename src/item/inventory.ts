@@ -93,6 +93,17 @@ export function addItemToInventory(
     };
   }
   
+  // カテゴリ別制限チェック
+  if (item.category && inventory.categoryLimits && !options?.allowOverflow) {
+    if (!canAddToCategory(inventory, item.category, 1)) {
+      return {
+        success: false,
+        slotsUsed: 0,
+        failureReason: `カテゴリ「${item.category}」のスロットが満杯です`
+      };
+    }
+  }
+  
   const newSlot: InventorySlot = {
     item,
     quantity,
@@ -460,4 +471,151 @@ export function setResource(
     inventory.resources = {};
   }
   inventory.resources[resourceId] = amount;
+}
+
+/**
+ * カテゴリのスロット使用状況を取得
+ * - カテゴリ別制限がある場合、そのカテゴリの使用スロット数を返す
+ * - groupIdがある場合、同じグループの全カテゴリの合計を返す
+ * 
+ * @param inventory - インベントリ
+ * @param category - カテゴリ名
+ * @returns 使用中のスロット数
+ */
+export function getCategorySlotUsage(
+  inventory: Inventory,
+  category: string
+): number {
+  if (!inventory.categoryLimits) {
+    return 0;
+  }
+  
+  // このカテゴリの制限設定を検索
+  const limit = inventory.categoryLimits.find(l => l.category === category);
+  if (!limit) {
+    return 0;
+  }
+  
+  // groupIdがある場合、同じグループの全カテゴリをカウント
+  if (limit.groupId) {
+    const groupCategories = inventory.categoryLimits
+      .filter(l => l.groupId === limit.groupId)
+      .map(l => l.category);
+    
+    return inventory.slots.filter(slot => 
+      groupCategories.includes(slot.item.category || '')
+    ).length;
+  }
+  
+  // 単一カテゴリの場合
+  return inventory.slots.filter(slot => 
+    slot.item.category === category
+  ).length;
+}
+
+/**
+ * カテゴリの空きスロット数を取得
+ * 
+ * @param inventory - インベントリ
+ * @param category - カテゴリ名
+ * @returns 空きスロット数（制限なしの場合は-1）
+ */
+export function getCategoryAvailableSlots(
+  inventory: Inventory,
+  category: string
+): number {
+  if (!inventory.categoryLimits) {
+    return -1; // 制限なし
+  }
+  
+  const limit = inventory.categoryLimits.find(l => l.category === category);
+  if (!limit) {
+    // groupIdで検索
+    const groupLimit = inventory.categoryLimits.find(l => 
+      l.groupId && inventory.categoryLimits?.some(l2 => 
+        l2.category === category && l2.groupId === l.groupId
+      )
+    );
+    if (!groupLimit) {
+      return -1; // 制限なし
+    }
+  }
+  
+  if (!limit) {
+    return -1;
+  }
+  
+  const used = getCategorySlotUsage(inventory, category);
+  return Math.max(0, limit.maxSlots - used);
+}
+
+/**
+ * カテゴリにアイテムを追加できるかチェック
+ * 
+ * @param inventory - インベントリ
+ * @param category - カテゴリ名
+ * @param slotsNeeded - 必要なスロット数（デフォルト: 1）
+ * @returns 追加可能な場合true
+ */
+export function canAddToCategory(
+  inventory: Inventory,
+  category: string,
+  slotsNeeded: number = 1
+): boolean {
+  const available = getCategoryAvailableSlots(inventory, category);
+  
+  // 制限なしの場合
+  if (available === -1) {
+    return true;
+  }
+  
+  return available >= slotsNeeded;
+}
+
+/**
+ * カテゴリ別スロット統計を取得
+ * 
+ * @param inventory - インベントリ
+ * @returns カテゴリ別の使用状況
+ */
+export function getCategorySlotStats(
+  inventory: Inventory
+): Record<string, { used: number; max: number; available: number }> {
+  const stats: Record<string, { used: number; max: number; available: number }> = {};
+  
+  if (!inventory.categoryLimits) {
+    return stats;
+  }
+  
+  // 処理済みのgroupIdを追跡
+  const processedGroups = new Set<string>();
+  
+  for (const limit of inventory.categoryLimits) {
+    // groupIdがあり、すでに処理済みの場合はスキップ
+    if (limit.groupId && processedGroups.has(limit.groupId)) {
+      continue;
+    }
+    
+    const used = getCategorySlotUsage(inventory, limit.category);
+    const available = limit.maxSlots - used;
+    
+    if (limit.groupId) {
+      // グループの場合、グループ名で統計を記録
+      stats[limit.groupId] = {
+        used,
+        max: limit.maxSlots,
+        available: Math.max(0, available)
+      };
+      processedGroups.add(limit.groupId);
+    } else {
+      // 単一カテゴリの場合
+      stats[limit.category] = {
+        used,
+        max: limit.maxSlots,
+        available: Math.max(0, available)
+      };
+    }
+  }
+  
+  return stats;
 }

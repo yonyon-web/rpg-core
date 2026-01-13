@@ -30,7 +30,11 @@ import {
   addResource,
   removeResource,
   hasResource,
-  setResource
+  setResource,
+  getCategorySlotUsage,
+  getCategoryAvailableSlots,
+  canAddToCategory,
+  getCategorySlotStats
 } from '../item/inventory';
 
 /**
@@ -380,6 +384,80 @@ export class InventoryService {
    */
   getAllResources(): Record<string, number> {
     return this.inventory.resources || {};
+  }
+  
+  // ===== カテゴリ別スロット管理 =====
+  
+  /**
+   * カテゴリのスロット使用状況を取得
+   * 
+   * @param category - カテゴリ名
+   * @returns 使用中のスロット数
+   * 
+   * @example
+   * ```typescript
+   * const used = service.getCategorySlotUsage('consumable');
+   * console.log(`消耗品: ${used}スロット使用中`);
+   * ```
+   */
+  getCategorySlotUsage(category: string): number {
+    return getCategorySlotUsage(this.inventory, category);
+  }
+  
+  /**
+   * カテゴリの空きスロット数を取得
+   * 
+   * @param category - カテゴリ名
+   * @returns 空きスロット数（制限なしの場合は-1）
+   * 
+   * @example
+   * ```typescript
+   * const available = service.getCategoryAvailableSlots('weapon');
+   * if (available === -1) {
+   *   console.log('制限なし');
+   * } else {
+   *   console.log(`空き: ${available}スロット`);
+   * }
+   * ```
+   */
+  getCategoryAvailableSlots(category: string): number {
+    return getCategoryAvailableSlots(this.inventory, category);
+  }
+  
+  /**
+   * カテゴリにアイテムを追加できるかチェック
+   * 
+   * @param category - カテゴリ名
+   * @param slotsNeeded - 必要なスロット数（デフォルト: 1）
+   * @returns 追加可能な場合true
+   * 
+   * @example
+   * ```typescript
+   * if (service.canAddToCategory('armor', 1)) {
+   *   // 防具を追加可能
+   * }
+   * ```
+   */
+  canAddToCategory(category: string, slotsNeeded: number = 1): boolean {
+    return canAddToCategory(this.inventory, category, slotsNeeded);
+  }
+  
+  /**
+   * カテゴリ別スロット統計を取得
+   * 
+   * @returns カテゴリ別の使用状況
+   * 
+   * @example
+   * ```typescript
+   * const stats = service.getCategorySlotStats();
+   * // {
+   * //   equipment: { used: 20, max: 30, available: 10 },
+   * //   consumable: { used: 15, max: 50, available: 35 }
+   * // }
+   * ```
+   */
+  getCategorySlotStats(): Record<string, { used: number; max: number; available: number }> {
+    return getCategorySlotStats(this.inventory);
   }
   
   // ===== 判定ロジック =====
