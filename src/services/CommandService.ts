@@ -14,6 +14,8 @@ import {
 } from '../types';
 import { Skill } from '../types/skill';
 import { UniqueId } from '../types/common';
+import { canUseSkill } from '../character/skillCost';
+import { filterAlive, isAlive } from '../combat/combatantState';
 
 /**
  * CommandServiceクラス
@@ -214,7 +216,7 @@ export class CommandService {
     const enemyMatch = targetString.match(/^enemy-(\d+)$/);
     if (enemyMatch) {
       const index = parseInt(enemyMatch[1], 10);
-      const aliveEnemies = this.battleState.enemyGroup.filter(e => e.currentHp > 0);
+      const aliveEnemies = filterAlive(this.battleState.enemyGroup);
       return aliveEnemies[index] || null;
     }
 
@@ -222,7 +224,7 @@ export class CommandService {
     const allyMatch = targetString.match(/^ally-(\d+)$/);
     if (allyMatch) {
       const index = parseInt(allyMatch[1], 10);
-      const aliveAllies = this.battleState.playerParty.filter(c => c.currentHp > 0);
+      const aliveAllies = filterAlive(this.battleState.playerParty);
       return aliveAllies[index] || null;
     }
 
@@ -277,29 +279,9 @@ export class CommandService {
    * @param actor キャラクター
    */
   private getUsableSkills(actor: Character): Skill[] {
-    return actor.learnedSkills.map(ls => ls.skill).filter((skill: Skill) => {
-      // cost形式をチェック
-      if (skill.cost) {
-        if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {
-          return false;
-        }
-        if (skill.cost.hp !== undefined && actor.currentHp <= skill.cost.hp) {
-          return false;
-        }
-        // カスタムコストのチェック
-        for (const [key, value] of Object.entries(skill.cost)) {
-          if (key !== 'mp' && key !== 'hp' && value !== undefined && value !== null) {
-            const actorResource = (actor as any)[`current${key.charAt(0).toUpperCase()}${key.slice(1)}`];
-            if (actorResource !== undefined && actorResource < (value as number)) {
-              return false;
-            }
-          }
-        }
-        return true;
-      }
-      // costが未定義の場合はコスト無しとして扱う
-      return true;
-    });
+    return actor.learnedSkills
+      .map(ls => ls.skill)
+      .filter((skill: Skill) => canUseSkill(actor, skill));
   }
 
   /**
@@ -310,7 +292,7 @@ export class CommandService {
       return [];
     }
 
-    return this.battleState.enemyGroup.filter(e => e.currentHp > 0);
+    return filterAlive(this.battleState.enemyGroup);
   }
 
   /**
@@ -324,21 +306,21 @@ export class CommandService {
 
     switch (skill.targetType) {
       case 'single-enemy':
-        return this.battleState.enemyGroup.filter(e => e.currentHp > 0);
+        return filterAlive(this.battleState.enemyGroup);
       case 'all-enemies':
-        return this.battleState.enemyGroup.filter(e => e.currentHp > 0);
+        return filterAlive(this.battleState.enemyGroup);
       case 'single-ally':
-        return this.battleState.playerParty.filter(c => c.currentHp > 0);
+        return filterAlive(this.battleState.playerParty);
       case 'all-allies':
-        return this.battleState.playerParty.filter(c => c.currentHp > 0);
+        return filterAlive(this.battleState.playerParty);
       case 'self':
         return this.state?.actor ? [this.state.actor] : [];
       case 'select-enemies':
         // 任意の敵を1~N体選択可能
-        return this.battleState.enemyGroup.filter(e => e.currentHp > 0);
+        return filterAlive(this.battleState.enemyGroup);
       case 'select-allies':
         // 任意の味方を1~N体選択可能
-        return this.battleState.playerParty.filter(c => c.currentHp > 0);
+        return filterAlive(this.battleState.playerParty);
       default:
         return [];
     }

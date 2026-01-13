@@ -9,6 +9,7 @@ import type {
   BattleSimulationResult 
 } from '../types/simulation';
 import type { Combatant } from '../types/combatant';
+import { filterAlive } from '../combat/combatantState';
 
 /**
  * SimulationService
@@ -70,8 +71,8 @@ export class SimulationService {
     // 戦闘が終了するまでターンを進める
     while (turns < maxTurns) {
       // 両パーティの生存確認
-      const party1Alive = party1Copy.filter((c: Combatant) => c.currentHp > 0);
-      const party2Alive = party2Copy.filter((c: Combatant) => c.currentHp > 0);
+      const party1Alive = filterAlive(party1Copy);
+      const party2Alive = filterAlive(party2Copy);
       
       if (party1Alive.length === 0 || party2Alive.length === 0) {
         break;
@@ -88,9 +89,9 @@ export class SimulationService {
       }
 
       // Party2のターン
-      const party2StillAlive = party2Copy.filter((c: Combatant) => c.currentHp > 0);
+      const party2StillAlive = filterAlive(party2Copy);
       for (const attacker of party2StillAlive) {
-        const party1StillAlive = party1Copy.filter((c: Combatant) => c.currentHp > 0);
+        const party1StillAlive = filterAlive(party1Copy);
         if (party1StillAlive.length === 0) break;
         const target = party1StillAlive[Math.floor(Math.random() * party1StillAlive.length)];
         const damage = Math.max(0, attacker.stats.attack - target.stats.defense);

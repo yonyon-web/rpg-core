@@ -20,6 +20,8 @@ import { calculateTurnOrder, checkPreemptiveStrike } from '../combat/turnOrder';
 import { calculateDamage } from '../combat/damage';
 import { checkHit, checkCritical, calculateHitRate, calculateCriticalRate } from '../combat/accuracy';
 import { defaultGameConfig } from '../config/defaultConfig';
+import { checkSkillCost, consumeSkillCost } from '../character/skillCost';
+import { filterAlive, isDead, allDead } from '../combat/combatantState';
 
 /**
  * BattleServiceクラス
@@ -78,8 +80,8 @@ export class BattleService {
       
       // 行動順を再計算
       const allCombatants = [
-        ...this.state.playerParty.filter(c => c.currentHp > 0),
-        ...this.state.enemyGroup.filter(e => e.currentHp > 0)
+        ...filterAlive(this.state.playerParty),
+        ...filterAlive(this.state.enemyGroup)
       ];
       this.state.turnOrder = calculateTurnOrder(allCombatants, defaultGameConfig);
     }
@@ -90,7 +92,7 @@ export class BattleService {
     }
 
     // 戦闘不能チェック
-    if (actor.currentHp <= 0) {
+    if (isDead(actor)) {
       return this.advanceTurn();
     }
 
@@ -198,13 +200,13 @@ export class BattleService {
     }
 
     // コスト消費チェック
-    const costCheck = this.checkSkillCost(attacker, skill);
+    const costCheck = checkSkillCost(attacker, skill);
     if (!costCheck.canUse) {
       return { success: false, message: costCheck.message || 'Cannot use skill' };
     }
 
     // コスト消費
-    this.consumeSkillCost(attacker, skill);
+    consumeSkillCost(attacker, skill);
 
     // 回復スキルの場合
     if (skill.type === 'heal') {
@@ -287,14 +289,12 @@ export class BattleService {
     }
 
     // 勝利条件：全ての敵が倒れた
-    const aliveEnemies = this.state.enemyGroup.filter(e => e.currentHp > 0);
-    if (aliveEnemies.length === 0) {
+    if (allDead(this.state.enemyGroup)) {
       return { isEnded: true, result: 'victory' as BattleResult };
     }
 
     // 敗北条件：全てのプレイヤーが倒れた
-    const aliveParty = this.state.playerParty.filter(c => c.currentHp > 0);
-    if (aliveParty.length === 0) {
+    if (allDead(this.state.playerParty)) {
       return { isEnded: true, result: 'defeat' as BattleResult };
     }
 
@@ -378,53 +378,5 @@ export class BattleService {
     return this.state.playerParty.some(c => c.id === actor.id);
   }
 
-  /**
-   * スキルコストをチェックする
-   */
-  private checkSkillCost(actor: any, skill: any): { canUse: boolean; message?: string } {
-    // cost形式をチェック
-    if (skill.cost) {
-      if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {
-        return { canUse: false, message: 'Not enough MP' };
-      }
-      if (skill.cost.hp !== undefined && actor.currentHp <= skill.cost.hp) {
-        return { canUse: false, message: 'Not enough HP' };
-      }
-      // カスタムコストのチェック
-      for (const [key, value] of Object.entries(skill.cost)) {
-        if (key !== 'mp' && key !== 'hp' && value !== undefined && value !== null) {
-          const actorResource = (actor as any)[`current${key.charAt(0).toUpperCase()}${key.slice(1)}`];
-          if (actorResource !== undefined && actorResource < (value as number)) {
-            return { canUse: false, message: `Not enough ${key}` };
-          }
-        }
-      }
-    }
-    
-    return { canUse: true };
-  }
 
-  /**
-   * スキルコストを消費する
-   */
-  private consumeSkillCost(actor: any, skill: any): void {
-    // cost形式を消費
-    if (skill.cost) {
-      if (skill.cost.mp !== undefined) {
-        actor.currentMp -= skill.cost.mp;
-      }
-      if (skill.cost.hp !== undefined) {
-        actor.currentHp -= skill.cost.hp;
-      }
-      // カスタムコストの消費
-      for (const [key, value] of Object.entries(skill.cost)) {
-        if (key !== 'mp' && key !== 'hp' && value !== undefined && value !== null) {
-          const resourceKey = `current${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-          if ((actor as any)[resourceKey] !== undefined) {
-            (actor as any)[resourceKey] -= (value as number);
-          }
-        }
-      }
-    }
-  }
 }
