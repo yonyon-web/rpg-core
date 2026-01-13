@@ -4,7 +4,7 @@
  */
 
 import type { Character } from '../types/battle';
-import type { Skill } from '../types/skill';
+import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication } from '../types/skill';
 import type { UniqueId } from '../types/common';
 
 /**
@@ -150,7 +150,7 @@ export function hasSkill(character: Character, skillId: UniqueId): boolean {
 export function getLearnedSkill(
   character: Character,
   skillId: UniqueId
-): import('../types/skill').LearnedSkill | null {
+): LearnedSkill | null {
   if (!character.learnedSkills) {
     return null;
   }
@@ -236,10 +236,10 @@ export function getSkillDataAtLevel(
 ): {
   name: string;
   power: number;
-  cost?: import('../types/skill').SkillCost;
+  cost?: SkillCost;
   accuracy: number;
   criticalBonus: number;
-  statusEffects?: import('../types/skill').StatusEffectApplication[];
+  statusEffects?: StatusEffectApplication[];
   description: string;
 } {
   // レベル1または levelData がない場合はベーススキルの値を返す
@@ -256,7 +256,10 @@ export function getSkillDataAtLevel(
   }
   
   // 現在レベルに対応する levelData を探す
-  // レベルは昇順にソート済みと仮定し、指定レベル以下の最大レベルのデータを使用
+  // NOTE: levelDataは昇順にソートされていることを想定
+  // 指定レベル以下の最大レベルのデータを使用
+  // ソートされていない場合は正しく動作しない可能性があるため、
+  // スキル定義時にlevelDataをレベル順にソートして設定すること
   let applicableLevelData = null;
   for (const levelData of skill.levelData) {
     if (levelData.level <= level) {
@@ -302,14 +305,14 @@ export function getSkillDataAtLevel(
  * console.log(effectiveSkill.power);  // 現在レベルの威力
  */
 export function getLearnedSkillEffectiveData(
-  learnedSkill: import('../types/skill').LearnedSkill
+  learnedSkill: LearnedSkill
 ): {
   name: string;
   power: number;
-  cost?: import('../types/skill').SkillCost;
+  cost?: SkillCost;
   accuracy: number;
   criticalBonus: number;
-  statusEffects?: import('../types/skill').StatusEffectApplication[];
+  statusEffects?: StatusEffectApplication[];
   description: string;
 } {
   return getSkillDataAtLevel(learnedSkill.skill, learnedSkill.level);

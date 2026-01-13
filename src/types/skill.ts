@@ -149,6 +149,7 @@ export interface Skill<
  * スキルレベルごとのデータ
  * - レベルごとに効果や説明を変更できる
  * - 指定されていないフィールドはベーススキルの値を使用
+ * - **重要**: levelDataは昇順にソートして定義すること（level: 2, 3, 4...の順）
  * 
  * @template TElement - 属性タイプ（デフォルト: DefaultElement）
  * @template TSkillType - スキルタイプ（デフォルト: DefaultSkillType）
@@ -176,7 +177,7 @@ export interface SkillLevelData<
   TTargetType extends BaseTargetType = DefaultTargetType,
   TEffectType extends BaseStatusEffectType = DefaultStatusEffectType
 > {
-  level: number;                    // このデータが適用されるレベル（2以上）
+  level: number;                    // このデータが適用されるレベル（通常2以上、レベル1はベーススキル定義を使用）
   name?: string;                    // レベル固有の名前（省略時はベーススキルの名前）
   power?: number;                   // レベル固有の威力（省略時はベーススキルの威力）
   cost?: SkillCost;                 // レベル固有のコスト（省略時はベーススキルのコスト）
