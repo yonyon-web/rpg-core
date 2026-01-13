@@ -10,4 +10,5 @@ export { StatusEffectController } from './StatusEffectController';
 export { InventoryController } from './InventoryController';
 export { EquipmentController } from './EquipmentController';
 export { PartyController } from './PartyController';
+export { PartySelectionController } from './PartySelectionController';
 export { ItemController } from './ItemController';

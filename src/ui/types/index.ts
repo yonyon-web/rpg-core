@@ -11,4 +11,5 @@ export * from './statusEffect';
 export * from './inventory';
 export * from './equipment';
 export * from './party';
+export * from './partySelection';
 export * from './item';
