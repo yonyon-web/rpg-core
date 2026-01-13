@@ -10,7 +10,7 @@
 
 ### 1.1 目的
 
-rpg-coreライブラリの既存Service層（16サービス）を、任意のUIフレームワーク（React、Vue、Svelteなど）から使用できるようにするため、ヘッドレスUIコントローラー層を実装します。
+rpg-coreライブラリの既存Service層（17サービス）を、任意のUIフレームワーク（React、Vue、Svelteなど）から使用できるようにするため、ヘッドレスUIコントローラー層を実装します。
 
 ### 1.2 ヘッドレスUIとは
 
@@ -329,8 +329,8 @@ interface StatusEffectUIState {
 
 ### Phase 5: 発展系コントローラー 【優先度: 低】
 
-**期間**: 4-5日  
-**目的**: クラフト、強化、セーブ/ロードUIを実装
+**期間**: 5-6日  
+**目的**: クラフト、強化、ショップ、セーブ/ロードUIを実装
 
 #### 5.1 CraftController
 
@@ -354,7 +354,74 @@ interface StatusEffectUIState {
 - 成功率計算
 - 強化実行
 
-#### 5.3 SaveLoadController
+#### 5.3 ShopController
+
+**対応Service**: ShopService  
+**ファイル**: `src/ui/controllers/ShopController.ts`
+
+**主な機能**:
+- ショップアイテム一覧表示
+- アイテム購入フロー
+- アイテム売却フロー
+- 価格計算とプレビュー
+- 在庫管理
+- 購入条件チェック
+
+**状態定義**:
+```typescript
+interface ShopUIState {
+  // 段階
+  stage: 'browsing' | 'buying' | 'selling' | 'confirming' | 'completed';
+  
+  // ショップ情報
+  shop: Shop | null;
+  displayedItems: ShopItem[];
+  
+  // フィルタ・ソート
+  filter: {
+    category?: ItemCategory;
+    affordable?: boolean;  // 購入可能なアイテムのみ
+    purchasable?: boolean;  // 条件を満たすアイテムのみ
+  };
+  sortBy: 'name' | 'price' | 'level';
+  
+  // 選択状態
+  selectedItem: ShopItem | null;
+  selectedQuantity: number;
+  transactionType: 'buy' | 'sell' | null;
+  
+  // プレビュー
+  totalPrice: number;
+  canAfford: boolean;
+  purchaseCondition: {
+    canPurchase: boolean;
+    reasons: string[];
+  } | null;
+  
+  // 売却候補（プレイヤーのインベントリから）
+  sellableItems: Item[];
+  
+  // カーソル
+  cursorIndex: number;
+  
+  // 結果
+  result: ShopTransaction | null;
+  isProcessing: boolean;
+}
+```
+
+**イベント定義**:
+```typescript
+type ShopEvents = {
+  'shop-opened': { shop: Shop };
+  'item-selected': { item: ShopItem; type: 'buy' | 'sell' };
+  'quantity-changed': { quantity: number };
+  'transaction-completed': { result: ShopTransaction };
+  'shop-closed': {};
+};
+```
+
+#### 5.4 SaveLoadController
 
 **対応Service**: SaveLoadService  
 **ファイル**: `src/ui/controllers/SaveLoadController.ts`
@@ -368,6 +435,7 @@ interface StatusEffectUIState {
 #### 成果物
 - [ ] `src/ui/controllers/CraftController.ts`
 - [ ] `src/ui/controllers/EnhanceController.ts`
+- [ ] `src/ui/controllers/ShopController.ts`
 - [ ] `src/ui/controllers/SaveLoadController.ts`
 - [ ] 対応する型定義ファイル
 - [ ] 対応するテストファイル
@@ -441,6 +509,7 @@ rpg-core/
 │   │   │   ├── skill.ts
 │   │   │   ├── job.ts
 │   │   │   ├── statusEffect.ts
+│   │   │   ├── shop.ts
 │   │   │   ├── saveLoad.ts
 │   │   │   └── index.ts
 │   │   ├── controllers/             # Phase 2-5
@@ -456,6 +525,7 @@ rpg-core/
 │   │   │   ├── JobChangeController.ts
 │   │   │   ├── CraftController.ts
 │   │   │   ├── EnhanceController.ts
+│   │   │   ├── ShopController.ts
 │   │   │   ├── SaveLoadController.ts
 │   │   │   └── index.ts
 │   │   └── index.ts
@@ -726,8 +796,8 @@ export function createBattleStore(service: BattleService) {
 | Phase 2: 戦闘UI | 5-7日 | Day 4 | Day 10 |
 | Phase 3: 管理UI | 6-8日 | Day 11 | Day 18 |
 | Phase 4: 成長UI | 4-5日 | Day 19 | Day 23 |
-| Phase 5: 発展UI | 4-5日 | Day 24 | Day 28 |
-| Phase 6: テスト・ドキュメント | 3-4日 | Day 29 | Day 32 |
+| Phase 5: 発展UI | 5-6日 | Day 24 | Day 29 |
+| Phase 6: テスト・ドキュメント | 3-4日 | Day 30 | Day 33 |
 
 ---
 
@@ -824,7 +894,8 @@ export function createBattleStore(service: BattleService) {
 | 10 | JobChangeController | JobChangeService | 中 | Phase 4 |
 | 11 | CraftController | CraftService | 低 | Phase 5 |
 | 12 | EnhanceController | EnhanceService | 低 | Phase 5 |
-| 13 | SaveLoadController | SaveLoadService | 低 | Phase 5 |
+| 13 | ShopController | ShopService | 低 | Phase 5 |
+| 14 | SaveLoadController | SaveLoadService | 低 | Phase 5 |
 
 **注**: EnemyAIService、EnemyGroupService、SimulationServiceは他のコントローラー内で使用されるため、独立したコントローラーは不要です。
 
@@ -840,9 +911,9 @@ export function createBattleStore(service: BattleService) {
 | Phase 2 | 4日 | 2日 | 1日 | 7日 |
 | Phase 3 | 5日 | 2日 | 1日 | 8日 |
 | Phase 4 | 3日 | 1日 | 0.5日 | 4.5日 |
-| Phase 5 | 3日 | 1日 | 0.5日 | 4.5日 |
+| Phase 5 | 3.5日 | 1日 | 0.5日 | 5日 |
 | Phase 6 | 1日 | 1.5日 | 1.5日 | 4日 |
-| **合計** | **17.5日** | **8日** | **5日** | **30.5日** |
+| **合計** | **18.5日** | **8日** | **5日** | **31.5日** |
 
 ---
 

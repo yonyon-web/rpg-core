@@ -78,7 +78,7 @@
 
 ## 🎯 実装計画の要点
 
-### 実装する13のコントローラー
+### 実装する14のコントローラー
 
 | 優先度 | コントローラー | 対応Service | フェーズ |
 |--------|--------------|------------|---------|
@@ -94,6 +94,7 @@
 | 中 | JobChangeController | JobChangeService | Phase 4 |
 | 低 | CraftController | CraftService | Phase 5 |
 | 低 | EnhanceController | EnhanceService | Phase 5 |
+| 低 | ShopController | ShopService | Phase 5 |
 | 低 | SaveLoadController | SaveLoadService | Phase 5 |
 
 ### スケジュール概要
@@ -110,10 +111,10 @@ Week 5: Phase 6完了 (テスト・ドキュメント)
 
 | カテゴリ | 工数 |
 |---------|------|
-| 実装 | 17.5日 |
+| 実装 | 18.5日 |
 | テスト | 8日 |
 | ドキュメント | 5日 |
-| **合計** | **30.5日** |
+| **合計** | **31.5日** |
 
 ---
 
@@ -258,13 +259,13 @@ export function createBattleStore(service: BattleService) {
 ### 既存の実装（すべて完了）
 
 - ✅ Core Engine: 完全実装・テスト済み
-- ✅ Service層: 16サービスすべて実装・テスト済み
+- ✅ Service層: 17サービスすべて実装・テスト済み
 - ✅ テスト: 434テストすべて合格
 - ✅ ドキュメント: Service層まで完備
 
 ### これから実装するもの
 
-- 🔴 Headless UI層: 13コントローラー（本計画書で定義）
+- 🔴 Headless UI層: 14コントローラー（本計画書で定義）
 - 🔴 UIフレームワーク統合例
 - 🔴 サンプルアプリケーション
 
@@ -366,7 +367,7 @@ rpg-core v2.0.0
 └── Headless UI Layer (🔴 これから実装)
     ├── ObservableState
     ├── EventEmitter
-    └── 13 Controllers
+    └── 14 Controllers
 ```
 
 **結果として**:
