@@ -1,14 +1,16 @@
 /**
  * StatusEffectController
  * 
- * 状態異常UIの状態管理とイベント処理を行うコントローラー
- * StatusEffectServiceと連携して状態異常の表示と管理を行う
+ * 状態異常UIの表示と管理を行うコントローラー
+ * StatusEffectServiceと連携して状態異常の取得、フィルタ、ソートを行う
+ * 
+ * ステートレス設計: 対象キャラクターは内部で保持せず、
+ * 各メソッドの引数として受け取る。これにより複数キャラクターの
+ * 状態異常を同時に表示できる。
  */
 
-import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type { 
-  StatusEffectUIState, 
   StatusEffectEvents, 
   ActiveStatusEffect,
   StatusEffectFilterType,
@@ -26,20 +28,20 @@ import type { StatusEffect } from '../../types/statusEffect';
  * const statusEffectService = new StatusEffectService();
  * const controller = new StatusEffectController(statusEffectService);
  * 
- * // 状態を購読
- * controller.subscribe((state) => {
- *   console.log('Status effects:', state.activeEffects);
+ * // 複数キャラクターの状態異常を取得
+ * party.forEach(character => {
+ *   const effects = controller.getActiveEffects(character);
+ *   console.log(`${character.name}:`, effects);
  * });
  * 
- * // 対象を設定
- * controller.setTarget(character);
- * 
- * // フィルタを変更
- * controller.setFilter('buff');
+ * // フィルタとソートを適用
+ * const buffs = controller.getActiveEffects(character, { 
+ *   filterType: 'buff', 
+ *   sortBy: 'duration' 
+ * });
  * ```
  */
 export class StatusEffectController {
-  private state: ObservableState<StatusEffectUIState>;
   private events: EventEmitter<StatusEffectEvents>;
   private service: StatusEffectService;
 
@@ -50,28 +52,7 @@ export class StatusEffectController {
    */
   constructor(service: StatusEffectService) {
     this.service = service;
-    
-    // 初期状態を設定
-    this.state = new ObservableState<StatusEffectUIState>({
-      target: null,
-      activeEffects: [],
-      selectedEffect: null,
-      filterType: 'all',
-      sortBy: 'duration',
-      cursorIndex: 0
-    });
-    
     this.events = new EventEmitter<StatusEffectEvents>();
-  }
-
-  /**
-   * 状態を購読
-   * 
-   * @param listener - 状態変更時に呼ばれるリスナー
-   * @returns 購読解除関数
-   */
-  subscribe(listener: (state: StatusEffectUIState) => void): () => void {
-    return this.state.subscribe(listener);
   }
 
   /**
@@ -89,118 +70,103 @@ export class StatusEffectController {
   }
 
   /**
-   * 現在の状態を取得
-   * 
-   * @returns 現在の状態異常UI状態
-   */
-  getState(): StatusEffectUIState {
-    return this.state.getState();
-  }
-
-  /**
-   * 対象を設定
-   * 
-   * @param target - 状態異常を表示する対象
-   */
-  setTarget(target: Combatant): void {
-    this.state.setState(prev => ({
-      ...prev,
-      target,
-      activeEffects: this.getActiveEffects(target),
-      selectedEffect: null,
-      cursorIndex: 0
-    }));
-    
-    // フィルタとソートを適用
-    this.applyFilterAndSort();
-  }
-
-  /**
    * 対象のアクティブな状態異常を取得
    * 
-   * @param target - 対象
+   * @param target - 対象キャラクター
+   * @param options - フィルタとソートのオプション
    * @returns アクティブな状態異常リスト
+   * 
+   * @example
+   * ```typescript
+   * // すべての状態異常を取得
+   * const allEffects = controller.getActiveEffects(character);
+   * 
+   * // バフのみをフィルタして取得
+   * const buffs = controller.getActiveEffects(character, { filterType: 'buff' });
+   * 
+   * // 重要度順にソート
+   * const sorted = controller.getActiveEffects(character, { sortBy: 'severity' });
+   * ```
    */
-  private getActiveEffects(target: Combatant): ActiveStatusEffect[] {
+  getActiveEffects(
+    target: Combatant,
+    options?: {
+      filterType?: StatusEffectFilterType;
+      sortBy?: StatusEffectSortBy;
+    }
+  ): ActiveStatusEffect[] {
     if (!target.statusEffects) {
       return [];
     }
     
-    return target.statusEffects.map(effect => ({
+    let effects: ActiveStatusEffect[] = target.statusEffects.map(effect => ({
       ...effect,
       remainingDuration: effect.duration || 0,
       stackCount: effect.stackCount || 1
     }));
-  }
-
-  /**
-   * フィルタを設定
-   * 
-   * @param filterType - フィルタタイプ
-   */
-  setFilter(filterType: StatusEffectFilterType): void {
-    this.state.setState(prev => ({
-      ...prev,
-      filterType,
-      cursorIndex: 0
-    }));
-    
-    this.events.emit('filter-changed', { filterType });
-    this.applyFilterAndSort();
-  }
-
-  /**
-   * ソート基準を設定
-   * 
-   * @param sortBy - ソート基準
-   */
-  setSortBy(sortBy: StatusEffectSortBy): void {
-    this.state.setState(prev => ({
-      ...prev,
-      sortBy,
-      cursorIndex: 0
-    }));
-    
-    this.events.emit('sort-changed', { sortBy });
-    this.applyFilterAndSort();
-  }
-
-  /**
-   * フィルタとソートを適用
-   */
-  private applyFilterAndSort(): void {
-    const currentState = this.state.getState();
-    
-    if (!currentState.target) {
-      return;
-    }
-    
-    let effects = this.getActiveEffects(currentState.target);
     
     // フィルタを適用
-    if (currentState.filterType && currentState.filterType !== 'all') {
-      effects = effects.filter(effect => {
-        const category = effect.category;
-        if (currentState.filterType === 'buff') {
-          return category === 'buff' || category === 'hot';
-        } else if (currentState.filterType === 'debuff') {
-          return category === 'debuff' || category === 'dot';
-        } else if (currentState.filterType === 'ailment') {
-          return category === 'disable';
-        }
-        return true;
-      });
+    if (options?.filterType && options.filterType !== 'all') {
+      effects = this.applyFilter(effects, options.filterType);
     }
     
     // ソートを適用
-    effects.sort((a, b) => {
-      if (currentState.sortBy === 'duration') {
+    if (options?.sortBy) {
+      effects = this.applySorting(effects, options.sortBy);
+    }
+    
+    return effects;
+  }
+
+  /**
+   * フィルタを適用
+   * 
+   * @param effects - 状態異常リスト
+   * @param filterType - フィルタタイプ
+   * @returns フィルタ後の状態異常リスト
+   */
+  private applyFilter(
+    effects: ActiveStatusEffect[],
+    filterType: StatusEffectFilterType
+  ): ActiveStatusEffect[] {
+    if (!filterType || filterType === 'all') {
+      return effects;
+    }
+    
+    return effects.filter(effect => {
+      const category = effect.category;
+      if (filterType === 'buff') {
+        return category === 'buff' || category === 'hot';
+      } else if (filterType === 'debuff') {
+        return category === 'debuff' || category === 'dot';
+      } else if (filterType === 'ailment') {
+        return category === 'disable';
+      }
+      return true;
+    });
+  }
+
+  /**
+   * ソートを適用
+   * 
+   * @param effects - 状態異常リスト
+   * @param sortBy - ソート基準
+   * @returns ソート後の状態異常リスト
+   */
+  private applySorting(
+    effects: ActiveStatusEffect[],
+    sortBy: StatusEffectSortBy
+  ): ActiveStatusEffect[] {
+    const sorted = [...effects];
+    
+    sorted.sort((a, b) => {
+      if (sortBy === 'duration') {
         return b.remainingDuration - a.remainingDuration;
-      } else if (currentState.sortBy === 'name') {
+      } else if (sortBy === 'name') {
         return a.name.localeCompare(b.name);
-      } else if (currentState.sortBy === 'severity') {
+      } else if (sortBy === 'severity') {
         // 重要度順（カテゴリ順）
-        const severityOrder = { ailment: 3, debuff: 2, buff: 1 };
+        const severityOrder = { ailment: 3, disable: 3, debuff: 2, dot: 2, buff: 1, hot: 1 };
         const aSeverity = severityOrder[a.category as keyof typeof severityOrder] || 0;
         const bSeverity = severityOrder[b.category as keyof typeof severityOrder] || 0;
         return bSeverity - aSeverity;
@@ -208,53 +174,45 @@ export class StatusEffectController {
       return 0;
     });
     
-    this.state.setState(prev => ({
-      ...prev,
-      activeEffects: effects
-    }));
+    return sorted;
   }
 
   /**
-   * 状態異常を選択
+   * 状態異常の数を取得
    * 
-   * @param effect - 選択する状態異常
+   * @param target - 対象キャラクター
+   * @param category - カテゴリ（省略時は全体）
+   * @returns 状態異常の数
+   * 
+   * @example
+   * ```typescript
+   * // すべての状態異常の数
+   * const totalCount = controller.getEffectCount(character);
+   * 
+   * // バフの数のみ
+   * const buffCount = controller.getEffectCount(character, 'buff');
+   * ```
    */
-  selectEffect(effect: ActiveStatusEffect): void {
-    this.state.setState(prev => ({
-      ...prev,
-      selectedEffect: effect
-    }));
-    
-    this.events.emit('effect-selected', { effect });
+  getEffectCount(
+    target: Combatant,
+    filterType?: StatusEffectFilterType
+  ): number {
+    const effects = this.getActiveEffects(target, { filterType });
+    return effects.length;
   }
 
   /**
-   * カーソルを移動
+   * 特定の状態異常が付与されているか確認
    * 
-   * @param direction - 移動方向（1: 下、-1: 上）
+   * @param target - 対象キャラクター
+   * @param effectId - 状態異常ID
+   * @returns 付与されている場合はtrue
    */
-  moveCursor(direction: number): void {
-    const currentState = this.state.getState();
-    const maxIndex = currentState.activeEffects.length - 1;
-    
-    if (maxIndex < 0) {
-      return;
+  hasEffect(target: Combatant, effectId: string): boolean {
+    if (!target.statusEffects) {
+      return false;
     }
-    
-    let newIndex = currentState.cursorIndex + direction;
-    
-    // ループさせる
-    if (newIndex < 0) {
-      newIndex = maxIndex;
-    } else if (newIndex > maxIndex) {
-      newIndex = 0;
-    }
-    
-    this.state.setState(prev => ({
-      ...prev,
-      cursorIndex: newIndex,
-      selectedEffect: prev.activeEffects[newIndex] || null
-    }));
+    return target.statusEffects.some(effect => effect.id === effectId);
   }
 
   /**
@@ -267,11 +225,6 @@ export class StatusEffectController {
     const result = this.service.applyEffect(target, effect);
     
     if (result.success) {
-      // 表示を更新
-      if (this.state.getState().target === target) {
-        this.setTarget(target);
-      }
-      
       this.events.emit('effect-applied', { target, effect });
     }
   }
@@ -286,49 +239,7 @@ export class StatusEffectController {
     const result = this.service.removeEffect(target, effectId);
     
     if (result.success) {
-      // 表示を更新
-      if (this.state.getState().target === target) {
-        this.setTarget(target);
-      }
-      
       this.events.emit('effect-removed', { target, effectId });
     }
-  }
-
-  /**
-   * 全ての状態異常を取得（フィルタなし）
-   * 
-   * @returns すべての状態異常
-   */
-  getAllEffects(): ActiveStatusEffect[] {
-    const currentState = this.state.getState();
-    
-    if (!currentState.target) {
-      return [];
-    }
-    
-    return this.getActiveEffects(currentState.target);
-  }
-
-  /**
-   * 状態異常の数を取得
-   * 
-   * @param category - カテゴリ（省略時は全体）
-   * @returns 状態異常の数
-   */
-  getEffectCount(category?: 'buff' | 'debuff' | 'ailment'): number {
-    const currentState = this.state.getState();
-    
-    if (!currentState.target) {
-      return 0;
-    }
-    
-    const effects = this.getActiveEffects(currentState.target);
-    
-    if (!category) {
-      return effects.length;
-    }
-    
-    return effects.filter(e => e.category === category).length;
   }
 }
