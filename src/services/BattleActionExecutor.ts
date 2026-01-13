@@ -12,6 +12,7 @@ import {
   BattleState,
   GameConfig
 } from '../types';
+import { Skill } from '../types/skill';
 import { calculateDamage } from '../combat/damage';
 import { checkSkillCost, consumeSkillCost } from '../character/skillCost';
 
@@ -74,14 +75,14 @@ export class BattleActionExecutor {
     }
 
     // 簡易的な通常攻撃スキルを作成
-    const basicAttackSkill: any = {
+    const basicAttackSkill = {
       accuracy: 0.95,
       isGuaranteedHit: false,
       power: 1.0,
       criticalBonus: 0,
       type: 'physical',
       element: 'none'
-    };
+    } as Skill;
 
     // 汎用ダメージ計算を使用
     const damageResult = calculateDamage(

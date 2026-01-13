@@ -38,7 +38,6 @@ export class BattleService {
   constructor(config?: GameConfig) {
     this.config = config || defaultGameConfig;
     this.actionExecutor = new BattleActionExecutor(this.config);
-    // RewardServiceはデフォルトの型パラメータを使用（DefaultExpCurveType, DefaultStats）
     this.rewardService = new RewardService();
   }
 
@@ -212,11 +211,7 @@ export class BattleService {
 
     this.state.rewards = rewards;
     
-    // RewardServiceで経験値配分とレベルアップ処理
-    // Note: この時点では報酬の基本情報のみを返す
-    // 実際の経験値配分とレベルアップは、このBattleRewardsオブジェクトを
-    // getRewardService().distributeRewards(party, rewards) に渡して処理する
-    
+    // 報酬の基本情報を返す。配分とレベルアップ処理はgetRewardService()を利用
     return rewards;
   }
 
