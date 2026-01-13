@@ -4,7 +4,7 @@
 
 import { UniqueId } from './common';
 import { Combatant } from './combatant';
-import { Skill } from './skill';
+import { Skill, LearnedSkill } from './skill';
 
 /**
  * キャラクター（プレイヤー側の戦闘者）
@@ -14,7 +14,7 @@ export interface Character extends Combatant {
   jobLevel?: number;     // 現在のジョブレベル（オプション）
   jobExp?: number;       // 現在のジョブ経験値（オプション）
   skills: Skill[];       // 習得済みスキル（後方互換性のため維持、レベルなし）
-  learnedSkills?: import('./skill').LearnedSkill[]; // 習得済みスキル（レベル管理あり、オプション）
+  learnedSkills?: LearnedSkill[]; // 習得済みスキル（レベル管理あり、オプション）
   currentExp?: number;   // 現在の経験値（オプション）
 }
 
