@@ -43,7 +43,7 @@ export interface InventoryUIState {
  */
 export interface InventoryEvents {
   'item-selected': { slot: InventorySlot };
-  'item-used': { item: Item; success: boolean };
+  'item-removed': { item: Item; quantity: number; success: boolean };
   'item-discarded': { item: Item; quantity: number };
   'filter-changed': { filter: InventoryUIState['filter'] };
   'sort-changed': { sortBy: InventorySortBy; sortOrder: UISortOrder };

@@ -216,22 +216,23 @@ export class InventoryController {
   }
 
   /**
-   * アイテムを使用
+   * アイテムをインベントリから削除します
+   * 注意: アイテムの効果適用が必要な場合はItemControllerを使用してください
    * 
-   * @param item - 使用するアイテム
-   * @returns 使用に成功したか
+   * @param item - 削除するアイテム
+   * @param quantity - 削除する数量（デフォルト: 1）
+   * @returns 削除に成功したか
    */
-  async useItem(item: Item): Promise<boolean> {
-    // インベントリからアイテムを1つ削除
-    const result = this.service.removeItem(item.id, 1);
+  removeItem(item: Item, quantity: number = 1): boolean {
+    const result = this.service.removeItem(item.id, quantity);
     
     if (result.success) {
-      this.events.emit('item-used', { item, success: true });
+      this.events.emit('item-removed', { item, quantity, success: true });
       this.refresh();
       return true;
     }
     
-    this.events.emit('item-used', { item, success: false });
+    this.events.emit('item-removed', { item, quantity, success: false });
     return false;
   }
 
