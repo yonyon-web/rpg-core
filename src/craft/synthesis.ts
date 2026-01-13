@@ -100,7 +100,7 @@ export function meetsRequirements(
   
   // スキル要件チェック
   if (reqs.skillId !== undefined) {
-    const hasSkill = character.skills?.some(skill => skill.id === reqs.skillId);
+    const hasSkill = character.learnedSkills.some(ls => ls.skill.id === reqs.skillId);
     if (!hasSkill) {
       return false;
     }

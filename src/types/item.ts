@@ -13,6 +13,9 @@ import type {
 } from './statusEffect';
 import type { BaseTargetType, DefaultTargetType } from './skill';
 
+// Re-export UniqueId for convenience
+export type { UniqueId };
+
 /**
  * アイテムタイプの基底型
  * - ゲームごとに独自のアイテム分類を定義可能
@@ -111,4 +114,137 @@ export interface ItemUseResult {
     statusRemoved?: string[];
     revived?: boolean;
   }[];
+}
+
+/**
+ * 一般的なアイテム型
+ * @template TItemType - アイテムタイプ（デフォルト: DefaultItemType）
+ */
+export interface Item<
+  TItemType extends BaseItemType = DefaultItemType
+> {
+  id: UniqueId;                    // アイテムID
+  name: string;                    // アイテム名
+  type: TItemType;                 // アイテムタイプ
+  description?: string;            // 説明
+  category: string;                // カテゴリ（weapon, armor, consumable等）
+  value?: number;                  // 売却価格
+  rarity?: number;                 // レアリティ（0-5など）
+  stackable?: boolean;             // スタック可能か
+  maxStack?: number;               // 最大スタック数
+  weight?: number;                 // 重量
+  usableInBattle?: boolean;        // 戦闘中使用可能か
+  usableOutOfBattle?: boolean;     // 戦闘外使用可能か
+}
+
+/**
+ * インベントリスロット
+ */
+export interface InventorySlot {
+  item: Item;                      // アイテム
+  quantity: number;                // 数量
+  isEquipped?: boolean;            // 装備中フラグ
+  slotIndex: number;               // スロットインデックス
+  acquiredAt?: number;             // 取得日時（タイムスタンプ）
+}
+
+/**
+ * カテゴリ別スロット制限設定
+ * - カテゴリごとに最大スロット数を設定
+ * - 複数カテゴリで共有する場合は同じgroupIdを指定
+ * 
+ * @example
+ * // 単一カテゴリの制限
+ * { category: 'consumable', maxSlots: 50 }
+ * 
+ * @example
+ * // 複数カテゴリで制限を共有
+ * [
+ *   { category: 'weapon', maxSlots: 30, groupId: 'equipment' },
+ *   { category: 'armor', maxSlots: 30, groupId: 'equipment' }
+ * ]
+ * // weapon + armor 合計で30スロットまで
+ */
+export interface CategorySlotLimit {
+  category: string;         // カテゴリ名
+  maxSlots: number;         // 最大スロット数
+  groupId?: string;         // グループID（複数カテゴリで共有する場合）
+}
+
+/**
+ * インベントリ
+ */
+export interface Inventory {
+  slots: InventorySlot[];          // スロットリスト
+  maxSlots: number;                // 最大スロット数（全体）
+  usedSlots: number;               // 使用中のスロット数
+  resources: Record<string, number>; // 汎用リソース（money, SP、クラフトポイント等、ゲーム毎に定義可能）
+  categoryLimits?: CategorySlotLimit[]; // カテゴリ別スロット制限（オプション）
+}
+
+/**
+ * インベントリ検索条件
+ * ライブラリ利用者が拡張可能
+ */
+export interface InventorySearchCriteria {
+  itemId?: UniqueId;               // アイテムID
+  category?: string;               // カテゴリ
+  name?: string;                   // 名前（部分一致）
+  minQuantity?: number;            // 最小数量
+  maxQuantity?: number;            // 最大数量
+  isEquipped?: boolean;            // 装備中フラグ
+  customPredicate?: (slot: InventorySlot) => boolean;  // カスタム条件関数
+  [key: string]: any;              // ライブラリ利用者による拡張を許可
+}
+
+/**
+ * インベントリソート基準
+ */
+export type InventorySortBy = 
+  | 'name'                         // 名前順
+  | 'category'                     // カテゴリ順
+  | 'quantity'                     // 数量順
+  | 'rarity'                       // レアリティ順
+  | 'value'                        // 価値順
+  | 'acquired'                     // 取得日時順
+  | 'type';                        // タイプ順
+
+/**
+ * ソート順序
+ */
+export type SortOrder = 'asc' | 'desc';
+
+/**
+ * インベントリ操作オプション
+ */
+export interface InventoryOperationOptions {
+  allowOverflow?: boolean;         // 容量超過を許可
+  skipEquipped?: boolean;          // 装備中アイテムをスキップ
+  preferStackable?: boolean;       // スタック可能アイテムを優先
+}
+
+/**
+ * インベントリ操作結果
+ */
+export interface InventoryResult {
+  success: boolean;                // 成功したか
+  slotsUsed: number;               // 使用または解放されたスロット数（負の値は解放）
+  itemsAdded?: number;             // 追加されたアイテム数
+  itemsRemoved?: number;           // 削除されたアイテム数
+  failureReason?: string;          // 失敗理由
+}
+
+/**
+ * インベントリ統計情報
+ */
+export interface InventoryStats {
+  totalSlots: number;              // 総スロット数
+  usedSlots: number;               // 使用中のスロット数
+  availableSlots: number;          // 空きスロット数
+  totalItems: number;              // 総アイテム数（数量合計）
+  uniqueItems: number;             // ユニークアイテム数（種類数）
+  itemsByCategory: Record<string, number>; // カテゴリ別アイテム数
+  totalValue: number;              // 総価値
+  equippedCount: number;           // 装備中アイテム数
+  resources: Record<string, number>; // 汎用リソース（moneyを含む）
 }

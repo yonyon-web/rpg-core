@@ -32,7 +32,7 @@ describe('ItemService', () => {
     currentHp: 50,
     currentMp: 25,
     currentExp: 1000,
-    skills: [],
+    learnedSkills: [],
     statusEffects: [],
     position: 0,
     job: 'warrior',

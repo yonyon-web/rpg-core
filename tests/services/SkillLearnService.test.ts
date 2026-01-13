@@ -32,7 +32,7 @@ describe('SkillLearnService', () => {
     currentHp: 100,
     currentMp: 50,
     currentExp: 1000,
-    skills: [],
+    learnedSkills: [],
     statusEffects: [],
     position: 0,
     job: 'warrior',
@@ -66,20 +66,21 @@ describe('SkillLearnService', () => {
       const result = service.learnSkill(character, skill);
 
       expect(result.success).toBe(true);
-      expect(character.skills).toHaveLength(1);
-      expect(character.skills[0]).toBe(skill);
+      expect(character.learnedSkills).toHaveLength(1);
+      expect(character.learnedSkills[0].skill).toBe(skill);
+      expect(character.learnedSkills[0].level).toBe(1);
       expect(result.message).toContain('learned');
     });
 
     test('should not learn a skill that is already known', () => {
       const character = createTestCharacter();
       const skill = createTestSkill();
-      character.skills.push(skill);
+      character.learnedSkills.push({ skill, level: 1, learnedAt: Date.now() });
 
       const result = service.learnSkill(character, skill);
 
       expect(result.success).toBe(false);
-      expect(character.skills).toHaveLength(1);
+      expect(character.learnedSkills).toHaveLength(1);
       expect(result.message).toContain('already');
     });
 
@@ -90,7 +91,7 @@ describe('SkillLearnService', () => {
       const result = service.learnSkill(character, skill, { levelRequirement: 10 });
 
       expect(result.success).toBe(false);
-      expect(character.skills).toHaveLength(0);
+      expect(character.learnedSkills).toHaveLength(0);
       expect(result.message).toContain('level');
     });
 
@@ -102,7 +103,7 @@ describe('SkillLearnService', () => {
       const result = service.learnSkill(character, skill, { levelRequirement: 10 });
 
       expect(result.success).toBe(true);
-      expect(character.skills).toHaveLength(1);
+      expect(character.learnedSkills).toHaveLength(1);
     });
 
     test('should respect job requirements', () => {
@@ -113,7 +114,7 @@ describe('SkillLearnService', () => {
       const result = service.learnSkill(character, skill, { requiredJob: 'warrior' });
 
       expect(result.success).toBe(false);
-      expect(character.skills).toHaveLength(0);
+      expect(character.learnedSkills).toHaveLength(0);
       expect(result.message).toContain('job');
     });
 
@@ -125,7 +126,7 @@ describe('SkillLearnService', () => {
       const result = service.learnSkill(character, skill, { requiredJob: 'warrior' });
 
       expect(result.success).toBe(true);
-      expect(character.skills).toHaveLength(1);
+      expect(character.learnedSkills).toHaveLength(1);
     });
 
     test('should respect prerequisite skills', () => {
@@ -137,7 +138,7 @@ describe('SkillLearnService', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(character.skills).toHaveLength(0);
+      expect(character.learnedSkills).toHaveLength(0);
       expect(result.message).toContain('prerequisite');
     });
 
@@ -145,14 +146,14 @@ describe('SkillLearnService', () => {
       const character = createTestCharacter();
       const prereqSkill = createTestSkill({ id: 'skill-1' });
       const skill = createTestSkill({ id: 'skill-2' });
-      character.skills.push(prereqSkill);
+      character.learnedSkills.push({ skill: prereqSkill, level: 1, learnedAt: Date.now() });
       
       const result = service.learnSkill(character, skill, { 
         prerequisiteSkills: ['skill-1'] 
       });
 
       expect(result.success).toBe(true);
-      expect(character.skills).toHaveLength(2);
+      expect(character.learnedSkills).toHaveLength(2);
     });
 
     test('should respect multiple requirements', () => {
@@ -180,7 +181,7 @@ describe('SkillLearnService', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(character.skills).toHaveLength(0);
+      expect(character.learnedSkills).toHaveLength(0);
       expect(result.message).toContain('job level');
     });
 
@@ -194,7 +195,7 @@ describe('SkillLearnService', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(character.skills).toHaveLength(1);
+      expect(character.learnedSkills).toHaveLength(1);
     });
   });
 
@@ -202,12 +203,12 @@ describe('SkillLearnService', () => {
     test('should successfully forget a known skill', () => {
       const character = createTestCharacter();
       const skill = createTestSkill();
-      character.skills.push(skill);
+      character.learnedSkills.push({ skill, level: 1, learnedAt: Date.now() });
 
       const result = service.forgetSkill(character, skill.id);
 
       expect(result.success).toBe(true);
-      expect(character.skills).toHaveLength(0);
+      expect(character.learnedSkills).toHaveLength(0);
       expect(result.message).toContain('forgotten');
     });
 
@@ -235,7 +236,7 @@ describe('SkillLearnService', () => {
       const character = createTestCharacter();
       const skill1 = createTestSkill({ id: 'skill-1' });
       const skill2 = createTestSkill({ id: 'skill-2' });
-      character.skills.push(skill1);
+      character.learnedSkills.push({ skill: skill1, level: 1, learnedAt: Date.now() });
 
       const result = service.getLearnableSkills(character, [skill1, skill2]);
 
@@ -273,7 +274,7 @@ describe('SkillLearnService', () => {
     test('should return true when character has the skill', () => {
       const character = createTestCharacter();
       const skill = createTestSkill();
-      character.skills.push(skill);
+      character.learnedSkills.push({ skill, level: 1, learnedAt: Date.now() });
 
       const result = service.hasSkill(character, skill.id);
 

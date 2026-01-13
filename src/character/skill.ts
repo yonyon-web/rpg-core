@@ -4,7 +4,7 @@
  */
 
 import type { Character } from '../types/battle';
-import type { Skill } from '../types/skill';
+import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication, SkillLevelUpCost } from '../types/skill';
 import type { UniqueId } from '../types/common';
 
 /**
@@ -131,5 +131,216 @@ export function validateSkillLearnConditions(
  * @returns 習得している場合true
  */
 export function hasSkill(character: Character, skillId: UniqueId): boolean {
-  return character.skills.some(s => s.id === skillId);
+  return character.learnedSkills.some(ls => ls.skill.id === skillId);
+}
+
+/**
+ * 習得済みスキルを取得
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns 習得済みスキル（見つからない場合はnull）
+ */
+export function getLearnedSkill(
+  character: Character,
+  skillId: UniqueId
+): LearnedSkill | null {
+  if (!character.learnedSkills) {
+    return null;
+  }
+  return character.learnedSkills.find(ls => ls.skill.id === skillId) || null;
+}
+
+/**
+ * スキルの現在のレベルを取得
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns スキルレベル（習得していない場合は0）
+ */
+export function getSkillLevel(character: Character, skillId: UniqueId): number {
+  const learned = getLearnedSkill(character, skillId);
+  return learned ? learned.level : 0;
+}
+
+/**
+ * スキルをレベルアップ可能かチェック
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns レベルアップ可能な場合true
+ */
+export function canLevelUpSkill(
+  character: Character,
+  skillId: UniqueId
+): boolean {
+  const learned = getLearnedSkill(character, skillId);
+  if (!learned) {
+    return false;
+  }
+  
+  const maxLevel = learned.skill.maxLevel || 1;
+  return learned.level < maxLevel;
+}
+
+/**
+ * スキルをレベルアップ
+ * 
+ * @param character - キャラクター
+ * @param skillId - スキルID
+ * @returns レベルアップに成功した場合true
+ */
+export function levelUpSkill(
+  character: Character,
+  skillId: UniqueId
+): boolean {
+  if (!canLevelUpSkill(character, skillId)) {
+    return false;
+  }
+  
+  const learned = getLearnedSkill(character, skillId);
+  if (learned) {
+    learned.level++;
+    if (learned.experience !== undefined) {
+      learned.experience = 0; // 経験値リセット（オプション）
+    }
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * スキルレベルアップに必要なコストを取得
+ * - levelDataに定義されたlevelUpCostを返す
+ * - 定義されていない場合はnullを返す
+ * 
+ * @param skill - スキル
+ * @param targetLevel - レベルアップ先のレベル
+ * @returns レベルアップコスト（定義されていない場合はnull）
+ * 
+ * @example
+ * const cost = getLevelUpCost(fireballSkill, 3);
+ * if (cost && cost.resourceId && cost.amount) {
+ *   console.log(`Level 3にするには${cost.resourceId}が${cost.amount}必要`);
+ * }
+ */
+export function getLevelUpCost(
+  skill: Skill,
+  targetLevel: number
+): SkillLevelUpCost | null {
+  if (!skill.levelData || skill.levelData.length === 0) {
+    return null;
+  }
+  
+  // targetLevelに対応するlevelDataを探す
+  const levelData = skill.levelData.find(ld => ld.level === targetLevel);
+  
+  if (!levelData || !levelData.levelUpCost) {
+    return null;
+  }
+  
+  return levelData.levelUpCost;
+}
+
+/**
+ * スキルの現在レベルでの効果を取得
+ * - levelDataが定義されている場合、現在レベルに応じた値を返す
+ * - levelDataが定義されていない場合、ベーススキルの値を返す
+ * 
+ * @param skill - スキル
+ * @param level - 現在のレベル
+ * @returns レベルに応じたスキルデータ
+ * 
+ * @example
+ * const effectiveSkill = getSkillDataAtLevel(fireball, 3);
+ * console.log(effectiveSkill.power);  // レベル3の威力
+ * console.log(effectiveSkill.description);  // レベル3の説明
+ */
+export function getSkillDataAtLevel(
+  skill: Skill,
+  level: number
+): {
+  name: string;
+  power: number;
+  cost?: SkillCost;
+  accuracy: number;
+  criticalBonus: number;
+  statusEffects?: StatusEffectApplication[];
+  description: string;
+} {
+  // レベル1または levelData がない場合はベーススキルの値を返す
+  if (level === 1 || !skill.levelData || skill.levelData.length === 0) {
+    return {
+      name: skill.name,
+      power: skill.power,
+      cost: skill.cost,
+      accuracy: skill.accuracy,
+      criticalBonus: skill.criticalBonus,
+      statusEffects: skill.statusEffects,
+      description: skill.description
+    };
+  }
+  
+  // 現在レベルに対応する levelData を探す
+  // NOTE: levelDataは昇順にソートされていることを想定
+  // 指定レベル以下の最大レベルのデータを使用
+  // ソートされていない場合は正しく動作しない可能性があるため、
+  // スキル定義時にlevelDataをレベル順にソートして設定すること
+  let applicableLevelData = null;
+  for (const levelData of skill.levelData) {
+    if (levelData.level <= level) {
+      applicableLevelData = levelData;
+    } else {
+      break; // レベルを超えたら終了
+    }
+  }
+  
+  // levelData が見つからない場合はベーススキルの値を返す
+  if (!applicableLevelData) {
+    return {
+      name: skill.name,
+      power: skill.power,
+      cost: skill.cost,
+      accuracy: skill.accuracy,
+      criticalBonus: skill.criticalBonus,
+      statusEffects: skill.statusEffects,
+      description: skill.description
+    };
+  }
+  
+  // levelData とベーススキルの値をマージ
+  return {
+    name: applicableLevelData.name ?? skill.name,
+    power: applicableLevelData.power ?? skill.power,
+    cost: applicableLevelData.cost ?? skill.cost,
+    accuracy: applicableLevelData.accuracy ?? skill.accuracy,
+    criticalBonus: applicableLevelData.criticalBonus ?? skill.criticalBonus,
+    statusEffects: applicableLevelData.statusEffects ?? skill.statusEffects,
+    description: applicableLevelData.description ?? skill.description
+  };
+}
+
+/**
+ * 習得済みスキルの現在レベルでの効果を取得
+ * 
+ * @param learnedSkill - 習得済みスキル
+ * @returns レベルに応じたスキルデータ
+ * 
+ * @example
+ * const effectiveSkill = getLearnedSkillEffectiveData(learnedSkill);
+ * console.log(effectiveSkill.power);  // 現在レベルの威力
+ */
+export function getLearnedSkillEffectiveData(
+  learnedSkill: LearnedSkill
+): {
+  name: string;
+  power: number;
+  cost?: SkillCost;
+  accuracy: number;
+  criticalBonus: number;
+  statusEffects?: StatusEffectApplication[];
+  description: string;
+} {
+  return getSkillDataAtLevel(learnedSkill.skill, learnedSkill.level);
 }

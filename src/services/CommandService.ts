@@ -277,7 +277,7 @@ export class CommandService {
    * @param actor キャラクター
    */
   private getUsableSkills(actor: Character): Skill[] {
-    return actor.skills.filter(skill => {
+    return actor.learnedSkills.map(ls => ls.skill).filter((skill: Skill) => {
       // cost形式をチェック
       if (skill.cost) {
         if (skill.cost.mp !== undefined && actor.currentMp < skill.cost.mp) {

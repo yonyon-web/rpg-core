@@ -32,7 +32,7 @@ describe('JobChangeService', () => {
     currentHp: 100,
     currentMp: 50,
     currentExp: 1000,
-    skills: [],
+    learnedSkills: [],
     statusEffects: [],
     position: 0,
     job: 'warrior',

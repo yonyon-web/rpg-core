@@ -4,7 +4,7 @@
 
 import { UniqueId } from './common';
 import { Combatant } from './combatant';
-import { Skill } from './skill';
+import { Skill, LearnedSkill } from './skill';
 
 /**
  * キャラクター（プレイヤー側の戦闘者）
@@ -13,7 +13,7 @@ export interface Character extends Combatant {
   job?: string;          // ジョブ名（オプション）
   jobLevel?: number;     // 現在のジョブレベル（オプション）
   jobExp?: number;       // 現在のジョブ経験値（オプション）
-  skills: Skill[];
+  learnedSkills: LearnedSkill[]; // 習得済みスキル（レベル管理あり）
   currentExp?: number;   // 現在の経験値（オプション）
 }
 
@@ -48,7 +48,7 @@ export type DefaultAIStrategy =
   | 'support';     // サポート型（バフ・デバフを優先）
 
 /**
- * AI戦略（後方互換性のため）
+ * AI戦略
  */
 export type AIStrategy = DefaultAIStrategy;
 

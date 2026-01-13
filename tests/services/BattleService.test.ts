@@ -31,7 +31,7 @@ describe('BattleService', () => {
     currentMp: mp,
     statusEffects: [],
     position: 0,
-    skills: [],
+    learnedSkills: [],
   });
 
   const createEnemy = (id: string, name: string, hp: number = 50, mp: number = 20): Enemy => ({
@@ -195,7 +195,7 @@ describe('BattleService', () => {
         };
 
         const party = [createCharacter('hero1', 'Hero')];
-        party[0].skills = [skill];
+        party[0].learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
         const enemies = [createEnemy('enemy1', 'Slime')];
 
         await battleService.startBattle(party, enemies);
@@ -238,7 +238,7 @@ describe('BattleService', () => {
 
         const party = [createCharacter('hero1', 'Hero')];
         party[0].currentHp = 50; // ダメージを受けた状態
-        party[0].skills = [healSkill];
+        party[0].learnedSkills = [{ skill: healSkill, level: 1, learnedAt: Date.now() }];
         const enemies = [createEnemy('enemy1', 'Slime')];
 
         await battleService.startBattle(party, enemies);
@@ -277,7 +277,7 @@ describe('BattleService', () => {
         };
 
         const party = [createCharacter('hero1', 'Hero', 100, 50)];
-        party[0].skills = [skill];
+        party[0].learnedSkills = [{ skill, level: 1, learnedAt: Date.now() }];
         const enemies = [createEnemy('enemy1', 'Slime')];
 
         await battleService.startBattle(party, enemies);
