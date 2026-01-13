@@ -229,4 +229,49 @@ describe('ItemService', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('event emission', () => {
+    test('should emit data-changed event on successful item use', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const serviceWithEvents = new ItemService(eventBus);
+      const character = createTestCharacter();
+      const item = createTestItem();
+
+      const result = serviceWithEvents.useItem(item, character, { inBattle: true });
+
+      expect(result.success).toBe(true);
+      expect(eventBus.emit).toHaveBeenCalledWith('data-changed', {
+        type: 'item-used',
+        timestamp: expect.any(Number),
+        data: { itemId: item.id, targetId: character.id }
+      });
+    });
+
+    test('should not emit event on failed item use', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const serviceWithEvents = new ItemService(eventBus);
+      const character = createTestCharacter({ currentHp: 100 });
+      const item = createTestItem();
+
+      const result = serviceWithEvents.useItem(item, character, { inBattle: true });
+
+      expect(result.success).toBe(false);
+      expect(eventBus.emit).not.toHaveBeenCalled();
+    });
+
+    test('should not emit event when eventBus is not provided', () => {
+      const serviceWithoutEvents = new ItemService();
+      const character = createTestCharacter();
+      const item = createTestItem();
+
+      const result = serviceWithoutEvents.useItem(item, character, { inBattle: true });
+
+      expect(result.success).toBe(true);
+      // No error should be thrown
+    });
+  });
 });

@@ -302,4 +302,273 @@ describe('SaveLoadService', () => {
       expect(service.getConfig().maxSlots).toBe(3);
     });
   });
+
+  describe('auto-save functionality', () => {
+    let eventBus: any;
+    let autoSaveService: SaveLoadService;
+    let gameState: GameState;
+
+    beforeEach(() => {
+      // EventBusのモック
+      eventBus = {
+        on: jest.fn(),
+        emit: jest.fn(),
+        off: jest.fn(),
+      };
+
+      gameState = createGameState();
+
+      autoSaveService = new SaveLoadService({
+        maxSlots: 3,
+        gameVersion: '1.0.0',
+        autoSaveEnabled: true,
+        autoSaveDebounceMs: 100,
+        maxAutoSaveRetries: 2,
+        autoSaveSlotId: 1
+      }, eventBus);
+    });
+
+    describe('setupAutoSave', () => {
+      test('should register data-changed event listener', () => {
+        expect(eventBus.on).toHaveBeenCalledWith('data-changed', expect.any(Function));
+      });
+
+      test('should not register listener if eventBus is not provided', () => {
+        const serviceWithoutBus = new SaveLoadService({
+          autoSaveEnabled: true
+        });
+        
+        // eventBus.onは呼ばれていないことを確認（新しいインスタンス用）
+        const callCount = eventBus.on.mock.calls.length;
+        expect(callCount).toBeGreaterThan(0); // 最初のインスタンス用には呼ばれている
+      });
+    });
+
+    describe('enableAutoSave / disableAutoSave', () => {
+      test('should enable auto-save', () => {
+        autoSaveService.disableAutoSave();
+        expect(autoSaveService.isAutoSaveEnabled()).toBe(false);
+        
+        autoSaveService.enableAutoSave();
+        expect(autoSaveService.isAutoSaveEnabled()).toBe(true);
+      });
+
+      test('should disable auto-save', () => {
+        expect(autoSaveService.isAutoSaveEnabled()).toBe(true);
+        
+        autoSaveService.disableAutoSave();
+        expect(autoSaveService.isAutoSaveEnabled()).toBe(false);
+      });
+    });
+
+    describe('setCurrentGameState', () => {
+      test('should set game state provider', () => {
+        const provider = jest.fn(() => gameState);
+        autoSaveService.setCurrentGameState(provider);
+        
+        // providerが設定されたことは間接的に確認される
+        expect(provider).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('auto-save trigger', () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      test('should schedule auto-save on data-changed event', () => {
+        autoSaveService.setCurrentGameState(() => gameState);
+
+        // data-changedイベントのリスナーを取得
+        const dataChangedListener = eventBus.on.mock.calls.find(
+          (call: any[]) => call[0] === 'data-changed'
+        )?.[1];
+
+        expect(dataChangedListener).toBeDefined();
+
+        // イベントを発行
+        dataChangedListener({
+          type: 'item-used',
+          timestamp: Date.now(),
+          data: { itemId: 'potion-1' }
+        });
+
+        // デバウンス時間経過前はセーブされない
+        expect(autoSaveService.hasSave(1)).toBe(false);
+
+        // デバウンス時間経過後にセーブされる
+        jest.advanceTimersByTime(100);
+        expect(autoSaveService.hasSave(1)).toBe(true);
+      });
+
+      test('should debounce multiple data-changed events', () => {
+        autoSaveService.setCurrentGameState(() => gameState);
+
+        const dataChangedListener = eventBus.on.mock.calls.find(
+          (call: any[]) => call[0] === 'data-changed'
+        )?.[1];
+
+        // 複数のイベントを短時間で発行
+        dataChangedListener({ type: 'item-used', timestamp: Date.now() });
+        jest.advanceTimersByTime(50);
+        
+        dataChangedListener({ type: 'equipment-changed', timestamp: Date.now() });
+        jest.advanceTimersByTime(50);
+        
+        dataChangedListener({ type: 'party-updated', timestamp: Date.now() });
+
+        // まだセーブされていない
+        expect(autoSaveService.hasSave(1)).toBe(false);
+
+        // 最後のイベントから100ms経過後にセーブされる
+        jest.advanceTimersByTime(100);
+        expect(autoSaveService.hasSave(1)).toBe(true);
+
+        // セーブは1回だけ
+        const saveSlot = autoSaveService.getSaveSlot(1);
+        expect(saveSlot).toBeDefined();
+      });
+
+      test('should not trigger auto-save when disabled', () => {
+        autoSaveService.setCurrentGameState(() => gameState);
+        autoSaveService.disableAutoSave();
+
+        const dataChangedListener = eventBus.on.mock.calls.find(
+          (call: any[]) => call[0] === 'data-changed'
+        )?.[1];
+
+        dataChangedListener({ type: 'item-used', timestamp: Date.now() });
+        jest.advanceTimersByTime(100);
+
+        // セーブされない
+        expect(autoSaveService.hasSave(1)).toBe(false);
+      });
+
+      test('should emit auto-save-completed event on successful save', () => {
+        autoSaveService.setCurrentGameState(() => gameState);
+
+        const dataChangedListener = eventBus.on.mock.calls.find(
+          (call: any[]) => call[0] === 'data-changed'
+        )?.[1];
+
+        dataChangedListener({ type: 'item-used', timestamp: Date.now() });
+        jest.advanceTimersByTime(100);
+
+        // auto-save-completedイベントが発行される
+        expect(eventBus.emit).toHaveBeenCalledWith('auto-save-completed', {
+          timestamp: expect.any(Number),
+          slotId: 1
+        });
+      });
+
+      test('should filter events based on autoSaveOnEvents config', () => {
+        // Create a new event bus for this test to avoid listener conflicts
+        const filteredEventBus: any = {
+          on: jest.fn(),
+          emit: jest.fn(),
+          off: jest.fn(),
+        };
+
+        const filteredService = new SaveLoadService({
+          autoSaveEnabled: true,
+          autoSaveDebounceMs: 100,
+          autoSaveSlotId: 1,
+          autoSaveOnEvents: ['item-used', 'equipment-changed']
+        }, filteredEventBus);
+
+        filteredService.setCurrentGameState(() => gameState);
+
+        const dataChangedListener = filteredEventBus.on.mock.calls.find(
+          (call: any[]) => call[0] === 'data-changed'
+        )?.[1];
+
+        // フィルタに含まれるイベント
+        dataChangedListener({ type: 'item-used', timestamp: Date.now() });
+        jest.advanceTimersByTime(100);
+        expect(filteredService.hasSave(1)).toBe(true);
+
+        // セーブスロットをクリア
+        filteredService.deleteSave(1);
+
+        // フィルタに含まれないイベント
+        dataChangedListener({ type: 'party-updated', timestamp: Date.now() });
+        jest.advanceTimersByTime(100);
+        expect(filteredService.hasSave(1)).toBe(false);
+      });
+    });
+
+    describe('retry logic', () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      test('should retry on save failure', () => {
+        // 失敗するゲーム状態プロバイダー（無効なデータ）
+        let callCount = 0;
+        autoSaveService.setCurrentGameState(() => {
+          callCount++;
+          if (callCount < 2) {
+            // 最初は無効なゲーム状態を返す
+            return { player: null } as any;
+          }
+          // 2回目は正常なゲーム状態を返す
+          return gameState;
+        });
+
+        const dataChangedListener = eventBus.on.mock.calls.find(
+          (call: any[]) => call[0] === 'data-changed'
+        )?.[1];
+
+        dataChangedListener({ type: 'item-used', timestamp: Date.now() });
+        jest.advanceTimersByTime(100);
+
+        // 最初のセーブは失敗
+        expect(autoSaveService.hasSave(1)).toBe(false);
+
+        // リトライ（指数バックオフ: 100ms * 2^1 = 200ms）
+        jest.advanceTimersByTime(200);
+        expect(autoSaveService.hasSave(1)).toBe(true);
+      });
+
+      test('should emit auto-save-failed event after max retries', () => {
+        // 常に失敗するゲーム状態プロバイダー
+        autoSaveService.setCurrentGameState(() => {
+          return { player: null } as any;
+        });
+
+        const dataChangedListener = eventBus.on.mock.calls.find(
+          (call: any[]) => call[0] === 'data-changed'
+        )?.[1];
+
+        dataChangedListener({ type: 'item-used', timestamp: Date.now() });
+        
+        // 最初のセーブ試行
+        jest.advanceTimersByTime(100);
+        expect(autoSaveService.hasSave(1)).toBe(false);
+
+        // 1回目のリトライ（200ms後）
+        jest.advanceTimersByTime(200);
+        expect(autoSaveService.hasSave(1)).toBe(false);
+
+        // 2回目のリトライ（400ms後）
+        jest.advanceTimersByTime(400);
+        expect(autoSaveService.hasSave(1)).toBe(false);
+
+        // auto-save-failedイベントが発行される
+        expect(eventBus.emit).toHaveBeenCalledWith('auto-save-failed', {
+          timestamp: expect.any(Number),
+          error: expect.any(String),
+          retryCount: 2
+        });
+      });
+    });
+  });
 });

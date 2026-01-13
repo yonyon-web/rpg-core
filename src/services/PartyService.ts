@@ -5,6 +5,8 @@
 
 import type { Combatant } from '../types/combatant';
 import type { BaseStats, DefaultStats } from '../types/stats';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as partyCore from '../party/formation';
 
 /**
@@ -40,12 +42,14 @@ export interface PartyServiceConfig {
  */
 export class PartyService<TStats extends BaseStats = DefaultStats> {
   private config: Required<PartyServiceConfig>;
+  private eventBus?: EventBus;
 
-  constructor(config?: PartyServiceConfig) {
+  constructor(config?: PartyServiceConfig, eventBus?: EventBus) {
     this.config = {
       minSize: config?.minSize ?? 1,
       maxSize: config?.maxSize ?? 4
     };
+    this.eventBus = eventBus;
   }
 
   /**
@@ -77,6 +81,15 @@ export class PartyService<TStats extends BaseStats = DefaultStats> {
 
     // メンバー追加
     party.push(member);
+
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'party-updated',
+        timestamp: Date.now(),
+        data: { memberId: member.id, action: 'add' }
+      });
+    }
 
     return {
       success: true
@@ -114,6 +127,15 @@ export class PartyService<TStats extends BaseStats = DefaultStats> {
 
     // メンバー削除
     const [removed] = party.splice(index, 1);
+
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'party-updated',
+        timestamp: Date.now(),
+        data: { memberId, action: 'remove' }
+      });
+    }
 
     return {
       success: true,

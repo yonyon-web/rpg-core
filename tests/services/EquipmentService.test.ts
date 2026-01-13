@@ -337,4 +337,71 @@ describe('EquipmentService', () => {
       expect(result.reason).toContain('スロット');
     });
   });
+
+  describe('event emission', () => {
+    test('should emit data-changed event on successful equip', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const serviceWithEvents = new EquipmentService({}, eventBus);
+      const character = createCharacter('char1', 10);
+      const weapon = createWeapon('sword1', 5);
+
+      const result = serviceWithEvents.equipItem(character, weapon, 'weapon');
+
+      expect(result.success).toBe(true);
+      expect(eventBus.emit).toHaveBeenCalledWith('data-changed', {
+        type: 'equipment-changed',
+        timestamp: expect.any(Number),
+        data: {
+          characterId: character.id,
+          equipmentId: weapon.id,
+          slot: 'weapon',
+          previousEquipmentId: undefined
+        }
+      });
+    });
+
+    test('should emit data-changed event on successful unequip', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const serviceWithEvents = new EquipmentService({}, eventBus);
+      const character = createCharacter('char1', 10);
+      const weapon = createWeapon('sword1', 5);
+
+      // First equip
+      serviceWithEvents.equipItem(character, weapon, 'weapon');
+      eventBus.emit.mockClear();
+
+      // Then unequip
+      const result = serviceWithEvents.unequipItem(character, 'weapon');
+
+      expect(result.success).toBe(true);
+      expect(eventBus.emit).toHaveBeenCalledWith('data-changed', {
+        type: 'equipment-changed',
+        timestamp: expect.any(Number),
+        data: {
+          characterId: character.id,
+          equipmentId: weapon.id,
+          slot: 'weapon',
+          action: 'unequip'
+        }
+      });
+    });
+
+    test('should not emit event on failed equip', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const serviceWithEvents = new EquipmentService({}, eventBus);
+      const character = createCharacter('char1', 1);
+      const weapon = createWeapon('sword1', 10); // Level requirement too high
+
+      const result = serviceWithEvents.equipItem(character, weapon, 'weapon');
+
+      expect(result.success).toBe(false);
+      expect(eventBus.emit).not.toHaveBeenCalled();
+    });
+  });
 });

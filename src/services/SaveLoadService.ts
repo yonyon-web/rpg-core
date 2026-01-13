@@ -9,6 +9,8 @@ import type {
   SaveResult,
   LoadResult 
 } from '../types/save';
+import type { DataChangeEvent, AutoSaveCompletedEvent, AutoSaveFailedEvent } from '../types/events';
+import type { EventBus } from '../core/EventBus';
 import * as persistence from '../system/persistence';
 
 /**
@@ -21,6 +23,16 @@ export interface SaveLoadServiceConfig {
   gameVersion?: string;
   /** 自動バージョンマイグレーション */
   autoMigrate?: boolean;
+  /** 自動セーブを有効にするか */
+  autoSaveEnabled?: boolean;
+  /** 自動セーブのデバウンス時間（ミリ秒） */
+  autoSaveDebounceMs?: number;
+  /** 自動セーブの失敗時リトライ回数 */
+  maxAutoSaveRetries?: number;
+  /** 自動セーブをトリガーするイベントタイプのフィルタ */
+  autoSaveOnEvents?: string[];
+  /** 自動セーブ用のスロットID */
+  autoSaveSlotId?: number;
 }
 
 /**
@@ -31,19 +43,52 @@ export interface SaveLoadServiceConfig {
  * const service = new SaveLoadService({ maxSlots: 10 });
  * const saveResult = service.save(gameState, 1, 'My Save');
  * const loadResult = service.load(1);
+ * 
+ * @example
+ * // 自動セーブを有効にする
+ * const eventBus = new EventBus();
+ * const service = new SaveLoadService({ 
+ *   autoSaveEnabled: true,
+ *   autoSaveDebounceMs: 2000 
+ * }, eventBus);
+ * service.setCurrentGameState(() => gameState);
  */
 export class SaveLoadService {
-  private config: Required<SaveLoadServiceConfig>;
+  private config: SaveLoadServiceConfig & {
+    maxSlots: number;
+    gameVersion: string;
+    autoMigrate: boolean;
+    autoSaveEnabled: boolean;
+    autoSaveDebounceMs: number;
+    maxAutoSaveRetries: number;
+    autoSaveSlotId: number;
+  };
   private saveSlots: Map<number, SaveSlot>;
+  private eventBus?: EventBus;
+  private autoSaveEnabled: boolean;
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private currentGameStateProvider?: () => GameState;
+  private autoSaveRetryCount: number = 0;
 
-  constructor(config: SaveLoadServiceConfig = {}) {
+  constructor(config: SaveLoadServiceConfig = {}, eventBus?: EventBus) {
     this.config = {
       maxSlots: 10,
       gameVersion: '1.0.0',
       autoMigrate: true,
+      autoSaveEnabled: false,
+      autoSaveDebounceMs: 1000,
+      maxAutoSaveRetries: 3,
+      autoSaveSlotId: 1,
       ...config
     };
     this.saveSlots = new Map();
+    this.eventBus = eventBus;
+    this.autoSaveEnabled = this.config.autoSaveEnabled;
+
+    // イベントバスが提供されている場合、自動セーブを設定
+    if (this.eventBus && this.autoSaveEnabled) {
+      this.setupAutoSave();
+    }
   }
 
   /**
@@ -246,7 +291,187 @@ export class SaveLoadService {
    * 
    * @returns 現在の設定
    */
-  getConfig(): Readonly<Required<SaveLoadServiceConfig>> {
+  getConfig(): Readonly<SaveLoadServiceConfig> {
     return { ...this.config };
+  }
+
+  /**
+   * 自動セーブを設定する
+   * イベントリスナーを登録し、データ変更イベントを監視する
+   * 
+   * @private
+   */
+  private setupAutoSave(): void {
+    if (!this.eventBus) {
+      return;
+    }
+
+    this.eventBus.on<DataChangeEvent>('data-changed', (event: DataChangeEvent) => {
+      // 自動セーブが有効かチェック
+      if (!this.autoSaveEnabled) {
+        return;
+      }
+
+      // イベントタイプフィルタが設定されている場合、フィルタに合致するかチェック
+      if (this.config.autoSaveOnEvents && this.config.autoSaveOnEvents.length > 0) {
+        if (!this.config.autoSaveOnEvents.includes(event.type)) {
+          return;
+        }
+      }
+
+      // 自動セーブをスケジュール
+      this.scheduleAutoSave();
+    });
+  }
+
+  /**
+   * 自動セーブをスケジュールする
+   * デバウンス処理: 連続した変更を1回のセーブにまとめる
+   * 
+   * @private
+   */
+  private scheduleAutoSave(): void {
+    // 既存のタイマーをキャンセル
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+
+    // 新しいタイマーを設定
+    this.saveTimeout = setTimeout(() => {
+      this.autoSave();
+    }, this.config.autoSaveDebounceMs);
+  }
+
+  /**
+   * 自動セーブを実行する
+   * 
+   * @private
+   */
+  private autoSave(): void {
+    // ゲーム状態プロバイダーが設定されていない場合は何もしない
+    if (!this.currentGameStateProvider) {
+      return;
+    }
+
+    try {
+      // 現在のゲーム状態を取得
+      const gameState = this.currentGameStateProvider();
+
+      // セーブを実行
+      const result = this.save(
+        gameState,
+        this.config.autoSaveSlotId,
+        'Auto Save',
+        0,
+        'Auto'
+      );
+
+      if (result.success) {
+        // セーブ成功時はリトライカウントをリセット
+        this.autoSaveRetryCount = 0;
+
+        // セーブ成功イベントを発行
+        if (this.eventBus) {
+          this.eventBus.emit<AutoSaveCompletedEvent>('auto-save-completed', {
+            timestamp: Date.now(),
+            slotId: this.config.autoSaveSlotId
+          });
+        }
+      } else {
+        // セーブ失敗時の処理
+        this.handleAutoSaveFailure(result.message);
+      }
+    } catch (error) {
+      // エラー発生時の処理
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.handleAutoSaveFailure(errorMessage);
+    }
+  }
+
+  /**
+   * 自動セーブの失敗を処理する
+   * 
+   * @param errorMessage - エラーメッセージ
+   * @private
+   */
+  private handleAutoSaveFailure(errorMessage: string): void {
+    this.autoSaveRetryCount++;
+
+    // リトライ上限に達していない場合は再スケジュール
+    if (this.autoSaveRetryCount < this.config.maxAutoSaveRetries) {
+      // 指数バックオフでリトライ
+      const retryDelay = this.config.autoSaveDebounceMs * Math.pow(2, this.autoSaveRetryCount);
+      this.saveTimeout = setTimeout(() => {
+        this.autoSave();
+      }, retryDelay);
+    } else {
+      // リトライ上限に達した場合はセーブ失敗イベントを発行
+      if (this.eventBus) {
+        this.eventBus.emit<AutoSaveFailedEvent>('auto-save-failed', {
+          timestamp: Date.now(),
+          error: errorMessage,
+          retryCount: this.autoSaveRetryCount
+        });
+      }
+
+      // リトライカウントをリセット
+      this.autoSaveRetryCount = 0;
+    }
+  }
+
+  /**
+   * 現在のゲーム状態プロバイダーを設定する
+   * 自動セーブ時にこのプロバイダーが呼び出され、現在のゲーム状態が取得される
+   * 
+   * @param provider - ゲーム状態を返す関数
+   * 
+   * @example
+   * service.setCurrentGameState(() => {
+   *   return {
+   *     version: '1.0.0',
+   *     timestamp: Date.now(),
+   *     player: { party, inventory, gold },
+   *     progress: { completedQuests, unlockedAreas, flags }
+   *   };
+   * });
+   */
+  setCurrentGameState(provider: () => GameState): void {
+    this.currentGameStateProvider = provider;
+  }
+
+  /**
+   * 自動セーブを有効にする
+   * 
+   * @example
+   * service.enableAutoSave();
+   */
+  enableAutoSave(): void {
+    this.autoSaveEnabled = true;
+  }
+
+  /**
+   * 自動セーブを無効にする
+   * スケジュールされている自動セーブもキャンセルされる
+   * 
+   * @example
+   * service.disableAutoSave();
+   */
+  disableAutoSave(): void {
+    this.autoSaveEnabled = false;
+
+    // スケジュールされているセーブをキャンセル
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+  }
+
+  /**
+   * 自動セーブが有効かどうかを取得する
+   * 
+   * @returns 自動セーブが有効な場合true
+   */
+  isAutoSaveEnabled(): boolean {
+    return this.autoSaveEnabled;
   }
 }

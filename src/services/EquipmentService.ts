@@ -15,6 +15,8 @@ import type {
   UnequipResult, 
   EquippedItems 
 } from '../types/equipment';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as equipmentCore from '../item/equipment';
 
 /**
@@ -56,9 +58,11 @@ export class EquipmentService<
   TEquipType extends BaseEquipmentType = DefaultEquipmentType
 > {
   private config: EquipmentServiceConfig<TSlot, TEquipType>;
+  private eventBus?: EventBus;
 
-  constructor(config?: EquipmentServiceConfig<TSlot, TEquipType>) {
+  constructor(config?: EquipmentServiceConfig<TSlot, TEquipType>, eventBus?: EventBus) {
     this.config = config || {};
+    this.eventBus = eventBus;
   }
 
   /**
@@ -101,6 +105,20 @@ export class EquipmentService<
     // 装備を装着
     character.equipment[slot] = equipment;
 
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'equipment-changed',
+        timestamp: Date.now(),
+        data: { 
+          characterId: character.id, 
+          equipmentId: equipment.id, 
+          slot,
+          previousEquipmentId: previousEquipment?.id 
+        }
+      });
+    }
+
     return {
       success: true,
       previousEquipment
@@ -128,6 +146,20 @@ export class EquipmentService<
     
     // 装備を解除
     delete character.equipment[slot];
+
+    // データ変更イベントを発行
+    if (this.eventBus && equipment) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'equipment-changed',
+        timestamp: Date.now(),
+        data: { 
+          characterId: character.id, 
+          equipmentId: equipment.id, 
+          slot,
+          action: 'unequip'
+        }
+      });
+    }
 
     return {
       success: true,

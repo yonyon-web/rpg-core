@@ -5,6 +5,8 @@
 
 import type { Combatant } from '../types/combatant';
 import type { ConsumableItem, ItemUseConditions, ItemUseResult } from '../types/item';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as itemEffects from '../item/effects';
 
 /**
@@ -23,8 +25,19 @@ export interface UsableItemInfo {
  * @example
  * const service = new ItemService();
  * const result = service.useItem(potion, character, { inBattle: true });
+ * 
+ * @example
+ * // イベントバスを使用する
+ * const eventBus = new EventBus();
+ * const service = new ItemService(eventBus);
  */
 export class ItemService {
+  private eventBus?: EventBus;
+
+  constructor(eventBus?: EventBus) {
+    this.eventBus = eventBus;
+  }
+
   /**
    * アイテムを使用する
    * 
@@ -105,6 +118,15 @@ export class ItemService {
           success: false,
           message: 'Unknown item effect type',
         };
+    }
+
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'item-used',
+        timestamp: Date.now(),
+        data: { itemId: item.id, targetId: target.id }
+      });
     }
 
     return {

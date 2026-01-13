@@ -7,6 +7,8 @@ import type { Character } from '../types/battle';
 import type { Skill, LearnedSkill } from '../types/skill';
 import type { UniqueId } from '../types/common';
 import type { InventoryService } from './InventoryService';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as skillModule from '../character/skill';
 
 /**
@@ -53,14 +55,17 @@ export interface SkillLearnCost {
  */
 export class SkillLearnService {
   private inventoryService?: InventoryService;
+  private eventBus?: EventBus;
   
   /**
    * コンストラクタ
    * 
    * @param inventoryService - インベントリサービス（オプション、リソースコスト管理用）
+   * @param eventBus - イベントバス（オプション）
    */
-  constructor(inventoryService?: InventoryService) {
+  constructor(inventoryService?: InventoryService, eventBus?: EventBus) {
     this.inventoryService = inventoryService;
+    this.eventBus = eventBus;
   }
   
   /**
@@ -130,6 +135,15 @@ export class SkillLearnService {
     };
     
     character.learnedSkills.push(learnedSkill);
+    
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'skill-learned',
+        timestamp: Date.now(),
+        data: { characterId: character.id, skillId: skill.id }
+      });
+    }
     
     return {
       success: true,

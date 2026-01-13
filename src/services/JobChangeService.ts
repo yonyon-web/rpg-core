@@ -6,6 +6,8 @@
 import type { Character } from '../types/battle';
 import type { Job, JobHistory } from '../types/job';
 import type { BaseStats, DefaultStats } from '../types/stats';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as jobModule from '../character/job';
 
 /**
@@ -36,6 +38,12 @@ export interface AvailableJobInfo<TStats extends BaseStats = DefaultStats> {
  * const result = service.changeJob(character, mageJob);
  */
 export class JobChangeService {
+  private eventBus?: EventBus;
+
+  constructor(eventBus?: EventBus) {
+    this.eventBus = eventBus;
+  }
+
   /**
    * ジョブを変更する
    * 
@@ -69,6 +77,15 @@ export class JobChangeService {
 
     // ジョブを変更
     character.job = job.id;
+
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'job-changed',
+        timestamp: Date.now(),
+        data: { characterId: character.id, previousJob, newJob: job.id }
+      });
+    }
 
     return {
       success: true,
