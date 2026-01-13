@@ -22,6 +22,11 @@ import type {
   BaseStats,
   DefaultStats
 } from '../../types';
+import { 
+  validateEquipmentSlot,
+  defaultEquipmentSlotMapping,
+  type EquipmentSlotMapping
+} from '../../item/equipment';
 
 /**
  * EquipmentController
@@ -52,9 +57,14 @@ export class EquipmentController<
   private state: ObservableState<EquipmentUIState<TStats, TSlot, TEquipType>>;
   private events: EventEmitter<EquipmentEvents<TStats, TEquipType>>;
   private service: EquipmentService<TStats, TSlot, TEquipType>;
+  private slotMapping: EquipmentSlotMapping<TSlot, TEquipType>;
 
-  constructor(service: EquipmentService<TStats, TSlot, TEquipType>) {
+  constructor(
+    service: EquipmentService<TStats, TSlot, TEquipType>,
+    slotMapping?: EquipmentSlotMapping<TSlot, TEquipType>
+  ) {
     this.service = service;
+    this.slotMapping = slotMapping || (defaultEquipmentSlotMapping as any);
     
     this.state = new ObservableState<EquipmentUIState<TStats, TSlot, TEquipType>>({
       stage: 'selecting-slot',
@@ -127,10 +137,9 @@ export class EquipmentController<
       return;
     }
     
-    // そのスロットに装備可能なアイテムをフィルタ
+    // そのスロットに装備可能なアイテムをフィルタ（装備タイプとスロットの対応をチェック）
     const equipableForSlot = currentState.availableEquipment.filter(equipment => {
-      // Simple check - in real usage, the UI layer would filter appropriately
-      return true;
+      return validateEquipmentSlot(slot, equipment.type, this.slotMapping);
     });
     
     this.state.setState({
