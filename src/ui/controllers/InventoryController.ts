@@ -71,7 +71,7 @@ export class InventoryController {
       cursorIndex: 0,
       usedSlots: inventory.usedSlots,
       maxSlots: inventory.maxSlots,
-      money: inventory.resources?.['money'] ?? 0
+      resources: inventory.resources || {}
     });
 
     this.events = new EventEmitter<InventoryEvents>();
@@ -146,7 +146,7 @@ export class InventoryController {
       },
       usedSlots: inventory.usedSlots,
       maxSlots: inventory.maxSlots,
-      money: inventory.resources?.['money'] ?? 0
+      resources: inventory.resources || {}
     });
   }
 
@@ -217,13 +217,22 @@ export class InventoryController {
 
   /**
    * アイテムを使用
+   * 
+   * @param item - 使用するアイテム
+   * @returns 使用に成功したか
    */
-  async useItem(item: Item, target: any, conditions: any): Promise<boolean> {
-    // ItemServiceを使用する場合はここで呼び出し
-    // 簡略化のため、成功として扱う
-    this.events.emit('item-used', { item, success: true });
-    this.refresh();
-    return true;
+  async useItem(item: Item): Promise<boolean> {
+    // インベントリからアイテムを1つ削除
+    const result = this.service.removeItem(item.id, 1);
+    
+    if (result.success) {
+      this.events.emit('item-used', { item, success: true });
+      this.refresh();
+      return true;
+    }
+    
+    this.events.emit('item-used', { item, success: false });
+    return false;
   }
 
   /**

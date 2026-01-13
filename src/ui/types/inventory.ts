@@ -33,7 +33,9 @@ export interface InventoryUIState {
   // 統計情報
   usedSlots: number;
   maxSlots: number;
-  money: number;
+  
+  // リソース
+  resources: Record<string, number>;  // すべてのリソース（money, SP, クラフトポイントなど）
 }
 
 /**

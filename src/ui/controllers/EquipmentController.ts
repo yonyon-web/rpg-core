@@ -25,6 +25,7 @@ import type {
 import { 
   validateEquipmentSlot,
   defaultEquipmentSlotMapping,
+  canEquip,
   type EquipmentSlotMapping
 } from '../../item/equipment';
 
@@ -164,9 +165,21 @@ export class EquipmentController<
     }
     
     // 装備可能性をチェック
-    const canEquip = equipment 
-      ? true // Simplified - actual check would use equipmentCore.canEquip
-      : true; // 装備解除は常に可能
+    let canEquipItem = true;
+    const equipmentReasons: string[] = [];
+    
+    if (equipment) {
+      // Core EngineのcanEquip関数を使用して装備可能性をチェック
+      canEquipItem = canEquip(currentState.character, equipment);
+      
+      if (!canEquipItem) {
+        // レベル要件チェック
+        if (currentState.character.level < equipment.levelRequirement) {
+          equipmentReasons.push(`レベル${equipment.levelRequirement}以上が必要です`);
+        }
+      }
+    }
+    // 装備解除は常に可能（equipment が null の場合）
     
     // ステータス比較を計算
     const statsComparison = equipment
@@ -176,8 +189,8 @@ export class EquipmentController<
     this.state.setState({
       selectedEquipment: equipment,
       statsComparison,
-      canEquip,
-      equipmentReasons: canEquip ? [] : ['装備できません']
+      canEquip: canEquipItem,
+      equipmentReasons
     });
     
     if (equipment) {
