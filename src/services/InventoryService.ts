@@ -16,6 +16,8 @@ import type {
   Item,
   UniqueId
 } from '../types';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 
 import {
   addItemToInventory,
@@ -63,14 +65,17 @@ import {
  */
 export class InventoryService {
   private inventory: Inventory;
+  private eventBus?: EventBus;
   
   /**
    * コンストラクタ
    * 
    * @param inventory - 管理対象のインベントリ
+   * @param eventBus - イベントバス（オプション）
    */
-  constructor(inventory: Inventory) {
+  constructor(inventory: Inventory, eventBus?: EventBus) {
     this.inventory = inventory;
+    this.eventBus = eventBus;
   }
   
   // ===== 基本操作 =====
@@ -83,7 +88,18 @@ export class InventoryService {
    * @returns 操作結果
    */
   addItem(item: Item, quantity: number): InventoryResult {
-    return addItemToInventory(this.inventory, item, quantity);
+    const result = addItemToInventory(this.inventory, item, quantity);
+    
+    // データ変更イベントを発行
+    if (result.success && this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'inventory-updated',
+        timestamp: Date.now(),
+        data: { itemId: item.id, quantity, action: 'add' }
+      });
+    }
+    
+    return result;
   }
   
   /**
@@ -94,7 +110,18 @@ export class InventoryService {
    * @returns 操作結果
    */
   removeItem(itemId: UniqueId, quantity: number): InventoryResult {
-    return removeItemFromInventory(this.inventory, itemId, quantity);
+    const result = removeItemFromInventory(this.inventory, itemId, quantity);
+    
+    // データ変更イベントを発行
+    if (result.success && this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'inventory-updated',
+        timestamp: Date.now(),
+        data: { itemId, quantity, action: 'remove' }
+      });
+    }
+    
+    return result;
   }
   
   /**

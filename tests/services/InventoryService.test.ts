@@ -887,4 +887,78 @@ describe('InventoryService', () => {
       expect(stats.totalItems).toBe(10);
     });
   });
+
+  describe('event emission', () => {
+    test('should emit data-changed event on successful item add', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const inventory = createEmptyInventory();
+      const serviceWithEvents = new InventoryService(inventory, eventBus);
+
+      const result = serviceWithEvents.addItem(potionItem, 5);
+
+      expect(result.success).toBe(true);
+      expect(eventBus.emit).toHaveBeenCalledWith('data-changed', {
+        type: 'inventory-updated',
+        timestamp: expect.any(Number),
+        data: { itemId: potionItem.id, quantity: 5, action: 'add' }
+      });
+    });
+
+    test('should emit data-changed event on successful item remove', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const inventory = createEmptyInventory();
+      const serviceWithEvents = new InventoryService(inventory, eventBus);
+
+      // First add
+      serviceWithEvents.addItem(potionItem, 5);
+      eventBus.emit.mockClear();
+
+      // Then remove
+      const result = serviceWithEvents.removeItem(potionItem.id, 2);
+
+      expect(result.success).toBe(true);
+      expect(eventBus.emit).toHaveBeenCalledWith('data-changed', {
+        type: 'inventory-updated',
+        timestamp: expect.any(Number),
+        data: { itemId: potionItem.id, quantity: 2, action: 'remove' }
+      });
+    });
+
+    test('should not emit event on failed add', () => {
+      const eventBus: any = {
+        emit: jest.fn()
+      };
+      const inventory: Inventory = {
+        slots: [],
+        maxSlots: 1,
+        resources: { money: 1000 },
+        usedSlots: 0
+      };
+      const serviceWithEvents = new InventoryService(inventory, eventBus);
+
+      // Fill the inventory
+      serviceWithEvents.addItem(swordItem, 1);
+      eventBus.emit.mockClear();
+
+      // Try to add another item (should fail due to full inventory)
+      const result = serviceWithEvents.addItem(hiPotionItem, 1);
+
+      expect(result.success).toBe(false);
+      expect(eventBus.emit).not.toHaveBeenCalled();
+    });
+
+    test('should not emit event when eventBus is not provided', () => {
+      const inventory = createEmptyInventory();
+      const serviceWithoutEvents = new InventoryService(inventory);
+
+      const result = serviceWithoutEvents.addItem(potionItem, 5);
+
+      expect(result.success).toBe(true);
+      // No error should be thrown
+    });
+  });
 });
