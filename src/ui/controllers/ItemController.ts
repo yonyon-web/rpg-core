@@ -6,7 +6,6 @@
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type { ItemService } from '../../services/ItemService';
-import type { InventoryService } from '../../services/InventoryService';
 import type { 
   ItemUseUIState, 
   ItemUseEvents, 
@@ -22,7 +21,7 @@ import type { Combatant, ConsumableItem, ItemUseConditions } from '../../types';
  * 
  * @example
  * ```typescript
- * const controller = new ItemController(itemService, inventoryService);
+ * const controller = new ItemController(itemService);
  * 
  * // アイテム使用を開始（戦闘中）
  * controller.startItemUse(availableItems, targets, 'battle');
@@ -33,7 +32,7 @@ import type { Combatant, ConsumableItem, ItemUseConditions } from '../../types';
  * // ターゲットを選択
  * controller.selectTarget(character);
  * 
- * // 使用を確定
+ * // 使用を確定（サービス層でアイテム効果適用とインベントリ削除が完結）
  * await controller.confirmUse();
  * ```
  */
@@ -41,11 +40,9 @@ export class ItemController {
   private state: ObservableState<ItemUseUIState>;
   private events: EventEmitter<ItemUseEvents>;
   private service: ItemService;
-  private inventoryService: InventoryService;
 
-  constructor(service: ItemService, inventoryService: InventoryService) {
+  constructor(service: ItemService) {
     this.service = service;
-    this.inventoryService = inventoryService;
     
     this.state = new ObservableState<ItemUseUIState>({
       stage: 'selecting-item',
@@ -170,6 +167,9 @@ export class ItemController {
 
   /**
    * 使用を確定
+   * 
+   * Note: アイテムの使用とインベントリからの削除はItemService内で完結します。
+   * コントローラーは結果を受け取り、UIに反映するのみです。
    */
   async confirmUse(): Promise<boolean> {
     const currentState = this.state.getState();
@@ -181,7 +181,7 @@ export class ItemController {
     this.state.setState({ stage: 'executing' });
     this.events.emit('stage-changed', { stage: 'executing' });
     
-    // アイテムを使用
+    // アイテムを使用（サービス層でインベントリからの削除も行われる）
     const conditions: ItemUseConditions = {
       inBattle: currentState.context === 'battle'
     };
@@ -191,32 +191,6 @@ export class ItemController {
       currentState.selectedTarget,
       conditions
     );
-    
-    // 使用成功時、インベントリからアイテムを削除
-    if (result.success) {
-      const removeResult = this.inventoryService.removeItem(currentState.selectedItem.id, 1);
-      
-      if (!removeResult.success) {
-        // アイテムの削除に失敗した場合
-        this.state.setState({
-          stage: 'completed',
-          lastResult: {
-            success: false,
-            message: removeResult.failureReason || 'Failed to remove item from inventory'
-          }
-        });
-        
-        this.events.emit('item-used', {
-          item: currentState.selectedItem,
-          target: currentState.selectedTarget,
-          success: false,
-          message: removeResult.failureReason || 'Failed to remove item from inventory'
-        });
-        this.events.emit('stage-changed', { stage: 'completed' });
-        
-        return false;
-      }
-    }
     
     this.state.setState({
       stage: 'completed',

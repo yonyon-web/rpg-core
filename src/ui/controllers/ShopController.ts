@@ -15,7 +15,9 @@ import type {
 /**
  * ショップコントローラー
  * アイテムの購入・売却UIを管理します
- * InventoryServiceと連携してインベントリ管理を行います
+ * 
+ * Note: InventoryServiceとの連携はUI表示用のプレビューのみです。
+ * 実際の取引処理（在庫管理、所持金変更）はShopService内で完結します。
  */
 export class ShopController {
   private state: ObservableState<ShopUIState>;
@@ -289,6 +291,9 @@ export class ShopController {
 
   /**
    * 取引可能性をチェック
+   * 
+   * Note: これはUI表示用のプレビューです。
+   * 実際の取引処理とバリデーションはShopService内で行われます。
    */
   private checkTradeability(): void {
     const currentState = this.state.getState();
@@ -301,7 +306,7 @@ export class ShopController {
     let canTrade = true;
 
     if (currentState.mode === 'buy') {
-      // 購入時のチェック
+      // 購入時のチェック（UI表示用プレビュー）
       
       // 所持金チェック
       if (currentState.playerMoney < currentState.totalPrice) {
@@ -326,9 +331,10 @@ export class ShopController {
         // }
       }
     } else {
-      // 売却時のチェック
+      // 売却時のチェック（UI表示用プレビュー）
       
       // インベントリにアイテムがあるかチェック
+      // これはユーザーにフィードバックを提供するためのUI固有のロジックです
       const inventory = this.inventoryService.getInventory();
       const itemSlot = inventory.slots.find(slot => 
         slot && slot.item.id === currentState.selectedItem!.item.id
