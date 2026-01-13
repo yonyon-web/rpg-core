@@ -204,25 +204,20 @@ describe('CommandController', () => {
         description: 'Fire magic attack',
       };
       
-      // 手動で状態を設定
-      controller['state'].setState({
-        stage: 'selecting-target',
-        actor,
-        availableCommands: [
-          { type: 'attack', label: 'Attack', enabled: true },
-          { type: 'skill', label: 'Skill', enabled: true }
-        ],
-        availableSkills: [skill],
-        availableItems: [],
-        availableTargets: [target],
-        selectedCommand: 'skill',
-        selectedSkill: skill,
-        selectedItem: null,
-        selectedTargets: [],
-        cursorIndex: 0,
-        damagePreview: null,
-        targetPreview: null
-      });
+      const battleState: BattleState = {
+        phase: 'player-turn',
+        turnNumber: 1,
+        playerParty: [actor],
+        enemyGroup: [target],
+        turnOrder: [actor, target],
+        currentActorIndex: 0,
+        actionHistory: [],
+      };
+      
+      // 正規のフローで状態を設定
+      controller.startCommandSelection(actor, battleState);
+      controller.selectCommand('skill');
+      controller.selectSkill(skill);
       
       controller.calculateDamagePreview(target);
       

@@ -16,6 +16,7 @@ import type { Item } from '../../types/item';
 import type { GameConfig } from '../../types/config';
 import { calculateDamage } from '../../combat/damage';
 import { defaultGameConfig } from '../../config/defaultConfig';
+import { BASIC_ATTACK_SKILL } from '../../combat/constants';
 
 /**
  * CommandController クラス
@@ -400,19 +401,10 @@ export class CommandController {
       }
       // 通常攻撃の場合
       else if (currentState.selectedCommand === 'attack') {
-        const basicAttackSkill = {
-          accuracy: 0.95,
-          isGuaranteedHit: false,
-          power: 1.0,
-          criticalBonus: 0,
-          type: 'physical',
-          element: 'none'
-        } as Skill;
-        
         const damageResult = calculateDamage(
           currentState.actor,
           target,
-          basicAttackSkill,
+          BASIC_ATTACK_SKILL,
           this.config
         );
         preview = damageResult.finalDamage;
