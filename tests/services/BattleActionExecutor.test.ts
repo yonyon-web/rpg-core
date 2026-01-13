@@ -240,6 +240,28 @@ describe('BattleActionExecutor', () => {
       expect(result.success).toBe(true);
       expect(result.message).toContain('defending');
     });
+
+    it('防御時に defense-up 状態異常を付与する', () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const initialEffectsCount = actor.statusEffects.length;
+
+      const action = {
+        actor,
+        type: 'defend' as const,
+        targets: [],
+      };
+
+      const result = executor.executeDefend(action);
+
+      expect(result.success).toBe(true);
+      expect(actor.statusEffects.length).toBe(initialEffectsCount + 1);
+      
+      const defendEffect = actor.statusEffects[actor.statusEffects.length - 1];
+      expect(defendEffect.type).toBe('defense-up');
+      expect(defendEffect.category).toBe('buff');
+      expect(defendEffect.duration).toBe(1);
+      expect(defendEffect.power).toBe(2.0);
+    });
   });
 
   describe('attemptEscape（逃走）', () => {

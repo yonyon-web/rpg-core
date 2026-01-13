@@ -13,6 +13,10 @@ import type { Character, BattleAction, BattleState } from '../../types/battle';
 import type { Combatant } from '../../types/combatant';
 import type { Skill } from '../../types/skill';
 import type { Item } from '../../types/item';
+import type { GameConfig } from '../../types/config';
+import { calculateDamage } from '../../combat/damage';
+import { defaultGameConfig } from '../../config/defaultConfig';
+import { BASIC_ATTACK_SKILL } from '../../combat/constants';
 
 /**
  * CommandController クラス
@@ -38,14 +42,17 @@ export class CommandController {
   private state: ObservableState<CommandUIState>;
   private events: EventEmitter<CommandEvents>;
   private service: CommandService;
+  private config: GameConfig;
 
   /**
    * コンストラクタ
    * 
    * @param service - CommandService インスタンス
+   * @param config - GameConfig インスタンス（オプショナル、デフォルト設定を使用）
    */
-  constructor(service: CommandService) {
+  constructor(service: CommandService, config?: GameConfig) {
     this.service = service;
+    this.config = config || defaultGameConfig;
     
     // 初期状態を設定
     this.state = new ObservableState<CommandUIState>({
@@ -373,8 +380,39 @@ export class CommandController {
    * @param target - プレビュー対象
    */
   calculateDamagePreview(target: Combatant): void {
-    // ここでは簡易実装（実際はCore Engineの計算を使用）
-    const preview = Math.floor(Math.random() * 100) + 50;
+    const currentState = this.state.getState();
+    let preview: number | null = null;
+    
+    // actorが存在しない場合は何もしない
+    if (!currentState.actor) {
+      return;
+    }
+    
+    try {
+      // 選択されたスキルがある場合
+      if (currentState.selectedSkill) {
+        const damageResult = calculateDamage(
+          currentState.actor,
+          target,
+          currentState.selectedSkill,
+          this.config
+        );
+        preview = damageResult.finalDamage;
+      }
+      // 通常攻撃の場合
+      else if (currentState.selectedCommand === 'attack') {
+        const damageResult = calculateDamage(
+          currentState.actor,
+          target,
+          BASIC_ATTACK_SKILL,
+          this.config
+        );
+        preview = damageResult.finalDamage;
+      }
+    } catch (error) {
+      // エラーが発生した場合は null を設定
+      preview = null;
+    }
     
     this.state.setState(prev => ({
       ...prev,
