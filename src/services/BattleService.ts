@@ -12,17 +12,15 @@ import {
   BattleAction, 
   ActionResult, 
   BattleEndCheck, 
-  EscapeResult, 
   BattleRewards,
   BattleResult,
   GameConfig
 } from '../types';
 import { calculateTurnOrder, checkPreemptiveStrike } from '../combat/turnOrder';
-import { calculateDamage } from '../combat/damage';
-import { checkHit, checkCritical, calculateHitRate, calculateCriticalRate } from '../combat/accuracy';
 import { defaultGameConfig } from '../config/defaultConfig';
-import { checkSkillCost, consumeSkillCost } from '../character/skillCost';
 import { filterAlive, isDead, allDead } from '../combat/combatantState';
+import { BattleActionExecutor } from './BattleActionExecutor';
+import { RewardService } from './RewardService';
 
 /**
  * BattleServiceクラス
@@ -30,6 +28,8 @@ import { filterAlive, isDead, allDead } from '../combat/combatantState';
 export class BattleService {
   private state: BattleState | null = null;
   private config: GameConfig;
+  private actionExecutor: BattleActionExecutor;
+  private rewardService: RewardService;
 
   /**
    * コンストラクタ
@@ -37,6 +37,8 @@ export class BattleService {
    */
   constructor(config?: GameConfig) {
     this.config = config || defaultGameConfig;
+    this.actionExecutor = new BattleActionExecutor(this.config);
+    this.rewardService = new RewardService();
   }
 
   /**
@@ -126,168 +128,19 @@ export class BattleService {
 
     this.state.phase = 'processing' as BattlePhase;
 
-    let result: ActionResult = { success: false };
+    // BattleActionExecutorに委譲
+    const result = await this.actionExecutor.executeAction(action, this.state);
 
-    switch (action.type) {
-      case 'attack':
-        result = this.executeAttack(action);
-        break;
-      case 'skill':
-        result = this.executeSkill(action);
-        break;
-      case 'defend':
-        result = this.executeDefend(action);
-        break;
-      case 'escape':
-        const escapeResult = await this.attemptEscape();
-        result = { success: escapeResult.success, message: escapeResult.message };
-        break;
-      default:
-        result = { success: false, message: 'Unknown action type' };
+    // 逃走成功時は戦闘状態を更新
+    if (action.type === 'escape' && result.success) {
+      this.state.phase = 'ended' as BattlePhase;
+      this.state.result = 'escaped' as BattleResult;
     }
 
     // 行動履歴に追加
     this.state.actionHistory.push(action);
 
     return result;
-  }
-
-  /**
-   * 通常攻撃を実行する
-   */
-  private executeAttack(action: BattleAction): ActionResult {
-    const attacker = action.actor;
-    const target = action.targets[0];
-
-    if (!target) {
-      return { success: false, message: 'No target' };
-    }
-
-    // 簡易的な通常攻撃スキルを作成
-    const basicAttackSkill: any = {
-      accuracy: 0.95,
-      isGuaranteedHit: false,
-      power: 1.0,
-      criticalBonus: 0,
-      type: 'physical',
-      element: 'none'
-    };
-
-    // 汎用ダメージ計算を使用
-    const damageResult = calculateDamage(
-      attacker,
-      target,
-      basicAttackSkill,
-      this.config
-    );
-
-    // ミスの場合
-    if (!damageResult.isHit) {
-      return { success: true, missed: true, message: 'Miss!' };
-    }
-
-    // ダメージを適用
-    target.currentHp = Math.max(0, target.currentHp - damageResult.finalDamage);
-
-    return {
-      success: true,
-      damage: damageResult.finalDamage,
-      critical: damageResult.isCritical,
-      message: damageResult.isCritical ? 'Critical hit!' : 'Hit!'
-    };
-  }
-
-  /**
-   * スキルを実行する
-   */
-  private executeSkill(action: BattleAction): ActionResult {
-    const attacker = action.actor;
-    const skill = action.skill;
-    const target = action.targets[0];
-
-    if (!skill || !target) {
-      return { success: false, message: 'Invalid skill or target' };
-    }
-
-    // コスト消費チェック
-    const costCheck = checkSkillCost(attacker, skill);
-    if (!costCheck.canUse) {
-      return { success: false, message: costCheck.message || 'Cannot use skill' };
-    }
-
-    // コスト消費
-    consumeSkillCost(attacker, skill);
-
-    // 回復スキルの場合
-    if (skill.type === 'heal') {
-      const healAmount = Math.floor(attacker.stats.magic * skill.power);
-      target.currentHp = Math.min(target.stats.maxHp, target.currentHp + healAmount);
-      return {
-        success: true,
-        heal: healAmount,
-        message: `Healed ${healAmount} HP!`
-      };
-    }
-
-    // ダメージスキルの場合：汎用ダメージ計算を使用
-    // これにより任意のスキルタイプ（physical, magic, laser, plasma等）に対応
-    const damageResult = calculateDamage(
-      attacker,
-      target,
-      skill,
-      this.config
-    );
-
-    // ミスの場合
-    if (!damageResult.isHit) {
-      return { success: true, missed: true, message: 'Miss!' };
-    }
-
-    // ダメージを適用
-    target.currentHp = Math.max(0, target.currentHp - damageResult.finalDamage);
-
-    return {
-      success: true,
-      damage: damageResult.finalDamage,
-      critical: damageResult.isCritical,
-      message: damageResult.isCritical ? 'Critical hit!' : 'Hit!'
-    };
-  }
-
-  /**
-   * 防御を実行する
-   */
-  private executeDefend(action: BattleAction): ActionResult {
-    // 防御はステータス効果として実装する必要があるが、
-    // 現時点では簡易実装
-    return {
-      success: true,
-      message: `${action.actor.name} is defending!`
-    };
-  }
-
-  /**
-   * 逃走を試みる
-   */
-  async attemptEscape(): Promise<EscapeResult> {
-    if (!this.state) {
-      throw new Error('Battle not started');
-    }
-
-    // 逃走成功率を計算（簡易版）
-    const partySpeed = this.state.playerParty.reduce((sum, c) => sum + c.stats.speed, 0) / this.state.playerParty.length;
-    const enemySpeed = this.state.enemyGroup.reduce((sum, e) => sum + e.stats.speed, 0) / this.state.enemyGroup.length;
-    
-    const escapeRate = Math.min(0.95, Math.max(0.05, 0.5 + (partySpeed - enemySpeed) / 100));
-    const success = Math.random() < escapeRate;
-
-    if (success) {
-      this.state.phase = 'ended' as BattlePhase;
-      this.state.result = 'escaped' as BattleResult;
-      return { success: true, message: 'Escaped successfully!' };
-    }
-
-    return { success: false, message: 'Failed to escape!' };
   }
 
   /**
@@ -331,7 +184,7 @@ export class BattleService {
       }
     }
 
-    // 報酬を計算
+    // 報酬を計算（基本情報のみ）
     let totalExp = 0;
     let totalMoney = 0;
     const items: any[] = [];
@@ -357,6 +210,11 @@ export class BattleService {
     };
 
     this.state.rewards = rewards;
+    
+    // RewardServiceで経験値配分とレベルアップ処理
+    // Note: この時点では報酬の基本情報のみを返す
+    // 実際の経験値配分とレベルアップは上位層で RewardService.distributeRewards() を呼び出す
+    
     return rewards;
   }
 
@@ -388,5 +246,11 @@ export class BattleService {
     return this.state.playerParty.some(c => c.id === actor.id);
   }
 
-
+  /**
+   * RewardServiceを取得する
+   * 戦闘終了後の報酬配分処理に使用
+   */
+  getRewardService(): RewardService {
+    return this.rewardService;
+  }
 }
