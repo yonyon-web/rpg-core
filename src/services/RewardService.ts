@@ -12,6 +12,8 @@ import type {
   LevelUpResult, 
   RewardDistributionResult 
 } from '../types/reward';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as growth from '../character/growth';
 
 /**
@@ -57,9 +59,11 @@ export class RewardService<
   TStats extends BaseStats = DefaultStats
 > {
   private config: RewardServiceConfig<TExpCurve, TStats>;
+  private eventBus?: EventBus;
 
-  constructor(config?: RewardServiceConfig<TExpCurve, TStats>) {
+  constructor(config?: RewardServiceConfig<TExpCurve, TStats>, eventBus?: EventBus) {
     this.config = config || {};
+    this.eventBus = eventBus;
   }
 
   /**
@@ -174,6 +178,19 @@ export class RewardService<
       if (levelUps.length > 0) {
         levelUpResults.set(character.id, levelUps);
       }
+    }
+    
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'reward-received',
+        timestamp: Date.now(),
+        data: { 
+          exp: rewards.exp, 
+          gold: rewards.money,
+          itemCount: rewards.items?.length || 0
+        }
+      });
     }
     
     return {

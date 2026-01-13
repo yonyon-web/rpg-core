@@ -11,6 +11,8 @@ import type {
 } from '../types/craft';
 import type { Character } from '../types/battle';
 import type { UniqueId } from '../types/common';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as synthesis from '../craft/synthesis';
 
 /**
@@ -42,13 +44,15 @@ export interface RecipeInfo {
 export class CraftService {
   private config: CraftServiceConfig;
   private recipes: Map<UniqueId, CraftRecipe>;
+  private eventBus?: EventBus;
 
-  constructor(config: CraftServiceConfig = {}) {
+  constructor(config: CraftServiceConfig = {}, eventBus?: EventBus) {
     this.config = {
       returnMaterialsOnFailure: false,
       ...config
     };
     this.recipes = new Map();
+    this.eventBus = eventBus;
   }
 
   /**
@@ -162,6 +166,19 @@ export class CraftService {
 
     // 成功時の処理
     const craftedItem = synthesis.generateCraftedItem(recipe);
+    
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'craft-completed',
+        timestamp: Date.now(),
+        data: { 
+          recipeId: recipe.id, 
+          itemId: craftedItem.itemId,
+          quantity: craftedItem.quantity 
+        }
+      });
+    }
     
     return {
       success: true,

@@ -9,6 +9,8 @@ import type { Character } from '../types/battle';
 import type { Shop, ShopItem, ShopTransaction } from '../types/shop';
 import type { UniqueId } from '../types/item';
 import type { InventoryService } from './InventoryService';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 
 import {
   calculateBuyPrice,
@@ -48,17 +50,20 @@ export class ShopService {
   private shop: Shop;
   private inventoryService: InventoryService;
   private initialStocks: Map<number, number>;  // 元の在庫数を記憶
+  private eventBus?: EventBus;
   
   /**
    * コンストラクタ
    * 
    * @param shop - 管理対象のショップ
    * @param inventoryService - インベントリサービス
+   * @param eventBus - イベントバス（オプション）
    */
-  constructor(shop: Shop, inventoryService: InventoryService) {
+  constructor(shop: Shop, inventoryService: InventoryService, eventBus?: EventBus) {
     this.shop = shop;
     this.inventoryService = inventoryService;
     this.initialStocks = new Map();
+    this.eventBus = eventBus;
     
     // 初期在庫を記憶
     shop.items.forEach((item, index) => {
@@ -92,7 +97,24 @@ export class ShopService {
     }
     
     const inventory = this.inventoryService.getInventory();
-    return buyItemCore(character, inventory, shopItem, quantity, this.shop);
+    const result = buyItemCore(character, inventory, shopItem, quantity, this.shop);
+    
+    // データ変更イベントを発行
+    if (result.success && this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'shop-transaction',
+        timestamp: Date.now(),
+        data: { 
+          shopId: this.shop.id,
+          itemId: shopItem.item.id, 
+          quantity, 
+          action: 'buy',
+          price: result.price
+        }
+      });
+    }
+    
+    return result;
   }
   
   /**
@@ -159,7 +181,24 @@ export class ShopService {
       };
     }
     
-    return sellItemCore(inventory, shopItem, itemId, quantity, this.shop);
+    const result = sellItemCore(inventory, shopItem, itemId, quantity, this.shop);
+    
+    // データ変更イベントを発行
+    if (result.success && this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'shop-transaction',
+        timestamp: Date.now(),
+        data: { 
+          shopId: this.shop.id,
+          itemId, 
+          quantity, 
+          action: 'sell',
+          price: result.price
+        }
+      });
+    }
+    
+    return result;
   }
   
   /**

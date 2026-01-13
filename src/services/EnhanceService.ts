@@ -10,6 +10,8 @@ import type {
   EnhanceCost 
 } from '../types/craft';
 import type { UniqueId } from '../types/common';
+import type { EventBus } from '../core/EventBus';
+import type { DataChangeEvent } from '../types/events';
 import * as enhance from '../craft/enhance';
 
 /**
@@ -56,12 +58,14 @@ export interface EnhanceInfo {
  */
 export class EnhanceService {
   private config: Required<EnhanceServiceConfig>;
+  private eventBus?: EventBus;
 
-  constructor(config: EnhanceServiceConfig) {
+  constructor(config: EnhanceServiceConfig, eventBus?: EventBus) {
     this.config = {
       requirePayment: true,
       ...config
     };
+    this.eventBus = eventBus;
   }
 
   /**
@@ -177,6 +181,19 @@ export class EnhanceService {
     
     // 強化後のステータスを計算
     const enhancedStats = enhance.applyEnhancement(equipment, newLevel);
+
+    // データ変更イベントを発行
+    if (this.eventBus) {
+      this.eventBus.emit<DataChangeEvent>('data-changed', {
+        type: 'enhancement-completed',
+        timestamp: Date.now(),
+        data: { 
+          equipmentId: equipment.id, 
+          previousLevel, 
+          newLevel 
+        }
+      });
+    }
 
     return {
       success: true,
