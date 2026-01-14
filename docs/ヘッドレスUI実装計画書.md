@@ -873,7 +873,7 @@ export function createBattleStore(service: BattleService) {
 ## 12. 参考資料
 
 - [ヘッドレスUI設計.md](./ヘッドレスUI設計.md) - 詳細な設計ドキュメント
-- [実装状況.md](./実装状況.md) - 現在の実装状況
+- [実装状況.md](./project-management/実装状況.md) - 現在の実装状況
 - [サービス設計.md](./サービス設計.md) - Service層の設計
 
 ---

@@ -117,35 +117,32 @@ rpg-core/
 
 ## ドキュメント
 
-### 🏗️ プロジェクト構造の見直し提案
+📖 **[ドキュメントTOP](./docs/README.md)** - 完全なドキュメント構成とナビゲーション
 
-src配下の構成見直しについて、複数の提案を作成しました：
-- 🎨 [ビジュアル図解](./docs/SRC_REORGANIZATION_VISUAL.md) - Before/After の視覚的比較（推奨から見る）
-- 📄 [要約版](./docs/SRC_REORGANIZATION_SUMMARY.md) - 4つの提案の概要と比較表
-- 📚 [詳細版](./docs/SRC_REORGANIZATION_PROPOSALS.md) - 各提案の完全な説明と実装計画
-
-### 📚 読書ガイド
+### 📚 クイックスタートガイド
 
 rpg-coreを理解するための推奨読書順序：
 
 1. **まず読む** - ライブラリの全体像を把握
    - [実装要素.md](./docs/実装要素.md) - ライブラリが目指すものとスコープ
-   - [依存関係管理.md](./docs/DEPENDENCY_MANAGEMENT.md) - 依存関係の設定と管理（🆕推奨）
+   - [依存関係管理](./docs/DEPENDENCY_MANAGEMENT.md) - 依存関係の設定と管理（🆕推奨）
+   - [使用例](./docs/USAGE_EXAMPLES.md) - 実際の使用例
    
 2. **次に読む** - アーキテクチャを理解
-   - [コアエンジン.md](./docs/コアエンジン.md) - Core Engineの役割と設計思想
-   - [サービス設計.md](./docs/サービス設計.md) - Service層の詳細設計
-   - [ヘッドレスUI設計.md](./docs/ヘッドレスUI設計.md) - UI層の設計
-   - [ヘッドレスUI実装計画書.md](./docs/ヘッドレスUI実装計画書.md) - ヘッドレスUI実装の具体的な計画
+   - [コアエンジン](./docs/コアエンジン.md) - Core Engineの役割と設計思想
+   - [サービス設計](./docs/サービス設計.md) - Service層の詳細設計
+   - [ヘッドレスUI設計](./docs/ヘッドレスUI設計.md) - UI層の設計
    
 3. **必要に応じて読む** - 実装したい機能の詳細
-   - 戦闘・バトル: [戦闘.md](./docs/features/戦闘.md)
-   - キャラクター・成長: [キャラクター成長.md](./docs/features/キャラクター成長.md), [スキル習得.md](./docs/features/スキル習得.md), [ジョブ変更.md](./docs/features/ジョブ変更.md)
-   - アイテム・装備: [アイテム.md](./docs/features/アイテム.md), [インベントリ.md](./docs/features/インベントリ.md), [装備.md](./docs/features/装備.md), [クラフト.md](./docs/features/クラフト.md), [強化.md](./docs/features/強化.md)
-   - パーティ・編成: [パーティ編成.md](./docs/features/パーティ編成.md)
-   - 状態・効果: [状態異常.md](./docs/features/状態異常.md)
-   - 敵・AI: [敵AI.md](./docs/features/敵AI.md)
-   - システム: [報酬.md](./docs/features/報酬.md), [セーブロード.md](./docs/features/セーブロード.md), [データ永続化.md](./docs/features/データ永続化.md), [シミュレーション.md](./docs/features/シミュレーション.md)
+   - [機能別ドキュメント](./docs/features/) - 各機能の詳細仕様
+   - [カスタマイズガイド](./docs/guides/) - ゲーム固有のカスタマイズ方法
+
+### 📂 主要なドキュメント
+
+- **[features/](./docs/features/)** - 機能別の詳細仕様（戦闘、アイテム、キャラクター成長など）
+- **[guides/](./docs/guides/)** - カスタマイズガイド集
+- **[project-management/](./docs/project-management/)** - 実装状況と課題管理
+- **[archive/](./docs/archive/)** - 過去の分析・計画文書（参考用）
 
 ## ライセンス
 

@@ -593,7 +593,7 @@ console.log(`近接攻撃: ${knight.stats.shortRangeAttack}`);
 console.log(`遠距離攻撃: ${knight.stats.longRangeAttack}`);
 ```
 
-詳細な説明とベストプラクティスについては、[カスタムステータス設計ガイド](./CUSTOM_STATS_GUIDE.md)を参照してください。
+詳細な説明とベストプラクティスについては、[カスタムステータス設計ガイド](./guides/CUSTOM_STATS_GUIDE.md)を参照してください。
 
 ## Example 9: カスタム状態異常の使用
 
@@ -747,7 +747,7 @@ console.log(`状態異常: ${investigator.statusEffects[0].name}`);
 console.log(`スタック数: ${investigator.statusEffects[0].stackCount}/${investigator.statusEffects[0].maxStack}`);
 ```
 
-詳細な説明とベストプラクティスについては、[カスタマイズ可能な型システム設計ガイド](./CUSTOMIZATION_GUIDE.md)を参照してください。
+詳細な説明とベストプラクティスについては、[カスタマイズ可能な型システム設計ガイド](./guides/CUSTOMIZATION_GUIDE.md)を参照してください。
 
 ## Example 10: すべてのカスタマイズ可能な型を使用（SF風戦略ゲーム）
 
@@ -937,7 +937,7 @@ console.log(`経験値曲線: ${scifiGameConfig.growth.expCurve}`);
 
 これにより、標準的なJRPGとは全く異なるSF戦略ゲームの世界観を、型安全に実装できます。
 
-詳細な説明とベストプラクティスについては、[カスタマイズ可能な型システム設計ガイド](./CUSTOMIZATION_GUIDE.md)を参照してください。
+詳細な説明とベストプラクティスについては、[カスタマイズ可能な型システム設計ガイド](./guides/CUSTOMIZATION_GUIDE.md)を参照してください。
 
 ## Next Steps
 
