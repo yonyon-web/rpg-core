@@ -5,18 +5,18 @@
  * CommandServiceと連携してコマンド選択フローを管理する
  */
 
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
-import type { CommandUIState, CommandEvents, CommandUIStage } from '../types/command';
-import type { CommandService } from '../../services/battle/CommandService';
-import type { Character, BattleAction, BattleState } from '../../types/battle';
-import type { Combatant } from '../../types/combatant';
-import type { Skill } from '../../types/skill';
-import type { Item } from '../../types/item';
-import type { GameConfig } from '../../types/config';
-import { calculateDamage } from '../../combat/damage';
-import { defaultGameConfig } from '../../config/defaultConfig';
-import { BASIC_ATTACK_SKILL } from '../../combat/constants';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
+import type { CommandUIState, CommandEvents, CommandUIStage } from '../../types/command';
+import type { CommandService } from '../../../services/battle/CommandService';
+import type { Character, BattleAction, BattleState } from '../../../types/battle';
+import type { Combatant } from '../../../types/combatant';
+import type { Skill } from '../../../types/skill';
+import type { Item } from '../../../types/item';
+import type { GameConfig } from '../../../types/config';
+import { calculateDamage } from '../../../combat/damage';
+import { defaultGameConfig } from '../../../config/defaultConfig';
+import { BASIC_ATTACK_SKILL } from '../../../combat/constants';
 
 /**
  * CommandController クラス

@@ -3,17 +3,17 @@
  * アイテム使用のヘッドレスUIコントローラー
  */
 
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
-import type { ItemService } from '../../services/item/ItemService';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
+import type { ItemService } from '../../../services/item/ItemService';
 import type { 
   ItemUseUIState, 
   ItemUseEvents, 
   ItemUseUIStage,
   ItemUseContext,
   ItemEffectPreview
-} from '../types/item';
-import type { Combatant, ConsumableItem, ItemUseConditions } from '../../types';
+} from '../../types/item';
+import type { Combatant, ConsumableItem, ItemUseConditions } from '../../../types';
 
 /**
  * ItemController

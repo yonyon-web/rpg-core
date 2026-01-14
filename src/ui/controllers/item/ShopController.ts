@@ -1,8 +1,8 @@
-import type { ShopService } from '../../services/item/ShopService';
-import type { InventoryService } from '../../services/item/InventoryService';
-import type { Character } from '../../types/battle';
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
+import type { ShopService } from '../../../services/item/ShopService';
+import type { InventoryService } from '../../../services/item/InventoryService';
+import type { Character } from '../../../types/battle';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
 import type {
   ShopUIState,
   ShopEvents,
@@ -11,7 +11,7 @@ import type {
   ShopMode,
   ShopFilterType,
   ShopSortBy,
-} from '../types/shop';
+} from '../../types/shop';
 
 /**
  * ショップコントローラー

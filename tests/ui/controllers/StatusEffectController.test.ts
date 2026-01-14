@@ -2,7 +2,7 @@
  * StatusEffectController のテスト
  */
 
-import { StatusEffectController } from '../../../src/ui/controllers/StatusEffectController';
+import { StatusEffectController } from '../../../src/ui/controllers/status/StatusEffectController';
 import { StatusEffectService } from '../../../src/services/StatusEffectService';
 import type { Combatant } from '../../../src/types/combatant';
 import type { StatusEffect } from '../../../src/types/statusEffect';

@@ -3,16 +3,16 @@
  * インベントリ管理のヘッドレスUIコントローラー
  */
 
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
-import type { InventoryService } from '../../services/item/InventoryService';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
+import type { InventoryService } from '../../../services/item/InventoryService';
 import type { 
   InventoryUIState, 
   InventoryEvents, 
   InventoryControllerOptions 
-} from '../types/inventory';
-import type { Item, InventorySlot, InventorySortBy } from '../../types';
-import type { UISortOrder } from '../types/common';
+} from '../../types/inventory';
+import type { Item, InventorySlot, InventorySortBy } from '../../../types';
+import type { UISortOrder } from '../../types/common';
 
 /**
  * InventoryController

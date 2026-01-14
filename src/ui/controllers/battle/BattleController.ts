@@ -5,9 +5,9 @@
  * BattleServiceと連携して戦闘の進行を管理する
  */
 
-import { BaseController } from '../core/BaseController';
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
+import { BaseController } from '../../core/BaseController';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
 import type { 
   BattleUIState, 
   BattleEvents, 
@@ -15,10 +15,10 @@ import type {
   BattleMessage, 
   BattleMessageType,
   BattleMessageData
-} from '../types/battle';
-import type { BattleService } from '../../services/battle/BattleService';
-import type { Character, Enemy, BattleAction } from '../../types/battle';
-import type { Combatant } from '../../types/combatant';
+} from '../../types/battle';
+import type { BattleService } from '../../../services/battle/BattleService';
+import type { Character, Enemy, BattleAction } from '../../../types/battle';
+import type { Combatant } from '../../../types/combatant';
 
 /**
  * BattleController クラス

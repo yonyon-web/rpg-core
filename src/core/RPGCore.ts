@@ -43,19 +43,19 @@ import { EnemyAIService } from '../services/enemy/EnemyAIService';
 import { EnemyGroupService } from '../services/enemy/EnemyGroupService';
 
 // Controllers
-import { BattleController } from '../ui/controllers/BattleController';
-import { ItemController } from '../ui/controllers/ItemController';
-import { EquipmentController } from '../ui/controllers/EquipmentController';
-import { PartyController } from '../ui/controllers/PartyController';
-import { CraftController } from '../ui/controllers/CraftController';
-import { SkillLearnController } from '../ui/controllers/SkillLearnController';
-import { RewardController } from '../ui/controllers/RewardController';
-import { EnhanceController } from '../ui/controllers/EnhanceController';
-import { JobChangeController } from '../ui/controllers/JobChangeController';
-import { StatusEffectController } from '../ui/controllers/StatusEffectController';
-import { InventoryController } from '../ui/controllers/InventoryController';
-import { ShopController } from '../ui/controllers/ShopController';
-import { CommandController } from '../ui/controllers/CommandController';
+import { BattleController } from '../ui/controllers/battle/BattleController';
+import { ItemController } from '../ui/controllers/item/ItemController';
+import { EquipmentController } from '../ui/controllers/item/EquipmentController';
+import { PartyController } from '../ui/controllers/party/PartyController';
+import { CraftController } from '../ui/controllers/craft/CraftController';
+import { SkillLearnController } from '../ui/controllers/character/SkillLearnController';
+import { RewardController } from '../ui/controllers/system/RewardController';
+import { EnhanceController } from '../ui/controllers/craft/EnhanceController';
+import { JobChangeController } from '../ui/controllers/character/JobChangeController';
+import { StatusEffectController } from '../ui/controllers/status/StatusEffectController';
+import { InventoryController } from '../ui/controllers/item/InventoryController';
+import { ShopController } from '../ui/controllers/item/ShopController';
+import { CommandController } from '../ui/controllers/battle/CommandController';
 
 import type { GameConfig } from '../types/config';
 import type { Inventory, Shop } from '../types';

@@ -2,7 +2,7 @@
  * CommandController のテスト
  */
 
-import { CommandController } from '../../../src/ui/controllers/CommandController';
+import { CommandController } from '../../../src/ui/controllers/battle/CommandController';
 import { CommandService } from '../../../src/services/CommandService';
 import type { Character, BattleState } from '../../../src/types/battle';
 import type { Enemy } from '../../../src/types/battle';

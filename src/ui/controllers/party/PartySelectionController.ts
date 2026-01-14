@@ -3,11 +3,11 @@
  * 複数のパーティから編成するパーティを選択する
  */
 
-import type { Combatant } from '../../types/combatant';
-import type { BaseStats, DefaultStats } from '../../types/stats';
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
-import type { PartySelectionUIState, PartySelectionEvents, PartyInfo } from '../types/partySelection';
+import type { Combatant } from '../../../types/combatant';
+import type { BaseStats, DefaultStats } from '../../../types/stats';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
+import type { PartySelectionUIState, PartySelectionEvents, PartyInfo } from '../../types/partySelection';
 
 /**
  * PartySelectionController

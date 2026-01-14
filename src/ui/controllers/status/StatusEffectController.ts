@@ -9,16 +9,16 @@
  * 状態異常を同時に表示できる。
  */
 
-import { EventEmitter } from '../core/EventEmitter';
+import { EventEmitter } from '../../core/EventEmitter';
 import type { 
   StatusEffectEvents, 
   ActiveStatusEffect,
   StatusEffectFilterType,
   StatusEffectSortBy
-} from '../types/statusEffect';
-import type { StatusEffectService } from '../../services/status/StatusEffectService';
-import type { Combatant } from '../../types/combatant';
-import type { StatusEffect } from '../../types/statusEffect';
+} from '../../types/statusEffect';
+import type { StatusEffectService } from '../../../services/status/StatusEffectService';
+import type { Combatant } from '../../../types/combatant';
+import type { StatusEffect } from '../../../types/statusEffect';
 
 /**
  * StatusEffectController クラス

@@ -3,15 +3,15 @@
  * 装備変更のヘッドレスUIコントローラー
  */
 
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
-import type { EquipmentService } from '../../services/item/EquipmentService';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
+import type { EquipmentService } from '../../../services/item/EquipmentService';
 import type { 
   EquipmentUIState, 
   EquipmentEvents, 
   EquipmentUIStage,
   StatsComparison
-} from '../types/equipment';
+} from '../../types/equipment';
 import type { 
   Combatant, 
   Equipment, 
@@ -21,13 +21,13 @@ import type {
   DefaultEquipmentType,
   BaseStats,
   DefaultStats
-} from '../../types';
+} from '../../../types';
 import { 
   validateEquipmentSlot,
   defaultEquipmentSlotMapping,
   canEquip,
   type EquipmentSlotMapping
-} from '../../item/equipment';
+} from '../../../item/equipment';
 
 /**
  * EquipmentController

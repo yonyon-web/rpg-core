@@ -3,14 +3,14 @@
  * スキル習得UIコントローラー
  */
 
-import { ObservableState } from '../core/ObservableState';
-import { EventEmitter } from '../core/EventEmitter';
-import type { SkillLearnUIState, SkillLearnEvents, SkillLearnUIStage, SkillFilterType, SkillSortBy } from '../types/skillLearn';
-import type { SkillLearnService, LearnableSkillInfo, SkillLearnCost } from '../../services/character/SkillLearnService';
-import type { Character } from '../../types/battle';
-import type { Skill } from '../../types/skill';
-import type { UniqueId } from '../../types/common';
-import type { UISortOrder } from '../types/common';
+import { ObservableState } from '../../core/ObservableState';
+import { EventEmitter } from '../../core/EventEmitter';
+import type { SkillLearnUIState, SkillLearnEvents, SkillLearnUIStage, SkillFilterType, SkillSortBy } from '../../types/skillLearn';
+import type { UISortOrder } from '../../types/common';
+import type { SkillLearnService, LearnableSkillInfo, SkillLearnCost } from '../../../services/character/SkillLearnService';
+import type { Character } from '../../../types/battle';
+import type { Skill } from '../../../types/skill';
+import type { UniqueId } from '../../../types/common';
 
 /**
  * SkillLearnController
