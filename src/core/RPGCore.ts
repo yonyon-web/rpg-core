@@ -25,6 +25,7 @@ import { EventBus } from './EventBus';
 
 // Services
 import { BattleService } from '../services/battle/BattleService';
+import { BattleActionExecutor } from '../services/battle/BattleActionExecutor';
 import { ItemService } from '../services/item/ItemService';
 import { EquipmentService } from '../services/item/EquipmentService';
 import { PartyService } from '../services/party/PartyService';
@@ -203,9 +204,18 @@ export class RPGCore {
       new SimulationService()
     );
     
+    // BattleActionExecutor - BattleServiceの依存関係
+    this._container.register('battleActionExecutor', (c) => 
+      new BattleActionExecutor(c.resolve('config'))
+    );
+    
     // BattleServiceは他のサービスに依存
     this._container.register('battleService', (c) => 
-      new BattleService(c.resolve('config'))
+      new BattleService(
+        c.resolve('config'),
+        c.resolve('rewardService'),
+        c.resolve('battleActionExecutor')
+      )
     );
   }
 
