@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="rpg-core - ターン制RPGゲームを作成するためのTypeScriptライブラリ">
+    <title>rpg-core - ターン制RPG TypeScriptライブラリ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="index.html" class="logo">rpg-core</a>
+                    <ul class="nav-links">
+                        <li><a href="index.html">ホーム</a></li>
+                        <li><a href="docs/index.html">ドキュメント</a></li>
+                        <li><a href="examples/index.html">サンプル</a></li>
+                        <li><a href="api/index.html">API</a></li>
+                        <li><a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h1 class="hero-title">rpg-core</h1>
+                <p class="hero-subtitle">ターン制RPGゲームを作る仕組みを提供するTypeScriptライブラリ</p>
+                <div class="hero-buttons">
+                    <a href="#quick-start" class="btn btn-primary">はじめる</a>
+                    <a href="https://github.com/yonyon-web/rpg-core" class="btn btn-secondary" target="_blank" rel="noopener">GitHub</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">特徴</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>純粋な計算とルール</h3>
+                        <p>UIや操作フローに依存しない、数値計算とゲームルールの判定に特化</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>状態を持たない設計</h3>
+                        <p>Game Stateから必要なデータを受け取り、計算結果を返す決定論的な動作</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🧪</div>
+                        <h3>テスト容易</h3>
+                        <p>モックや単体テストが容易に書ける設計で、品質の高い開発が可能</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎨</div>
+                        <h3>カスタマイズ可能</h3>
+                        <p>ゲーム固有のルールに対応できる拡張性を備えた設計</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📘</div>
+                        <h3>TypeScript完全対応</h3>
+                        <p>型定義付きで開発体験が向上し、エディタの支援を最大限活用</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🏗️</div>
+                        <h3>JRPG設計思想</h3>
+                        <p>日本のRPGスタイルに最適化された、戦闘・成長・管理システム</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Start Section -->
+        <section id="quick-start" class="quick-start">
+            <div class="container">
+                <h2 class="section-title">クイックスタート</h2>
+                
+                <div class="install-section">
+                    <h3>インストール</h3>
+                    <pre><code>npm install rpg-core</code></pre>
+                </div>
+
+                <div class="usage-section">
+                    <h3>基本的な使い方</h3>
+                    <div class="code-example">
+                        <pre><code>import { RPGCore } from 'rpg-core';
+
+// ライブラリ全体を初期化
+const rpg = new RPGCore({
+  config: customGameConfig,  // 省略可能
+  useEventBus: true          // 省略可能
+});
+
+// サービスに簡単にアクセス
+const battleService = rpg.services.battle;
+const itemService = rpg.services.item;
+
+// コントローラーも簡単に作成
+const battleController = rpg.controllers.battle();</code></pre>
+                    </div>
+                </div>
+
+                <div class="next-steps">
+                    <h3>次のステップ</h3>
+                    <ul>
+                        <li><a href="docs/index.html">ドキュメントを読む</a> - ライブラリの詳細な使い方を学ぶ</li>
+                        <li><a href="examples/index.html">サンプルを試す</a> - 実際の動作を確認する</li>
+                        <li><a href="api/index.html">APIリファレンス</a> - 利用可能なクラスとメソッドを確認</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Section -->
+        <section class="architecture">
+            <div class="container">
+                <h2 class="section-title">アーキテクチャ</h2>
+                <div class="architecture-diagram">
+                    <div class="arch-layer">
+                        <div class="layer-box">UI（見た目・入力）</div>
+                        <div class="arrow">↓</div>
+                    </div>
+                    <div class="arch-layer">
+                        <div class="layer-box">Headless UI（選択・確認・キャンセル）</div>
+                        <div class="arrow">↓</div>
+                    </div>
+                    <div class="arch-layer">
+                        <div class="layer-box">JRPG Services（操作フロー）</div>
+                        <div class="arrow">↓</div>
+                    </div>
+                    <div class="arch-layer">
+                        <div class="layer-box">Core Engine（数値・ルール）</div>
+                        <div class="arrow">↓</div>
+                    </div>
+                    <div class="arch-layer">
+                        <div class="layer-box">Game State（永続可能な状態）</div>
+                    </div>
+                </div>
+                <p class="architecture-description">
+                    レイヤー化された設計により、各層が明確な責任を持ち、
+                    テストやカスタマイズが容易になっています。
+                </p>
+            </div>
+        </section>
+
+        <!-- Call to Action -->
+        <section class="cta">
+            <div class="container">
+                <h2>今すぐ始めましょう</h2>
+                <p>rpg-coreを使って、あなたのRPGゲームを作り始めましょう</p>
+                <div class="cta-buttons">
+                    <a href="docs/index.html" class="btn btn-primary">ドキュメントを読む</a>
+                    <a href="https://github.com/yonyon-web/rpg-core" class="btn btn-outline" target="_blank" rel="noopener">GitHubで見る</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 rpg-core. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/rpg-core/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="docs/index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
