@@ -20,4 +20,7 @@ export * from './services';
 // Headless UIモジュールのエクスポート
 export * from './ui';
 
+// ユーティリティモジュールのエクスポート
+export * from './utils';
+
 export const version = '1.0.0';

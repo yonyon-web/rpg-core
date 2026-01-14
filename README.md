@@ -50,6 +50,46 @@ const battleController = kit.controllers.battle();
 
 詳しくは [依存関係管理ガイド](./project-docs/DEPENDENCY_MANAGEMENT.md) を参照してください。
 
+### ゲームエンティティの定義を簡単に
+
+GEasy-Kitは、キャラクター、モンスター、ジョブ、アイテム、装備を簡単に定義できるBuilderヘルパーを提供します：
+
+```typescript
+import { CharacterBuilder, EnemyBuilder, ItemBuilder } from 'geasy-kit';
+
+// キャラクターを簡潔に定義
+const hero = new CharacterBuilder('hero1', 'Hero')
+  .level(10)
+  .hp(150)
+  .attack(50)
+  .defense(30)
+  .build();
+
+// モンスターを簡潔に定義
+const slime = new EnemyBuilder('slime1', 'Slime', 'slime')
+  .level(5)
+  .hp(50)
+  .attack(20)
+  .expReward(50)
+  .moneyReward(20)
+  .build();
+
+// アイテムを簡潔に定義
+const potion = new ItemBuilder('potion', 'Potion')
+  .type('consumable')
+  .stackable(99)
+  .usableInBattle(true)
+  .build();
+```
+
+**メリット:**
+- ✅ 冗長なオブジェクトリテラルが不要
+- ✅ デフォルト値が自動設定
+- ✅ メソッドチェーンで直感的に定義
+- ✅ テストコードが読みやすくなる
+
+詳しくは [Builderヘルパーガイド](./project-docs/guides/BUILDER_HELPERS_GUIDE.md) を参照してください。
+
 ### 従来の方法: 個別にインスタンス化
 
 従来の手動インスタンス化も引き続きサポートされています：
