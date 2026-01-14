@@ -1,0 +1,58 @@
+/**
+ * Syntax highlighting styles for TypeScript/JavaScript code
+ * Dark theme matching the documentation style
+ */
+
+/* Base code block styling */
+.hljs {
+    display: block;
+    overflow-x: auto;
+}
+
+/* Syntax highlighting colors */
+.hljs-keyword {
+    color: #ff79c6;
+    font-weight: 600;
+}
+
+.hljs-string {
+    color: #50fa7b;
+}
+
+.hljs-comment {
+    color: #6272a4;
+    font-style: italic;
+}
+
+.hljs-number {
+    color: #bd93f9;
+}
+
+.hljs-function {
+    color: #8be9fd;
+}
+
+.hljs-type {
+    color: #f1fa8c;
+}
+
+/* Additional syntax elements */
+.hljs-operator {
+    color: #ff79c6;
+}
+
+.hljs-punctuation {
+    color: #f8f8f2;
+}
+
+.hljs-variable {
+    color: #f8f8f2;
+}
+
+.hljs-property {
+    color: #66d9ef;
+}
+
+.hljs-class {
+    color: #f1fa8c;
+}

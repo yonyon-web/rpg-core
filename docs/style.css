@@ -571,3 +571,156 @@ code {
     background-color: var(--text-light);
     color: var(--bg-white);
 }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+thead {
+    background-color: var(--bg-light);
+}
+
+th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dark);
+    border-bottom: 2px solid var(--border-color);
+}
+
+td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background-color: var(--bg-light);
+}
+
+td code,
+th code {
+    background-color: var(--bg-light);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-family: 'Monaco', 'Courier New', monospace;
+}
+
+/* ===== Flow Diagrams ===== */
+.flow-diagram {
+    background-color: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+.flow-node {
+    background-color: var(--bg-white);
+    border: 2px solid var(--primary-color);
+    border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-dark);
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.flow-node:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.flow-node code {
+    background-color: var(--bg-light);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-weight: normal;
+    color: var(--secondary-color);
+}
+
+.flow-node.flow-start {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.flow-node.flow-start code {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.flow-node.flow-end {
+    border-color: var(--accent-color);
+    background-color: var(--bg-light);
+}
+
+.flow-node.flow-decision {
+    border-radius: 0.25rem;
+    border-width: 3px;
+    border-style: dashed;
+    background-color: #fff3cd;
+    border-color: var(--accent-color);
+}
+
+.flow-arrow {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin: 0.25rem 0;
+    font-weight: bold;
+}
+
+.flow-branch {
+    display: flex;
+    gap: 2rem;
+    margin-top: 0.5rem;
+    justify-content: center;
+    width: 100%;
+}
+
+.flow-arrow-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.branch-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.arrow-back,
+.arrow-down {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    font-weight: bold;
+}

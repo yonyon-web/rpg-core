@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>戦闘システム - GEasy Kit</title>
     <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../lib/syntax-highlight.css">
+    <script src="../lib/syntax-highlight.js"></script>
 </head>
 <body>
     <header class="header">
@@ -63,51 +65,152 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
-                        <h3>基本的な使い方</h3>
-                        <p>BattleControllerを使って、戦闘UIの状態を管理します：</p>
-                        <pre><code>import { GEasyKit } from 'geasy-kit';
-
-const game = new GEasyKit();
-const battleController = game.controllers.battle();
-
-// 状態の購読
-battleController.subscribe((state) => {
-  console.log('戦闘状態:', state);
-  updateUI(state);
-});
-
-// 戦闘を開始
-await battleController.startBattle(playerParty, enemyGroup);</code></pre>
-
-                        <h3>カスタマイズ方法</h3>
-                        <p>イベントを購読して、カスタム処理を追加できます：</p>
-                        <pre><code>// ダメージ時のアニメーション
-battleController.on('damageDealt', (event) => {
-  showDamageAnimation(event.target, event.damage);
-});
-
-// ターン開始時の処理
-battleController.on('turnStart', (event) => {
-  console.log(\`ターン \${event.turnNumber} 開始\`);
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>BattleController</h4>
-                            <pre><code>interface BattleController {
-  // 状態管理
-  getState(): BattleState;
-  subscribe(listener: (state: BattleState) => void): () => void;
-  
-  // 戦闘制御
-  startBattle(party: Character[], enemies: Enemy[]): Promise<void>;
-  selectCommand(actorId: string, command: Command): Promise<void>;
-  nextTurn(): Promise<void>;
-  
-  // イベント購読
-  on(event: string, handler: (data: any) => void): () => void;
-}</code></pre>
+                        <h3>戦闘フロー</h3>
+                        <p>BattleControllerは以下の流れで戦闘を進行します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">戦闘開始<br/><code>startBattle()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">コマンド入力待ち<br/><code>selectCommand()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">ターン実行<br/><code>executeTurn()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">勝敗判定</div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">戦闘継続</span>
+                                        <div class="arrow-back">↑</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">戦闘終了</span>
+                                        <div class="arrow-down">↓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">終了</div>
+                            </div>
                         </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>戦闘の流れを変更するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>startBattle(party, enemies)</code> - 戦闘を開始</li>
+                            <li><code>selectCommand(actorId, command)</code> - キャラクターの行動を選択</li>
+                            <li><code>executeTurn()</code> - 選択された行動を実行</li>
+                            <li><code>endBattle(result)</code> - 戦闘を強制終了</li>
+                            <li><code>pause()</code> - 戦闘を一時停止</li>
+                            <li><code>resume()</code> - 一時停止した戦闘を再開</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>phase</td>
+                                    <td>string</td>
+                                    <td>現在のフェーズ（'idle' | 'command' | 'execution' | 'ended'）</td>
+                                </tr>
+                                <tr>
+                                    <td>turnNumber</td>
+                                    <td>number</td>
+                                    <td>現在のターン数</td>
+                                </tr>
+                                <tr>
+                                    <td>party</td>
+                                    <td>Character[]</td>
+                                    <td>味方パーティのキャラクター配列</td>
+                                </tr>
+                                <tr>
+                                    <td>enemies</td>
+                                    <td>Enemy[]</td>
+                                    <td>敵グループの配列</td>
+                                </tr>
+                                <tr>
+                                    <td>turnOrder</td>
+                                    <td>Combatant[]</td>
+                                    <td>現在のターンの行動順</td>
+                                </tr>
+                                <tr>
+                                    <td>currentActorId</td>
+                                    <td>string</td>
+                                    <td>現在行動中のキャラクターID</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedCommands</td>
+                                    <td>Map&lt;string, Command&gt;</td>
+                                    <td>選択済みのコマンド</td>
+                                </tr>
+                                <tr>
+                                    <td>result</td>
+                                    <td>'victory' | 'defeat' | null</td>
+                                    <td>戦闘結果（終了時のみ）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>startBattle</td>
+                                    <td>party: Character[], enemies: Enemy[]</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>戦闘を開始する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectCommand</td>
+                                    <td>actorId: string, command: Command</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>キャラクターの行動を選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>executeTurn</td>
+                                    <td>-</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>ターンを実行する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>BattleState</td>
+                                    <td>現在の戦闘状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: BattleState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="service">Service</h2>
                         
@@ -131,43 +234,55 @@ await battleService.selectCommand(playerId, {
 // ターンを進める
 await battleService.processTurn();</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>BattleServiceを拡張して、独自の戦闘ルールを追加できます：</p>
-                        <pre><code>import { BattleService } from 'geasy-kit';
-
-class CustomBattleService extends BattleService {
-  // カスタム勝利条件
-  checkBattleEnd() {
-    const state = this.getState();
-    
-    // 10ターン経過で自動勝利
-    if (state.turnNumber >= 10) {
-      return { ended: true, result: 'victory' };
-    }
-    
-    return super.checkBattleEnd();
-  }
-}</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>BattleService</h4>
-                            <pre><code>class BattleService {
-  // 戦闘制御
-  startBattle(party: Character[], enemies: Enemy[]): Promise<void>;
-  processTurn(): Promise<void>;
-  endBattle(result: 'victory' | 'defeat'): Promise<void>;
-  
-  // 状態管理
-  getState(): BattleState;
-  
-  // コマンド処理
-  selectCommand(actorId: string, command: Command): Promise<void>;
-  
-  // イベント発行
-  emit(event: string, data: any): void;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>startBattle</td>
+                                    <td>party: Character[], enemies: Enemy[]</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>戦闘を開始する</td>
+                                </tr>
+                                <tr>
+                                    <td>processTurn</td>
+                                    <td>-</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>ターンを処理する</td>
+                                </tr>
+                                <tr>
+                                    <td>endBattle</td>
+                                    <td>result: 'victory' | 'defeat'</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>戦闘を終了する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>BattleState</td>
+                                    <td>現在の戦闘状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectCommand</td>
+                                    <td>actorId: string, command: Command</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>キャラクターのコマンドを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>emit</td>
+                                    <td>event: string, data: any</td>
+                                    <td>void</td>
+                                    <td>イベントを発行する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="core-engine">Core Engine</h2>
                         
@@ -186,57 +301,49 @@ const turnOrder = engine.calculateTurnOrder(combatants);
 // 命中判定
 const hit = engine.checkHit(attacker, target, skill);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>ダメージ計算式をカスタマイズできます：</p>
-                        <pre><code>import { DamageCalculator } from 'geasy-kit';
-
-class CustomDamageCalculator extends DamageCalculator {
-  calculate(attacker, target, skill) {
-    // 独自の計算式
-    const baseDamage = attacker.attack * skill.power / 100;
-    const defense = target.defense * 0.5;
-    const damage = Math.max(1, baseDamage - defense);
-    
-    // クリティカル判定
-    const isCritical = Math.random() < 0.1;
-    
-    return {
-      value: Math.floor(isCritical ? damage * 2 : damage),
-      isCritical
-    };
-  }
-}
-
-const game = new GEasyKit({
-  config: {
-    damageCalculator: new CustomDamageCalculator()
-  }
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>Core Engine - 戦闘関連</h4>
-                            <pre><code>interface BattleCoreEngine {
-  // ダメージ計算
-  calculateDamage(
-    attacker: Combatant,
-    target: Combatant,
-    skill: Skill
-  ): DamageResult;
-  
-  // 命中判定
-  checkHit(attacker: Combatant, target: Combatant): boolean;
-  
-  // クリティカル判定
-  checkCritical(attacker: Combatant): boolean;
-  
-  // 行動順計算
-  calculateTurnOrder(combatants: Combatant[]): Combatant[];
-  
-  // 勝敗判定
-  checkBattleEnd(state: BattleState): BattleEndResult;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>calculateDamage</td>
+                                    <td>attacker: Combatant, target: Combatant, skill: Skill</td>
+                                    <td>DamageResult</td>
+                                    <td>ダメージを計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkHit</td>
+                                    <td>attacker: Combatant, target: Combatant</td>
+                                    <td>boolean</td>
+                                    <td>命中判定を行う</td>
+                                </tr>
+                                <tr>
+                                    <td>checkCritical</td>
+                                    <td>attacker: Combatant</td>
+                                    <td>boolean</td>
+                                    <td>クリティカル判定を行う</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateTurnOrder</td>
+                                    <td>combatants: Combatant[]</td>
+                                    <td>Combatant[]</td>
+                                    <td>行動順を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkBattleEnd</td>
+                                    <td>state: BattleState</td>
+                                    <td>BattleEndResult</td>
+                                    <td>戦闘終了条件を判定する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2>次のステップ</h2>
                         <div class="card">
