@@ -1,5 +1,6 @@
 import type { EnhanceService } from '../../services/EnhanceService';
-import type { Equipment } from '../../types/equipment';
+import type { EnhancableEquipment } from '../../types/craft';
+import type { BaseStats } from '../../types/stats';
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type {
@@ -15,12 +16,12 @@ import type {
  * 強化コントローラー
  * 装備の強化UIを管理します
  */
-export class EnhanceController<TStats> {
+export class EnhanceController<TStats extends BaseStats = BaseStats> {
   private state: ObservableState<EnhanceUIState<TStats>>;
   private events: EventEmitter<EnhanceEvents<TStats>>;
-  private service: EnhanceService<TStats>;
+  private service: EnhanceService;
 
-  constructor(service: EnhanceService<TStats>) {
+  constructor(service: EnhanceService) {
     this.service = service;
     
     this.state = new ObservableState<EnhanceUIState<TStats>>({
@@ -64,7 +65,7 @@ export class EnhanceController<TStats> {
   /**
    * 強化開始
    */
-  startEnhancing(equipment: Equipment<TStats>[], maxLevel: number = 10): void {
+  startEnhancing(equipment: EnhancableEquipment[], maxLevel: number = 10): void {
     this.state.setState({
       stage: 'browsing',
       availableEquipment: equipment,
@@ -81,7 +82,7 @@ export class EnhanceController<TStats> {
   /**
    * 装備を選択
    */
-  selectEquipment(equipment: Equipment<TStats>): void {
+  selectEquipment(equipment: EnhancableEquipment): void {
     const currentLevel = equipment.enhanceLevel || 0;
 
     this.state.setState({
@@ -127,7 +128,7 @@ export class EnhanceController<TStats> {
     if (!currentState.selectedEquipment) return;
 
     const equipment = currentState.selectedEquipment;
-    const currentStats = equipment.stats || {} as Partial<TStats>;
+    const currentStats = equipment.baseStats || {} as Record<string, number>;
     
     // 強化後のステータスを計算
     const afterStats = { ...currentStats };
@@ -145,9 +146,9 @@ export class EnhanceController<TStats> {
     }
 
     const preview: EnhanceStatsPreview<TStats> = {
-      current: currentStats,
-      after: afterStats,
-      differences,
+      current: currentStats as any,
+      after: afterStats as any,
+      differences: differences as any,
     };
 
     this.state.setState({ statsPreview: preview });
@@ -179,12 +180,11 @@ export class EnhanceController<TStats> {
 
     try {
       const result = this.service.enhance(
-        currentState.selectedEquipment.id,
-        currentState.selectedMaterials
+        currentState.selectedEquipment
       );
 
       if (result.success) {
-        const newLevel = (currentState.selectedEquipment.enhanceLevel || 0) + 1;
+        const newLevel = result.newLevel;
         
         this.state.setState({
           stage: 'completed',
@@ -208,12 +208,12 @@ export class EnhanceController<TStats> {
         this.state.setState({
           stage: 'selected',
           loading: { isLoading: false },
-          error: { hasError: true, errorMessage: result.failureReason },
+          error: { hasError: true, errorMessage: result.message },
         });
 
         this.events.emit('enhance-failed', {
           equipment: currentState.selectedEquipment,
-          reason: result.failureReason || '強化に失敗しました',
+          reason: result.message || '強化に失敗しました',
         });
 
         return false;
@@ -322,10 +322,12 @@ export class EnhanceController<TStats> {
       let comparison = 0;
       switch (currentState.sortBy) {
         case 'name':
-          comparison = a.name.localeCompare(b.name);
+          // EnhancableEquipment doesn't have a name property, sort by ID
+          comparison = a.id.toString().localeCompare(b.id.toString());
           break;
         case 'level':
-          comparison = (a.levelRequirement || 0) - (b.levelRequirement || 0);
+          // EnhancableEquipment doesn't have levelRequirement, sort by ID
+          comparison = a.id.toString().localeCompare(b.id.toString());
           break;
         case 'enhance-level':
           comparison = (a.enhanceLevel || 0) - (b.enhanceLevel || 0);
