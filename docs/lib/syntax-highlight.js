@@ -6,8 +6,11 @@
     'use strict';
     
     function highlightTypeScript(code) {
+        // List of TypeScript/JavaScript keywords
+        const keywordList = ['import', 'export', 'from', 'const', 'let', 'var', 'function', 'class', 'interface', 'type', 'extends', 'implements', 'return', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue', 'throw', 'try', 'catch', 'finally', 'new', 'this', 'super', 'async', 'await', 'yield', 'typeof', 'instanceof', 'void', 'null', 'undefined', 'true', 'false', 'enum', 'namespace', 'module', 'declare', 'public', 'private', 'protected', 'static', 'readonly', 'get', 'set', 'as', 'is', 'in', 'of', 'any', 'never', 'unknown', 'string', 'number', 'boolean', 'object', 'symbol'];
+        
         // Keywords
-        const keywords = /\b(import|export|from|const|let|var|function|class|interface|type|extends|implements|return|if|else|for|while|do|switch|case|break|continue|throw|try|catch|finally|new|this|super|async|await|yield|typeof|instanceof|void|null|undefined|true|false|enum|namespace|module|declare|public|private|protected|static|readonly|get|set|as|is|in|of|any|never|unknown|string|number|boolean|object|symbol)\b/g;
+        const keywords = new RegExp('\\b(' + keywordList.join('|') + ')\\b', 'g');
         
         // Strings
         const strings = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g;
@@ -18,11 +21,12 @@
         // Numbers
         const numbers = /\b(\d+\.?\d*)\b/g;
         
-        // Functions (excluding keywords)
-        const functions = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?=\()/g;
+        // Functions (excluding keywords) - use negative lookahead to exclude keywords
+        const keywordPattern = keywordList.join('|');
+        const functions = new RegExp('\\b(?!' + keywordPattern + '\\b)([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*(?=\\()', 'g');
         
-        // Types (capitalized words often represent types)
-        const types = /\b([A-Z][a-zA-Z0-9_$]*)\b/g;
+        // Types (capitalized words, but exclude built-in type keywords)
+        const types = /\b(?!String\b|Number\b|Boolean\b|Object\b|Symbol\b|Array\b)([A-Z][a-zA-Z0-9_$]*)\b/g;
         
         // Temporarily replace strings and comments to avoid conflicts
         const placeholders = [];
@@ -45,7 +49,7 @@
         // Escape HTML
         code = escapeHtml(code);
         
-        // Apply syntax highlighting
+        // Apply syntax highlighting in order: keywords first, then others
         code = code.replace(keywords, '<span class="hljs-keyword">$1</span>');
         code = code.replace(numbers, '<span class="hljs-number">$1</span>');
         code = code.replace(functions, '<span class="hljs-function">$1</span>');
