@@ -33,7 +33,7 @@
 
 - **DEPENDENCY_MANAGEMENT_EVALUATION.md** - 依存関係管理アプローチの評価
 
-**背景**: RPGCoreクラスとServiceContainerの導入時に、アプローチの妥当性を評価した文書。
+**背景**: GEasyKitクラスとServiceContainerの導入時に、アプローチの妥当性を評価した文書。
 
 ## 🔍 参照方法
 

@@ -10,7 +10,7 @@ GEasy-Kitライブラリに **Dependency Injection (DI)** パターンを実装�
 - 循環依存の自動検出
 - 遅延初期化
 
-### 2. RPGCore
+### 2. GEasyKit
 - 統一エントリーポイント
 - 1カ所での設定完結
 - すべてのサービスとコントローラーへの簡単なアクセス
@@ -43,19 +43,19 @@ const battleController = new BattleController(battleService);
 ### 新しい方式（After）
 ```typescript
 // ✅ 自動で依存関係を解決
-import { RPGCore } from 'GEasy-Kit';
+import { GEasyKit } from 'GEasy-Kit';
 
-const rpg = new RPGCore({
+const kit = new GEasyKit({
   config: customGameConfig  // 省略可能
 });
 
 // サービスに簡単にアクセス（依存関係は自動解決）
-const battleService = rpg.services.battle;
-const itemService = rpg.services.item;
-const craftService = rpg.services.craft;
+const battleService = kit.services.battle;
+const itemService = kit.services.item;
+const craftService = kit.services.craft;
 
 // コントローラーも簡単に作成
-const battleController = rpg.controllers.battle();
+const battleController = kit.controllers.battle();
 ```
 
 **改善点：**
@@ -71,9 +71,9 @@ const battleController = rpg.controllers.battle();
 
 ```typescript
 // たった3行でセットアップ完了
-const rpg = new RPGCore();
-const battleService = rpg.services.battle;
-const controller = rpg.controllers.battle();
+const kit = new GEasyKit();
+const battleService = kit.services.battle;
+const controller = kit.controllers.battle();
 ```
 
 ### 2. 🔗 自動的な依存関係解決
@@ -87,7 +87,7 @@ this._container.register('itemService', (c) =>
 );
 ```
 
-開発者は`rpg.services.item`を呼ぶだけで、必要な依存関係が自動的に解決される。
+開発者は`kit.services.item`を呼ぶだけで、必要な依存関係が自動的に解決される。
 
 ### 3. 🔧 保守性の向上
 **効果：** コードの変更がより安全で予測可能に
@@ -101,8 +101,8 @@ this._container.register('itemService', (c) =>
 
 ```typescript
 // TypeScriptの型推論が完全に機能
-const battleService = rpg.services.battle;  // 型: BattleService
-const controller = rpg.controllers.battle(); // 型: BattleController
+const battleService = kit.services.battle;  // 型: BattleService
+const controller = kit.controllers.battle(); // 型: BattleController
 ```
 
 ### 5. 🧪 テストの容易性
@@ -110,7 +110,7 @@ const controller = rpg.controllers.battle(); // 型: BattleController
 
 ```typescript
 // テスト用のモックを注入
-const testRpg = new RPGCore();
+const testRpg = new GEasyKit();
 testRpg.container.register('battleService', () => mockBattleService);
 ```
 
@@ -120,8 +120,8 @@ testRpg.container.register('battleService', () => mockBattleService);
 ```typescript
 class MyCustomService { /* ... */ }
 
-rpg.container.register('myService', () => new MyCustomService());
-const myService = rpg.container.resolve('myService');
+kit.container.register('myService', () => new MyCustomService());
+const myService = kit.container.resolve('myService');
 ```
 
 ## デメリット（Cons）
@@ -132,7 +132,7 @@ const myService = rpg.container.resolve('myService');
 **緩和策：**
 - 包括的なドキュメント（DEPENDENCY_MANAGEMENT.md）
 - 5つの実用的な例を提供
-- RPGCoreクラスが複雑さを隠蔽
+- GEasyKitクラスが複雑さを隠蔽
 - 従来の手動初期化も引き続きサポート
 
 **評価：** 初期の学習コストはあるが、ドキュメントと例で十分にカバー可能。
@@ -187,7 +187,7 @@ if (this.resolving.has(name)) {
 ```
 
 ### 2. マルチインスタンス
-**問題：** 複数のRPGCoreインスタンスを作成した場合、それぞれが独立
+**問題：** 複数のGEasyKitインスタンスを作成した場合、それぞれが独立
 
 **対策：**
 - 通常は問題なし（各ゲームインスタンスが独立）
@@ -195,7 +195,7 @@ if (this.resolving.has(name)) {
 - ドキュメントに動作を明記
 
 ### 3. バンドルサイズ
-**影響：** ServiceContainerとRPGCoreの追加により約5KB増加
+**影響：** ServiceContainerとGEasyKitの追加により約5KB増加
 
 **評価：** ライブラリ全体のサイズと比較して無視できるレベル。提供される価値に対して妥当。
 
@@ -280,9 +280,9 @@ export function createServices(config: GameConfig) {
 **デメリットは適切に緩和されており、メリットが大きく上回る。**
 
 ### 推奨
-- ✅ 新規プロジェクトではRPGCoreクラスの使用を推奨
+- ✅ 新規プロジェクトではGEasyKitクラスの使用を推奨
 - ✅ 既存プロジェクトは段階的に移行可能（互換性維持）
-- ✅ すべての公式ドキュメントと例でRPGCoreを使用
+- ✅ すべての公式ドキュメントと例でGEasyKitを使用
 
 ## 今後の展開
 

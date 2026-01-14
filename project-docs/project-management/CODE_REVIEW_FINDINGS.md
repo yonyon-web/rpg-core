@@ -61,7 +61,7 @@ export function calculatePhysicalDamage(...args): DamageResult {
 ---
 
 ### 3. DIP違反：具体実装への依存
-**場所**: `src/core/RPGCore.ts`
+**場所**: `src/core/GEasyKit.ts`
 
 **問題点**:
 - 114-204行目の `registerServices` メソッドで具体クラスを直接 `new` している
