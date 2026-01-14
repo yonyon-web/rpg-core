@@ -2,7 +2,7 @@
  * InventoryService のテスト
  */
 
-import { InventoryService } from '../../src/services/InventoryService';
+import { InventoryService } from '../../src/services/item/InventoryService';
 import type { Inventory, Item, InventorySlot } from '../../src/types';
 
 describe('InventoryService', () => {

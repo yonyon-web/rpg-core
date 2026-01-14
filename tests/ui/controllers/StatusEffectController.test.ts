@@ -3,9 +3,9 @@
  */
 
 import { StatusEffectController } from '../../../src/ui/controllers/status/StatusEffectController';
-import { StatusEffectService } from '../../../src/services/StatusEffectService';
-import type { Combatant } from '../../../src/types/combatant';
-import type { StatusEffect } from '../../../src/types/statusEffect';
+import { StatusEffectService } from '../../../src/services/status/StatusEffectService';
+import type { Combatant } from '../../../src/types/battle/combatant';
+import type { StatusEffect } from '../../../src/types/status/statusEffect';
 
 describe('StatusEffectController', () => {
   let service: StatusEffectService;

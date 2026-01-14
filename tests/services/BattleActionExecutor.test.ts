@@ -2,9 +2,9 @@
  * Tests for BattleActionExecutor
  */
 
-import { BattleActionExecutor } from '../../src/services/BattleActionExecutor';
+import { BattleActionExecutor } from '../../src/services/battle/BattleActionExecutor';
 import { Character, Enemy, BattleState } from '../../src/types';
-import { Skill } from '../../src/types/skill';
+import { Skill } from '../../src/types/character/skill';
 import { defaultGameConfig } from '../../src/config';
 
 describe('BattleActionExecutor', () => {

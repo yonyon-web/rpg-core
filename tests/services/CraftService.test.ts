@@ -2,10 +2,10 @@
  * CraftService テスト
  */
 
-import { CraftService } from '../../src/services/CraftService';
+import { CraftService } from '../../src/services/craft/CraftService';
 import type { CraftRecipe } from '../../src/types/craft';
 import type { Character } from '../../src/types/battle';
-import type { InventoryItem } from '../../src/craft/synthesis';
+import type { InventoryItem } from '../../src/core/craft/synthesis';
 
 describe('CraftService', () => {
   let service: CraftService;

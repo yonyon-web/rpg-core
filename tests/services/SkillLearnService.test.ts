@@ -3,10 +3,10 @@
  * スキル習得サービスのテスト
  */
 
-import { SkillLearnService } from '../../src/services/SkillLearnService';
+import { SkillLearnService } from '../../src/services/character/SkillLearnService';
 import { Character } from '../../src/types/battle';
-import { Skill } from '../../src/types/skill';
-import { DefaultStats } from '../../src/types/stats';
+import { Skill } from '../../src/types/character/skill';
+import { DefaultStats } from '../../src/types/character/stats';
 
 describe('SkillLearnService', () => {
   let service: SkillLearnService;

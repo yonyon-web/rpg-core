@@ -2,7 +2,7 @@
  * EnhanceService テスト
  */
 
-import { EnhanceService, ResourceManager } from '../../src/services/EnhanceService';
+import { EnhanceService, ResourceManager } from '../../src/services/craft/EnhanceService';
 import type { EnhancableEquipment } from '../../src/types/craft';
 
 describe('EnhanceService', () => {

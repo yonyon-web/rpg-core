@@ -2,9 +2,9 @@
  * Tests for EnemyAIService
  */
 
-import { EnemyAIService } from '../../src/services/EnemyAIService';
+import { EnemyAIService } from '../../src/services/enemy/EnemyAIService';
 import { Enemy, Character, BattleState } from '../../src/types';
-import { Skill } from '../../src/types/skill';
+import { Skill } from '../../src/types/character/skill';
 
 describe('EnemyAIService', () => {
   let aiService: EnemyAIService;

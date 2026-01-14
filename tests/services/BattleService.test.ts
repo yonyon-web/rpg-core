@@ -2,9 +2,9 @@
  * Tests for BattleService
  */
 
-import { BattleService } from '../../src/services/BattleService';
+import { BattleService } from '../../src/services/battle/BattleService';
 import { Character, Enemy } from '../../src/types';
-import { Skill } from '../../src/types/skill';
+import { Skill } from '../../src/types/character/skill';
 import { defaultGameConfig } from '../../src/config';
 
 describe('BattleService', () => {

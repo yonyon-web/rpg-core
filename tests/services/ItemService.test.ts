@@ -3,10 +3,10 @@
  * アイテム使用サービスのテスト
  */
 
-import { ItemService } from '../../src/services/ItemService';
+import { ItemService } from '../../src/services/item/ItemService';
 import { Character } from '../../src/types/battle';
 import { ConsumableItem } from '../../src/types/item';
-import { DefaultStats } from '../../src/types/stats';
+import { DefaultStats } from '../../src/types/character/stats';
 
 describe('ItemService', () => {
   let service: ItemService;

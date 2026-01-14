@@ -3,7 +3,7 @@
  * - カスタムスキルタイプに対応したダメージ計算をテスト
  */
 
-import { calculateDamage } from '../../src/combat/damage';
+import { calculateDamage } from '../../src/core/combat/damage';
 import { Combatant, Skill, GameConfig, DefaultStats, CustomFormulas } from '../../src/types';
 
 describe('Generic Damage Calculation', () => {

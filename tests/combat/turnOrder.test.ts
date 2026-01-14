@@ -2,7 +2,7 @@
  * Tests for turn order calculation module
  */
 
-import { calculateTurnOrder, checkPreemptiveStrike } from '../../src/combat/turnOrder';
+import { calculateTurnOrder, checkPreemptiveStrike } from '../../src/core/combat/turnOrder';
 import { Combatant } from '../../src/types';
 import { defaultGameConfig } from '../../src/config';
 

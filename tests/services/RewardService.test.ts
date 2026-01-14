@@ -3,9 +3,9 @@
  * TDD アプローチで実装
  */
 
-import { RewardService } from '../../src/services/RewardService';
-import type { Combatant } from '../../src/types/combatant';
-import type { DefaultStats } from '../../src/types/stats';
+import { RewardService } from '../../src/services/system/RewardService';
+import type { Combatant } from '../../src/types/battle/combatant';
+import type { DefaultStats } from '../../src/types/character/stats';
 import type { BattleRewards } from '../../src/types/battle';
 
 // テスト用キャラクター作成ヘルパー

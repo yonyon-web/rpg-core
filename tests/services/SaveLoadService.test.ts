@@ -2,8 +2,8 @@
  * SaveLoadService テスト
  */
 
-import { SaveLoadService } from '../../src/services/SaveLoadService';
-import type { GameState } from '../../src/types/save';
+import { SaveLoadService } from '../../src/services/system/SaveLoadService';
+import type { GameState } from '../../src/types/system/save';
 
 describe('SaveLoadService', () => {
   let service: SaveLoadService;

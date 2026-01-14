@@ -2,9 +2,9 @@
  * Tests for CommandService
  */
 
-import { CommandService } from '../../src/services/CommandService';
+import { CommandService } from '../../src/services/battle/CommandService';
 import { Character, Enemy, BattleState } from '../../src/types';
-import { Skill } from '../../src/types/skill';
+import { Skill } from '../../src/types/character/skill';
 
 describe('CommandService', () => {
   let commandService: CommandService;

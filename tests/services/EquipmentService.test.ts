@@ -3,10 +3,10 @@
  * TDD アプローチで実装
  */
 
-import { EquipmentService } from '../../src/services/EquipmentService';
-import type { Combatant } from '../../src/types/combatant';
-import type { DefaultStats } from '../../src/types/stats';
-import type { Equipment } from '../../src/types/equipment';
+import { EquipmentService } from '../../src/services/item/EquipmentService';
+import type { Combatant } from '../../src/types/battle/combatant';
+import type { DefaultStats } from '../../src/types/character/stats';
+import type { Equipment } from '../../src/types/item/equipment';
 
 // テスト用キャラクター作成ヘルパー
 function createCharacter(id: string, level: number = 1): Combatant<DefaultStats> {
