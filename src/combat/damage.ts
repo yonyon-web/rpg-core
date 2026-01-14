@@ -4,6 +4,7 @@
 
 import { Combatant, Skill, GameConfig, DamageResult, DefaultElement, DefaultElementResistance, DefaultStats } from '../types';
 import { calculateHitRate, checkHit, calculateCriticalRate, checkCritical } from './accuracy';
+import { HEAL_VARIANCE, MIN_DAMAGE } from './constants';
 
 /**
  * 命中判定とクリティカル判定を実行
@@ -75,7 +76,7 @@ function applyDamageModifiers(
   appliedModifiers.push({ source: 'variance', multiplier: variance });
   
   // 最低ダメージを1に設定
-  finalDamage = Math.max(1, Math.floor(finalDamage));
+  finalDamage = Math.max(MIN_DAMAGE, Math.floor(finalDamage));
   
   return { finalDamage, elementalModifier, variance, appliedModifiers };
 }
@@ -291,10 +292,10 @@ export function calculateHealAmount(
   }
 
   // 回復量に小さな分散を適用
-  const variance = 1.0 + (Math.random() * 2 - 1) * 0.05; // ±5%の分散
+  const variance = 1.0 + (Math.random() * 2 - 1) * HEAL_VARIANCE;
 
   // 最終回復量を計算
-  const healAmount = Math.max(1, Math.floor(baseHeal * variance));
+  const healAmount = Math.max(MIN_DAMAGE, Math.floor(baseHeal * variance));
 
   return healAmount;
 }

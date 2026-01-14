@@ -15,7 +15,16 @@ import {
 import { Skill } from '../types/skill';
 import { calculateDamage } from '../combat/damage';
 import { checkSkillCost, consumeSkillCost } from '../character/skillCost';
-import { BASIC_ATTACK_SKILL } from '../combat/constants';
+import { 
+  BASIC_ATTACK_SKILL,
+  DEFEND_POWER_MULTIPLIER,
+  DEFEND_DURATION,
+  DEFEND_MAX_STACK,
+  MAX_ESCAPE_RATE,
+  MIN_ESCAPE_RATE,
+  BASE_ESCAPE_RATE,
+  ESCAPE_SPEED_FACTOR
+} from '../combat/constants';
 
 /**
  * BattleActionExecutorクラス
@@ -170,11 +179,11 @@ export class BattleActionExecutor {
       category: 'buff' as const,
       name: '防御',
       description: '防御力が上昇している',
-      power: 2.0, // 防御力2倍
-      duration: 1, // 次のターン開始まで
-      maxDuration: 1,
+      power: DEFEND_POWER_MULTIPLIER,
+      duration: DEFEND_DURATION,
+      maxDuration: DEFEND_DURATION,
       stackCount: 1,
-      maxStack: 1,
+      maxStack: DEFEND_MAX_STACK,
       canBeDispelled: true,
       appliedAt: Date.now(),
       source: actor.id
@@ -193,11 +202,17 @@ export class BattleActionExecutor {
    * 逃走を試みる
    */
   async attemptEscape(battleState: BattleState): Promise<EscapeResult> {
-    // 逃走成功率を計算（簡易版）
+    // 逃走成功率を計算
     const partySpeed = battleState.playerParty.reduce((sum, c) => sum + c.stats.speed, 0) / battleState.playerParty.length;
     const enemySpeed = battleState.enemyGroup.reduce((sum, e) => sum + e.stats.speed, 0) / battleState.enemyGroup.length;
     
-    const escapeRate = Math.min(0.95, Math.max(0.05, 0.5 + (partySpeed - enemySpeed) / 100));
+    const escapeRate = Math.min(
+      MAX_ESCAPE_RATE,
+      Math.max(
+        MIN_ESCAPE_RATE,
+        BASE_ESCAPE_RATE + (partySpeed - enemySpeed) / ESCAPE_SPEED_FACTOR
+      )
+    );
     const success = Math.random() < escapeRate;
 
     if (success) {

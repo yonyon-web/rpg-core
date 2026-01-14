@@ -5,6 +5,7 @@
  * BattleServiceと連携して戦闘の進行を管理する
  */
 
+import { BaseController } from '../core/BaseController';
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type { 
@@ -41,9 +42,7 @@ import type { Combatant } from '../../types/combatant';
  * await controller.startBattle(party, enemies);
  * ```
  */
-export class BattleController {
-  private state: ObservableState<BattleUIState>;
-  private events: EventEmitter<BattleEvents>;
+export class BattleController extends BaseController<BattleUIState, BattleEvents> {
   private service: BattleService;
   private messageIdCounter: number = 0;
   private animationIdCounter: number = 0;
@@ -54,6 +53,7 @@ export class BattleController {
    * @param service - BattleService インスタンス
    */
   constructor(service: BattleService) {
+    super();
     this.service = service;
     
     // 初期状態を設定
@@ -73,39 +73,6 @@ export class BattleController {
     });
     
     this.events = new EventEmitter<BattleEvents>();
-  }
-
-  /**
-   * 状態を購読
-   * 
-   * @param listener - 状態変更時に呼ばれるリスナー
-   * @returns 購読解除関数
-   */
-  subscribe(listener: (state: BattleUIState) => void): () => void {
-    return this.state.subscribe(listener);
-  }
-
-  /**
-   * イベントを購読
-   * 
-   * @param event - イベント名
-   * @param listener - イベント発火時に呼ばれるリスナー
-   * @returns 購読解除関数
-   */
-  on<K extends keyof BattleEvents>(
-    event: K,
-    listener: (data: BattleEvents[K]) => void
-  ): () => void {
-    return this.events.on(event, listener);
-  }
-
-  /**
-   * 現在の状態を取得
-   * 
-   * @returns 現在の戦闘UI状態
-   */
-  getState(): BattleUIState {
-    return this.state.getState();
   }
 
   /**
