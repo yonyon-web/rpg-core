@@ -12,6 +12,21 @@
   - Headless UI層の実装状況
   - 各フェーズの完了状況
 
+- **[IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)** - 実装計画書
+  - コードレビューで特定された問題の修正計画
+  - 段階的な実装の進捗追跡
+
+### コード品質管理
+
+- **[CODE_REVIEW_FINDINGS.md](./CODE_REVIEW_FINDINGS.md)** - コードレビュー結果
+  - SOLID原則に基づく問題点の特定
+  - 重要度別の問題リスト
+  - 推奨される修正方法
+
+- **[CONTROLLER_REVIEW_STATUS.md](./CONTROLLER_REVIEW_STATUS.md)** - コントローラー設計レビュー状況
+  - 各コントローラーのレビュー状態
+  - レビュー観点とチェックリスト
+
 ### 課題管理
 
 - **[次に考えるべき課題.md](./次に考えるべき課題.md)** - 今後の課題と改善項目
