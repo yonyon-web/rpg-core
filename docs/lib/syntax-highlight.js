@@ -18,8 +18,8 @@
         // Comments
         const comments = /(\/\/.*$|\/\*[\s\S]*?\*\/)/gm;
         
-        // Numbers
-        const numbers = /\b(\d+\.?\d*)\b/g;
+        // Numbers (integers, decimals, and numbers starting with decimal point)
+        const numbers = /\b(\d+(\.\d+)?)\b|\.(\d+)\b/g;
         
         // Functions (excluding keywords) - use negative lookahead to exclude keywords
         const keywordPattern = keywordList.join('|');
