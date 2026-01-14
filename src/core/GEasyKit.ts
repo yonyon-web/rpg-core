@@ -22,6 +22,7 @@
 import { ServiceContainer } from './ServiceContainer';
 import { defaultGameConfig } from '../config/defaultConfig';
 import { EventBus } from './EventBus';
+import { BuilderRegistry } from '../utils/builders/BuilderRegistry';
 
 // Services
 import { BattleService } from '../services/battle/BattleService';
@@ -90,6 +91,7 @@ export class GEasyKit {
   private _container: ServiceContainer;
   private _config: GameConfig;
   private _eventBus?: EventBus;
+  private _builderRegistry: BuilderRegistry;
 
   /**
    * コンストラクタ
@@ -99,6 +101,7 @@ export class GEasyKit {
   constructor(options: GEasyKitOptions = {}) {
     this._container = new ServiceContainer();
     this._config = options.config || defaultGameConfig;
+    this._builderRegistry = new BuilderRegistry();
     
     // EventBusの初期化
     if (options.useEventBus !== false) {
@@ -295,5 +298,28 @@ export class GEasyKit {
    */
   get container(): ServiceContainer {
     return this._container;
+  }
+
+  /**
+   * BuilderRegistryにアクセス
+   * 
+   * Builderで作成したエンティティが自動的に登録されます。
+   * 
+   * @example
+   * ```typescript
+   * const kit = new GEasyKit();
+   * 
+   * // Builderでエンティティを作成すると自動登録される
+   * const fireball = new SkillBuilder('fireball', 'Fireball', kit.registry)
+   *   .type('magic')
+   *   .power(80)
+   *   .build(); // build時に自動的にregistryに登録
+   * 
+   * // 名前でIDを取得できる
+   * const fireballId = kit.registry.getSkillId('Fireball');
+   * ```
+   */
+  get registry(): BuilderRegistry {
+    return this._builderRegistry;
   }
 }

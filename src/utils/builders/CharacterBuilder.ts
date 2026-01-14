@@ -29,11 +29,13 @@ import type { Character } from '../../types/battle/battle';
 import type { DefaultStats } from '../../types/character/stats';
 import type { LearnedSkill } from '../../types/character/skill';
 import type { StatusEffect } from '../../types/status/statusEffect';
+import type { BuilderRegistry } from './BuilderRegistry';
 
 export class CharacterBuilder {
   private character: Partial<Character>;
+  private registry?: BuilderRegistry;
 
-  constructor(id: string, name: string) {
+  constructor(id: string, name: string, registry?: BuilderRegistry) {
     // Initialize with default values
     this.character = {
       id,
@@ -58,6 +60,7 @@ export class CharacterBuilder {
       position: 0,
       learnedSkills: [],
     };
+    this.registry = registry;
   }
 
   /**
@@ -226,6 +229,11 @@ export class CharacterBuilder {
    * Build and return the Character
    */
   build(): Character {
-    return this.character as Character;
+    const character = this.character as Character;
+    // Auto-register if registry is provided
+    if (this.registry) {
+      this.registry.registerCharacter(character);
+    }
+    return character;
   }
 }

@@ -29,11 +29,13 @@
 
 import type { Skill, BaseTargetType, SkillCost, DefaultSkillType, DefaultTargetType } from '../../types/character/skill';
 import type { UniqueId, DefaultElement } from '../../types/common';
+import type { BuilderRegistry } from './BuilderRegistry';
 
 export class SkillBuilder {
   private skill: Partial<Skill>;
+  private registry?: BuilderRegistry;
 
-  constructor(id: UniqueId, name: string) {
+  constructor(id: UniqueId, name: string, registry?: BuilderRegistry) {
     // Initialize with default values
     this.skill = {
       id,
@@ -48,6 +50,7 @@ export class SkillBuilder {
       cost: {},
       element: 'none',
     };
+    this.registry = registry;
   }
 
   /**
@@ -148,6 +151,11 @@ export class SkillBuilder {
    * Build and return the Skill
    */
   build(): Skill {
-    return this.skill as Skill;
+    const skill = this.skill as Skill;
+    // Auto-register if registry is provided
+    if (this.registry) {
+      this.registry.registerSkill(skill);
+    }
+    return skill;
   }
 }

@@ -31,8 +31,9 @@ import type { BuilderRegistry } from './BuilderRegistry';
 
 export class JobBuilder {
   private job: Partial<Job>;
+  private registry?: BuilderRegistry;
 
-  constructor(id: UniqueId, name: string) {
+  constructor(id: UniqueId, name: string, registry?: BuilderRegistry) {
     // Initialize with default values
     this.job = {
       id,
@@ -40,6 +41,7 @@ export class JobBuilder {
       description: '',
       statModifiers: {},
     };
+    this.registry = registry;
   }
 
   /**
@@ -185,6 +187,11 @@ export class JobBuilder {
    * Build and return the Job
    */
   build(): Job {
-    return this.job as Job;
+    const job = this.job as Job;
+    // Auto-register if registry is provided
+    if (this.registry) {
+      this.registry.registerJob(job);
+    }
+    return job;
   }
 }

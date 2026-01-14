@@ -29,11 +29,13 @@
 
 import type { Item, BaseItemType } from '../../types/item/item';
 import type { UniqueId } from '../../types/common';
+import type { BuilderRegistry } from './BuilderRegistry';
 
 export class ItemBuilder<TItemType extends BaseItemType = string> {
   private item: Partial<Item<TItemType>>;
+  private registry?: BuilderRegistry;
 
-  constructor(id: UniqueId, name: string) {
+  constructor(id: UniqueId, name: string, registry?: BuilderRegistry) {
     // Initialize with default values
     this.item = {
       id,
@@ -48,6 +50,7 @@ export class ItemBuilder<TItemType extends BaseItemType = string> {
       usableInBattle: false,
       usableOutOfBattle: false,
     };
+    this.registry = registry;
   }
 
   /**
@@ -136,6 +139,11 @@ export class ItemBuilder<TItemType extends BaseItemType = string> {
    * Build and return the Item
    */
   build(): Item<TItemType> {
-    return this.item as Item<TItemType>;
+    const item = this.item as Item<TItemType>;
+    // Auto-register if registry is provided
+    if (this.registry) {
+      this.registry.registerItem(item);
+    }
+    return item;
   }
 }

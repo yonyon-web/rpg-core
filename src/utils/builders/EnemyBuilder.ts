@@ -38,8 +38,9 @@ import type { BuilderRegistry } from './BuilderRegistry';
 
 export class EnemyBuilder {
   private enemy: Partial<Enemy>;
+  private registry?: BuilderRegistry;
 
-  constructor(id: string, name: string, enemyType: string) {
+  constructor(id: string, name: string, enemyType: string, registry?: BuilderRegistry) {
     // Initialize with default values
     this.enemy = {
       id,
@@ -69,6 +70,7 @@ export class EnemyBuilder {
       moneyReward: 5,
       dropItems: [],
     };
+    this.registry = registry;
   }
 
   /**
@@ -287,6 +289,11 @@ export class EnemyBuilder {
    * Build and return the Enemy
    */
   build(): Enemy {
-    return this.enemy as Enemy;
+    const enemy = this.enemy as Enemy;
+    // Auto-register if registry is provided
+    if (this.registry) {
+      this.registry.registerEnemy(enemy);
+    }
+    return enemy;
   }
 }

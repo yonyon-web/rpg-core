@@ -29,7 +29,7 @@ import type { UniqueId } from '../../types/common';
 import type { Job } from '../../types/character/job';
 import type { Skill } from '../../types/character/skill';
 import type { Item, BaseItemType } from '../../types/item/item';
-import type { Equipment } from '../../types/item/equipment';
+import type { Equipment, BaseEquipmentType } from '../../types/item/equipment';
 import type { Character } from '../../types/battle/battle';
 import type { Enemy } from '../../types/battle/battle';
 
@@ -37,7 +37,7 @@ export class BuilderRegistry {
   private jobs: Map<string, Job> = new Map();
   private skills: Map<string, Skill> = new Map();
   private items: Map<string, Item<any>> = new Map();
-  private equipment: Map<string, Equipment> = new Map();
+  private equipment: Map<string, Equipment<any, any>> = new Map();
   private characters: Map<string, Character> = new Map();
   private enemies: Map<string, Enemy> = new Map();
 
@@ -68,7 +68,7 @@ export class BuilderRegistry {
   /**
    * Register equipment
    */
-  registerEquipment(equipment: Equipment): this {
+  registerEquipment<TEquipType extends BaseEquipmentType = string>(equipment: Equipment<any, TEquipType>): this {
     this.equipment.set(equipment.name, equipment);
     return this;
   }
@@ -155,8 +155,8 @@ export class BuilderRegistry {
   /**
    * Get equipment by name
    */
-  getEquipment(name: string): Equipment | undefined {
-    return this.equipment.get(name);
+  getEquipment<TEquipType extends BaseEquipmentType = string>(name: string): Equipment<any, TEquipType> | undefined {
+    return this.equipment.get(name) as Equipment<any, TEquipType> | undefined;
   }
 
   /**

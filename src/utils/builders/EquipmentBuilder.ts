@@ -30,11 +30,13 @@
 import type { Equipment, BaseEquipmentType } from '../../types/item/equipment';
 import type { DefaultStats } from '../../types/character/stats';
 import type { UniqueId } from '../../types/common';
+import type { BuilderRegistry } from './BuilderRegistry';
 
 export class EquipmentBuilder<TEquipType extends BaseEquipmentType = string> {
   private equipment: Partial<Equipment<DefaultStats, TEquipType>>;
+  private registry?: BuilderRegistry;
 
-  constructor(id: UniqueId, name: string) {
+  constructor(id: UniqueId, name: string, registry?: BuilderRegistry) {
     // Initialize with default values
     this.equipment = {
       id,
@@ -43,6 +45,7 @@ export class EquipmentBuilder<TEquipType extends BaseEquipmentType = string> {
       levelRequirement: 1,
       statModifiers: {},
     };
+    this.registry = registry;
   }
 
   /**
@@ -92,6 +95,11 @@ export class EquipmentBuilder<TEquipType extends BaseEquipmentType = string> {
    * Build and return the Equipment
    */
   build(): Equipment<DefaultStats, TEquipType> {
-    return this.equipment as Equipment<DefaultStats, TEquipType>;
+    const equipment = this.equipment as Equipment<DefaultStats, TEquipType>;
+    // Auto-register if registry is provided
+    if (this.registry) {
+      this.registry.registerEquipment(equipment);
+    }
+    return equipment;
   }
 }
