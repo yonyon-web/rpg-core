@@ -5,5 +5,5 @@
  */
 
 export { ObservableState, type Listener } from './ObservableState';
-export { EventEmitter, type EventMap, type EventListener } from './EventEmitter';
+export { EventEmitter, type EventMap } from './EventEmitter';
 export { BaseController } from './BaseController';

@@ -1,4 +1,4 @@
-import type { Equipment } from '../../types/equipment';
+import type { EnhancableEquipment } from '../../types/craft';
 import type { LoadingState, ErrorState } from './common';
 
 /**
@@ -8,9 +8,9 @@ export interface EnhanceUIState<TStats> {
   /** 現在のステージ */
   stage: EnhanceUIStage;
   /** 強化可能な装備一覧 */
-  availableEquipment: Equipment<TStats>[];
+  availableEquipment: EnhancableEquipment[];
   /** 選択された装備 */
-  selectedEquipment: Equipment<TStats> | null;
+  selectedEquipment: EnhancableEquipment | null;
   /** 強化に使用する素材 */
   selectedMaterials: Array<{ itemId: string; quantity: number }>;
   /** 強化レベル */
@@ -69,17 +69,17 @@ export interface EnhanceStatsPreview<TStats> {
  */
 export interface EnhanceEvents<TStats> {
   /** 強化開始 */
-  'enhance-started': { equipment: Equipment<TStats>[] };
+  'enhance-started': { equipment: EnhancableEquipment[] };
   /** 装備選択 */
-  'equipment-selected': { equipment: Equipment<TStats> };
+  'equipment-selected': { equipment: EnhancableEquipment };
   /** 素材選択 */
   'material-selected': { itemId: string; quantity: number };
   /** 強化実行 */
-  'enhance-executed': { equipment: Equipment<TStats>; success: boolean; newLevel: number };
+  'enhance-executed': { equipment: EnhancableEquipment; success: boolean; newLevel: number };
   /** 強化成功 */
-  'enhance-succeeded': { equipment: Equipment<TStats>; newLevel: number; stats: Partial<TStats> };
+  'enhance-succeeded': { equipment: EnhancableEquipment; newLevel: number; stats: Partial<TStats> };
   /** 強化失敗 */
-  'enhance-failed': { equipment: Equipment<TStats>; reason: string };
+  'enhance-failed': { equipment: EnhancableEquipment; reason: string };
   /** ステータスプレビュー */
   'stats-previewed': { preview: EnhanceStatsPreview<TStats> };
   /** フィルタ変更 */

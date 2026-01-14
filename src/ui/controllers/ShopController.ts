@@ -1,11 +1,12 @@
 import type { ShopService } from '../../services/ShopService';
 import type { InventoryService } from '../../services/InventoryService';
+import type { Character } from '../../types/battle';
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type {
   ShopUIState,
   ShopEvents,
-  ShopItem,
+  ShopUIItem,
   ShopUIStage,
   ShopMode,
   ShopFilterType,
@@ -15,15 +16,14 @@ import type {
 /**
  * ショップコントローラー
  * アイテムの購入・売却UIを管理します
- * 
- * Note: InventoryServiceとの連携はUI表示用のプレビューのみです。
- * 実際の取引処理（在庫管理、所持金変更）はShopService内で完結します。
  */
 export class ShopController {
   private state: ObservableState<ShopUIState>;
   private events: EventEmitter<ShopEvents>;
   private service: ShopService;
   private inventoryService: InventoryService;
+  private character: Character | null = null;
+  private shopItemIndices: Map<string, number> = new Map(); // Maps item ID to shop index
 
   constructor(service: ShopService, inventoryService: InventoryService) {
     this.service = service;
@@ -68,11 +68,52 @@ export class ShopController {
   }
 
   /**
+   * キャラクターを設定
+   * ショップの取引に使用されます
+   * 
+   * @param character - キャラクター。nullの場合はデフォルトキャラクターを使用（制限なしゲーム用）
+   */
+  setCharacter(character: Character | null): void {
+    this.character = character;
+  }
+
+  /**
+   * 取引実行用のキャラクターを取得
+   * キャラクターが設定されていない場合は、制限チェックをパスするダミーキャラクターを返す
+   */
+  private getCharacterForTrade(): Character {
+    if (this.character) {
+      return this.character;
+    }
+    
+    // 制限のないゲーム用のデフォルトキャラクター
+    // すべての要件チェックをパスする最大レベルのキャラクター
+    return {
+      id: 'default-character',
+      name: 'Player',
+      level: 999,
+      job: '',
+      learnedSkills: [],
+      stats: {} as any,
+      statusEffects: [],
+      currentHp: 1,
+      currentMp: 0,
+      position: 0,
+    };
+  }
+
+  /**
    * ショップ開始
    */
-  startShopping(items: ShopItem[], playerMoney: number): void {
+  startShopping(items: ShopUIItem[], playerMoney: number): void {
     const totalItems = items.length;
     const perPage = this.state.getState().pagination.perPage;
+
+    // Build index mapping
+    this.shopItemIndices.clear();
+    items.forEach((item, index) => {
+      this.shopItemIndices.set(item.item.id, index);
+    });
 
     this.state.setState({
       stage: 'browsing',
@@ -113,7 +154,7 @@ export class ShopController {
   /**
    * アイテムを選択
    */
-  selectItem(item: ShopItem): void {
+  selectItem(item: ShopUIItem): void {
     const currentState = this.state.getState();
     const price = currentState.mode === 'buy' ? item.buyPrice : item.sellPrice;
 
@@ -172,23 +213,34 @@ export class ShopController {
 
     try {
       let result;
+      // Use getCharacterForTrade() to support games without character restrictions
+      const character = this.getCharacterForTrade();
+      
       if (currentState.mode === 'buy') {
+        // Get the shop item index for buyItem
+        const shopItemIndex = this.shopItemIndices.get(currentState.selectedItem.item.id);
+        if (shopItemIndex === undefined) {
+          throw new Error('Shop item index not found');
+        }
+        
         result = this.service.buyItem(
-          currentState.selectedItem.item.id,
+          character,
+          shopItemIndex,
           currentState.quantity
         );
       } else {
         result = this.service.sellItem(
+          character,
           currentState.selectedItem.item.id,
           currentState.quantity
         );
       }
 
       if (result.success) {
-        // プレイヤーの所持金を更新
+        // Update player money based on transaction
         const newMoney = currentState.mode === 'buy'
-          ? currentState.playerMoney - currentState.totalPrice
-          : currentState.playerMoney + currentState.totalPrice;
+          ? currentState.playerMoney - (result.moneySpent || 0)
+          : currentState.playerMoney + (result.moneyGained || 0);
 
         this.state.setState({
           stage: 'completed',
@@ -200,13 +252,13 @@ export class ShopController {
           this.events.emit('item-bought', {
             item: currentState.selectedItem,
             quantity: currentState.quantity,
-            totalPrice: currentState.totalPrice,
+            totalPrice: result.moneySpent || 0,
           });
         } else {
           this.events.emit('item-sold', {
             item: currentState.selectedItem,
             quantity: currentState.quantity,
-            totalPrice: currentState.totalPrice,
+            totalPrice: result.moneyGained || 0,
           });
         }
 

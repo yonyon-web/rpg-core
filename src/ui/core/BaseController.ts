@@ -6,7 +6,7 @@
  */
 
 import { ObservableState } from './ObservableState';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter, EventMap } from './EventEmitter';
 
 /**
  * BaseController 抽象クラス
@@ -34,7 +34,7 @@ import { EventEmitter } from './EventEmitter';
  * }
  * ```
  */
-export abstract class BaseController<TState, TEvents> {
+export abstract class BaseController<TState, TEvents extends EventMap> {
   protected state!: ObservableState<TState>;
   protected events!: EventEmitter<TEvents>;
   

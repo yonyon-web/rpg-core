@@ -1,6 +1,9 @@
 import type { CraftService } from '../../services/CraftService';
+import type { InventoryService } from '../../services/InventoryService';
 import type { Item } from '../../types/item';
 import type { CraftRecipe } from '../../types/craft';
+import type { Character } from '../../types/battle';
+import type { InventoryItem } from '../../craft/synthesis';
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type {
@@ -19,9 +22,12 @@ export class CraftController {
   private state: ObservableState<CraftUIState>;
   private events: EventEmitter<CraftEvents>;
   private service: CraftService;
+  private inventoryService: InventoryService;
+  private character: Character | null = null;
 
-  constructor(service: CraftService) {
+  constructor(service: CraftService, inventoryService: InventoryService) {
     this.service = service;
+    this.inventoryService = inventoryService;
     
     this.state = new ObservableState<CraftUIState>({
       stage: 'browsing',
@@ -55,6 +61,42 @@ export class CraftController {
     listener: (data: CraftEvents[K]) => void
   ): () => void {
     return this.events.on(event, listener);
+  }
+
+  /**
+   * キャラクターを設定
+   * クラフト要件チェックに使用されます
+   * 
+   * @param character - キャラクター。nullの場合はデフォルトキャラクターを使用（制限なしゲーム用）
+   */
+  setCharacter(character: Character | null): void {
+    this.character = character;
+    this.checkCraftability();
+  }
+
+  /**
+   * クラフト実行用のキャラクターを取得
+   * キャラクターが設定されていない場合は、制限チェックをパスするダミーキャラクターを返す
+   */
+  private getCharacterForCraft(): Character {
+    if (this.character) {
+      return this.character;
+    }
+    
+    // 制限のないゲーム用のデフォルトキャラクター
+    // すべての要件チェックをパスする最大レベルのキャラクター
+    return {
+      id: 'default-character',
+      name: 'Player',
+      level: 999,
+      job: '',
+      learnedSkills: [],
+      stats: {} as any,
+      statusEffects: [],
+      currentHp: 1,
+      currentMp: 0,
+      position: 0,
+    };
   }
 
   /**
@@ -123,18 +165,35 @@ export class CraftController {
     });
 
     try {
-      const result = this.service.craft(currentState.selectedRecipe.id, currentState.quantity);
+      const recipe = this.service.getRecipe(currentState.selectedRecipe.id);
+      if (!recipe) {
+        throw new Error('Recipe not found');
+      }
+      
+      // Get inventory items in the format expected by CraftService
+      const inventoryItems = this.getInventoryItems();
+      
+      // Execute craft with actual inventory and character
+      // Use getCharacterForCraft() to support games without character restrictions
+      const result = this.service.craft(recipe, inventoryItems, this.getCharacterForCraft());
 
-      if (result.success && result.items) {
+      if (result.success && result.item) {
         this.state.setState({
           stage: 'completed',
           loading: { isLoading: false },
         });
 
+        // Convert CraftedItemInfo to Item for the event
+        const resultItems = result.item ? [{
+          id: result.item.id,
+          name: result.item.name,
+          type: result.item.type,
+        } as any] : [];
+
         this.events.emit('craft-executed', {
           recipe: currentState.selectedRecipe,
           quantity: currentState.quantity,
-          result: result.items,
+          result: resultItems,
         });
 
         return true;
@@ -142,12 +201,12 @@ export class CraftController {
         this.state.setState({
           stage: 'selected',
           loading: { isLoading: false },
-          error: { hasError: true, errorMessage: result.failureReason },
+          error: { hasError: true, errorMessage: result.message },
         });
 
         this.events.emit('craft-failed', {
           recipe: currentState.selectedRecipe,
-          reason: result.failureReason || 'クラフトに失敗しました',
+          reason: result.message || 'クラフトに失敗しました',
         });
 
         return false;
@@ -210,30 +269,33 @@ export class CraftController {
       return;
     }
 
-    const inventory = this.service.getInventory();
-    const recipe = currentState.selectedRecipe;
+    // Get inventory items for checking
+    const inventoryItems = this.getInventoryItems();
+    
+    // Check if recipe can be crafted
+    // Use getCharacterForCraft() to support games without character restrictions
+    const recipeInfo = this.service.canCraft(
+      currentState.selectedRecipe,
+      inventoryItems,
+      this.getCharacterForCraft()
+    );
+
+    // Convert missing materials to UI format
     const missing: Array<{ itemId: string; required: number; current: number }> = [];
-
-    let canCraft = true;
-
-    // 材料チェック
-    for (const material of recipe.materials) {
-      const required = material.quantity * currentState.quantity;
-      const inventorySlot = inventory.slots.find(s => s.item.id === material.itemId);
-      const current = inventorySlot?.quantity || 0;
-
-      if (current < required) {
-        canCraft = false;
+    if (recipeInfo.missingMaterials) {
+      for (const material of recipeInfo.missingMaterials) {
+        const inventoryItem = inventoryItems.find(item => item.itemId === material.itemId);
+        const current = inventoryItem?.quantity || 0;
         missing.push({
           itemId: material.itemId,
-          required,
+          required: material.quantity + current,
           current,
         });
       }
     }
 
     this.state.setState({
-      canCraft,
+      canCraft: recipeInfo.canCraft,
       missingMaterials: missing,
     });
   }
@@ -260,10 +322,14 @@ export class CraftController {
           comparison = a.name.localeCompare(b.name);
           break;
         case 'level':
-          comparison = (a.level || 0) - (b.level || 0);
+          // CraftRecipe doesn't have a level property
+          // Sort by recipe ID as fallback
+          comparison = a.id.toString().localeCompare(b.id.toString());
           break;
         case 'category':
-          comparison = (a.category || '').localeCompare(b.category || '');
+          // CraftRecipe doesn't have a category property
+          // Sort by recipe ID as fallback
+          comparison = a.id.toString().localeCompare(b.id.toString());
           break;
       }
       return currentState.sortOrder === 'asc' ? comparison : -comparison;
@@ -276,16 +342,21 @@ export class CraftController {
    * レシピがクラフト可能かチェック
    */
   private canCraftRecipe(recipe: CraftRecipe): boolean {
-    const inventory = this.service.getInventory();
-    
-    for (const material of recipe.materials) {
-      const inventorySlot = inventory.slots.find(s => s.item.id === material.itemId);
-      const current = inventorySlot?.quantity || 0;
-      if (current < material.quantity) {
-        return false;
-      }
-    }
+    const inventoryItems = this.getInventoryItems();
+    // Use getCharacterForCraft() to support games without character restrictions
+    const recipeInfo = this.service.canCraft(recipe, inventoryItems, this.getCharacterForCraft());
+    return recipeInfo.canCraft;
+  }
 
-    return true;
+  /**
+   * インベントリアイテムを取得
+   * InventoryService から CraftService が期待する形式に変換
+   */
+  private getInventoryItems(): InventoryItem[] {
+    const inventory = this.inventoryService.getInventory();
+    return inventory.slots.map(slot => ({
+      itemId: slot.item.id,
+      quantity: slot.quantity
+    }));
   }
 }
