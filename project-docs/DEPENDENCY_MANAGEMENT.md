@@ -165,10 +165,10 @@ export const RPGProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 // カスタムフック
 export const useRPG = () => {
   const kit = useContext(RPGContext);
-  if (!rpg) {
+  if (!kit) {
     throw new Error('useRPG must be used within RPGProvider');
   }
-  return rpg;
+  return kit;
 };
 
 // コンポーネント内での使用
