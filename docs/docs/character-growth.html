@@ -65,60 +65,149 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
-                        <h3>基本的な使い方</h3>
-                        <p>GrowthControllerを使って、成長UIの状態を管理します：</p>
-                        <pre><code>import { GEasyKit } from 'geasy-kit';
-
-const game = new GEasyKit();
-const growthController = game.controllers.growth();
-
-// 成長状態の購読
-growthController.subscribe((state) => {
-  console.log('成長状態:', state);
-  if (state.leveledUp) {
-    showLevelUpAnimation(state);
-  }
-});
-
-// 経験値を付与
-await growthController.gainExperience(characterId, 100);
-
-// レベルアップ処理
-if (growthController.canLevelUp(characterId)) {
-  await growthController.levelUp(characterId);
-}</code></pre>
-
-                        <h3>カスタマイズ方法</h3>
-                        <p>イベントを購読して、カスタム処理を追加できます：</p>
-                        <pre><code>// レベルアップ時のアニメーション
-growthController.on('levelUp', (event) => {
-  showLevelUpEffect(event.character);
-  playLevelUpSound();
-});
-
-// スキル習得時の処理
-growthController.on('skillLearned', (event) => {
-  console.log(\`スキル習得: \${event.skill.name}\`);
-  showSkillLearnedNotification(event.skill);
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>GrowthController</h4>
-                            <pre><code>interface GrowthController {
-  // 状態管理
-  getState(): GrowthState;
-  subscribe(listener: (state: GrowthState) => void): () => void;
-  
-  // 成長制御
-  gainExperience(characterId: string, exp: number): Promise<void>;
-  levelUp(characterId: string): Promise<LevelUpResult>;
-  canLevelUp(characterId: string): boolean;
-  
-  // イベント購読
-  on(event: string, handler: (data: any) => void): () => void;
-}</code></pre>
+                        <h3>成長フロー</h3>
+                        <p>GrowthControllerは以下の流れでキャラクター成長を進行します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">経験値獲得<br/><code>gainExperience()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">レベルアップ判定<br/><code>canLevelUp()</code></div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">可能</span>
+                                        <div class="arrow-down">↓</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">不可</span>
+                                        <div class="arrow-down">→終了</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">レベルアップ実行<br/><code>levelUp()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">ステータス上昇</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">スキル習得判定</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">成長完了</div>
+                            </div>
                         </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>成長の流れを変更するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>gainExperience(characterId, exp)</code> - 経験値を付与</li>
+                            <li><code>levelUp(characterId)</code> - レベルアップを実行</li>
+                            <li><code>canLevelUp(characterId)</code> - レベルアップ可能か判定</li>
+                            <li><code>getExpToNextLevel(characterId)</code> - 次のレベルまでの経験値を取得</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>characterId</td>
+                                    <td>string</td>
+                                    <td>対象キャラクターのID</td>
+                                </tr>
+                                <tr>
+                                    <td>currentLevel</td>
+                                    <td>number</td>
+                                    <td>現在のレベル</td>
+                                </tr>
+                                <tr>
+                                    <td>currentExp</td>
+                                    <td>number</td>
+                                    <td>現在の経験値</td>
+                                </tr>
+                                <tr>
+                                    <td>expToNextLevel</td>
+                                    <td>number</td>
+                                    <td>次のレベルまでの必要経験値</td>
+                                </tr>
+                                <tr>
+                                    <td>leveledUp</td>
+                                    <td>boolean</td>
+                                    <td>レベルアップしたかどうか</td>
+                                </tr>
+                                <tr>
+                                    <td>statGains</td>
+                                    <td>Stats | null</td>
+                                    <td>レベルアップ時のステータス上昇値</td>
+                                </tr>
+                                <tr>
+                                    <td>newSkills</td>
+                                    <td>Skill[]</td>
+                                    <td>習得したスキル一覧</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>gainExperience</td>
+                                    <td>characterId: string, exp: number</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>経験値を付与する</td>
+                                </tr>
+                                <tr>
+                                    <td>levelUp</td>
+                                    <td>characterId: string</td>
+                                    <td>Promise&lt;LevelUpResult&gt;</td>
+                                    <td>レベルアップを実行する</td>
+                                </tr>
+                                <tr>
+                                    <td>canLevelUp</td>
+                                    <td>characterId: string</td>
+                                    <td>boolean</td>
+                                    <td>レベルアップ可能か判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>GrowthState</td>
+                                    <td>現在の成長状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: GrowthState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="service">Service</h2>
                         
@@ -141,48 +230,55 @@ const rewards = await rewardService.grantBattleRewards(party, enemyGroup);
 console.log('獲得経験値:', rewards.exp);
 console.log('獲得お金:', rewards.gold);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>GrowthServiceを拡張して、独自の成長ルールを追加できます：</p>
-                        <pre><code>import { GrowthService } from 'geasy-kit';
-
-class CustomGrowthService extends GrowthService {
-  // カスタム成長計算
-  async levelUp(characterId) {
-    const result = await super.levelUp(characterId);
-    
-    // 特定レベルでボーナス付与
-    if (result.newLevel % 10 === 0) {
-      this.grantMilestoneBonus(characterId, result.newLevel);
-    }
-    
-    return result;
-  }
-  
-  grantMilestoneBonus(characterId, level) {
-    // マイルストーンボーナスの実装
-    console.log(\`レベル\${level}到達ボーナス！\`);
-  }
-}</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>GrowthService</h4>
-                            <pre><code>class GrowthService {
-  // 経験値管理
-  gainExperience(characterId: string, exp: number): Promise<void>;
-  getExpToNextLevel(characterId: string): number;
-  
-  // レベルアップ
-  levelUp(characterId: string): Promise<LevelUpResult>;
-  canLevelUp(characterId: string): boolean;
-  
-  // ステータス計算
-  calculateStatGrowth(character: Character): Stats;
-  
-  // イベント発行
-  emit(event: string, data: any): void;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>gainExperience</td>
+                                    <td>characterId: string, exp: number</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>経験値を付与する</td>
+                                </tr>
+                                <tr>
+                                    <td>getExpToNextLevel</td>
+                                    <td>characterId: string</td>
+                                    <td>number</td>
+                                    <td>次のレベルまでの必要経験値を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>levelUp</td>
+                                    <td>characterId: string</td>
+                                    <td>Promise&lt;LevelUpResult&gt;</td>
+                                    <td>レベルアップを実行する</td>
+                                </tr>
+                                <tr>
+                                    <td>canLevelUp</td>
+                                    <td>characterId: string</td>
+                                    <td>boolean</td>
+                                    <td>レベルアップ可能か判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateStatGrowth</td>
+                                    <td>character: Character</td>
+                                    <td>Stats</td>
+                                    <td>ステータス成長値を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>emit</td>
+                                    <td>event: string, data: any</td>
+                                    <td>void</td>
+                                    <td>イベントを発行する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="core-engine">Core Engine</h2>
                         
@@ -199,63 +295,49 @@ const statGains = engine.calculateStatGrowth(character, newLevel);
 // スキル習得判定
 const newSkills = engine.getLearnableSkills(character, newLevel);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>成長曲線と成長率をカスタマイズできます：</p>
-                        <pre><code>import { GrowthCalculator } from 'geasy-kit';
-
-class CustomGrowthCalculator extends GrowthCalculator {
-  // カスタム経験値テーブル
-  getExpToNextLevel(level) {
-    if (level <= 10) {
-      return level * 100;  // 序盤は緩やか
-    } else if (level <= 50) {
-      return 1000 + (level - 10) * 200;  // 中盤
-    } else {
-      return 9000 + (level - 50) * 500;  // 終盤は急激
-    }
-  }
-  
-  // カスタムステータス成長
-  calculateStatGrowth(character, newLevel) {
-    return {
-      hp: Math.floor(10 + newLevel * 5 + Math.random() * 3),
-      attack: Math.floor(5 + newLevel * 2 + Math.random() * 2),
-      defense: Math.floor(5 + newLevel * 1.5 + Math.random() * 2),
-      speed: Math.floor(5 + newLevel * 1 + Math.random() * 1)
-    };
-  }
-}
-
-const game = new GEasyKit({
-  config: {
-    growthCalculator: new CustomGrowthCalculator()
-  }
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>Core Engine - 成長関連</h4>
-                            <pre><code>interface GrowthCoreEngine {
-  // 経験値計算
-  getExpToNextLevel(level: number): number;
-  calculateExpGain(enemy: Enemy, level: number): number;
-  
-  // ステータス計算
-  calculateStatGrowth(
-    character: Character,
-    newLevel: number
-  ): Stats;
-  
-  // スキル習得
-  getLearnableSkills(
-    character: Character,
-    level: number
-  ): Skill[];
-  
-  // レベルアップ判定
-  checkLevelUp(character: Character): boolean;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>getExpToNextLevel</td>
+                                    <td>level: number</td>
+                                    <td>number</td>
+                                    <td>次のレベルまでの必要経験値を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateExpGain</td>
+                                    <td>enemy: Enemy, level: number</td>
+                                    <td>number</td>
+                                    <td>敵を倒した時の獲得経験値を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateStatGrowth</td>
+                                    <td>character: Character, newLevel: number</td>
+                                    <td>Stats</td>
+                                    <td>レベルアップ時のステータス上昇を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>getLearnableSkills</td>
+                                    <td>character: Character, level: number</td>
+                                    <td>Skill[]</td>
+                                    <td>レベルで習得可能なスキルを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkLevelUp</td>
+                                    <td>character: Character</td>
+                                    <td>boolean</td>
+                                    <td>レベルアップ可能か判定する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2>次のステップ</h2>
                         <div class="card">

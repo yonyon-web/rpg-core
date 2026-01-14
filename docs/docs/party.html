@@ -65,59 +65,151 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
-                        <h3>基本的な使い方</h3>
-                        <p>PartyControllerを使って、パーティUIの状態を管理します：</p>
-                        <pre><code>import { GEasyKit } from 'geasy-kit';
-
-const game = new GEasyKit();
-const partyController = game.controllers.party();
-
-// パーティ状態の購読
-partyController.subscribe((state) => {
-  console.log('パーティ:', state.members);
-  updatePartyUI(state);
-});
-
-// メンバーを追加
-await partyController.addMember(characterId);
-
-// メンバーを削除
-await partyController.removeMember(characterId);
-
-// 並び替え
-await partyController.reorderMembers([char1, char2, char3]);</code></pre>
-
-                        <h3>カスタマイズ方法</h3>
-                        <p>イベントを購読して、カスタム処理を追加できます：</p>
-                        <pre><code>// メンバー追加時の処理
-partyController.on('memberAdded', (event) => {
-  console.log(\`\${event.character.name}がパーティに加わった！\`);
-  showJoinAnimation(event.character);
-});
-
-// メンバー削除時の処理
-partyController.on('memberRemoved', (event) => {
-  console.log(\`\${event.character.name}がパーティから離脱した\`);
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>PartyController</h4>
-                            <pre><code>interface PartyController {
-  // 状態管理
-  getState(): PartyState;
-  subscribe(listener: (state: PartyState) => void): () => void;
-  
-  // パーティ制御
-  addMember(characterId: string): Promise<void>;
-  removeMember(characterId: string): Promise<void>;
-  reorderMembers(order: string[]): Promise<void>;
-  setFormation(formation: Formation): Promise<void>;
-  
-  // イベント購読
-  on(event: string, handler: (data: any) => void): () => void;
-}</code></pre>
+                        <h3>パーティ管理フロー</h3>
+                        <p>PartyControllerは以下の流れでパーティ編成を管理します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">パーティ編成開始</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">メンバー選択<br/><code>addMember()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">メンバー数チェック</div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">追加可能</span>
+                                        <div class="arrow-back">↑</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">定員</span>
+                                        <div class="arrow-down">↓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">並び替え<br/><code>reorderMembers()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">フォーメーション設定<br/><code>setFormation()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">編成完了</div>
+                            </div>
                         </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>パーティ編成の流れを変更するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>addMember(characterId)</code> - メンバーを追加</li>
+                            <li><code>removeMember(characterId)</code> - メンバーを削除</li>
+                            <li><code>reorderMembers(order)</code> - メンバーの順序を変更</li>
+                            <li><code>setFormation(formation)</code> - フォーメーションを設定</li>
+                            <li><code>canAddMember(characterId)</code> - メンバー追加可能か判定</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>members</td>
+                                    <td>Character[]</td>
+                                    <td>現在のパーティメンバー</td>
+                                </tr>
+                                <tr>
+                                    <td>maxMembers</td>
+                                    <td>number</td>
+                                    <td>最大メンバー数</td>
+                                </tr>
+                                <tr>
+                                    <td>formation</td>
+                                    <td>Formation</td>
+                                    <td>現在のフォーメーション</td>
+                                </tr>
+                                <tr>
+                                    <td>averageLevel</td>
+                                    <td>number</td>
+                                    <td>パーティの平均レベル</td>
+                                </tr>
+                                <tr>
+                                    <td>totalHp</td>
+                                    <td>number</td>
+                                    <td>パーティの合計HP</td>
+                                </tr>
+                                <tr>
+                                    <td>totalAttack</td>
+                                    <td>number</td>
+                                    <td>パーティの合計攻撃力</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>addMember</td>
+                                    <td>characterId: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>メンバーを追加する</td>
+                                </tr>
+                                <tr>
+                                    <td>removeMember</td>
+                                    <td>characterId: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>メンバーを削除する</td>
+                                </tr>
+                                <tr>
+                                    <td>reorderMembers</td>
+                                    <td>order: string[]</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>メンバーの順序を変更する</td>
+                                </tr>
+                                <tr>
+                                    <td>setFormation</td>
+                                    <td>formation: Formation</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>フォーメーションを設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>PartyState</td>
+                                    <td>現在のパーティ状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: PartyState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="service">Service</h2>
                         
@@ -141,50 +233,67 @@ const stats = partyService.getPartyStats();
 console.log('総HP:', stats.totalHp);
 console.log('総攻撃力:', stats.totalAttack);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>PartyServiceを拡張して、独自のパーティルールを追加できます：</p>
-                        <pre><code>import { PartyService } from 'geasy-kit';
-
-class CustomPartyService extends PartyService {
-  // カスタムパーティ制限
-  async addMember(characterId) {
-    const party = this.getCurrentParty();
-    
-    // 同じジョブは2人まで
-    const character = this.getCharacter(characterId);
-    const sameJobCount = party.members.filter(
-      m => m.job === character.job
-    ).length;
-    
-    if (sameJobCount >= 2) {
-      throw new Error('同じジョブは2人までです');
-    }
-    
-    return super.addMember(characterId);
-  }
-}</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>PartyService</h4>
-                            <pre><code>class PartyService {
-  // メンバー管理
-  addMember(characterId: string): Promise<void>;
-  removeMember(characterId: string): Promise<void>;
-  reorderMembers(order: string[]): Promise<void>;
-  
-  // パーティ情報
-  getCurrentParty(): Party;
-  getPartyStats(): PartyStats;
-  canAddMember(characterId: string): boolean;
-  
-  // フォーメーション
-  setFormation(formation: Formation): Promise<void>;
-  
-  // イベント発行
-  emit(event: string, data: any): void;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>addMember</td>
+                                    <td>characterId: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>メンバーを追加する</td>
+                                </tr>
+                                <tr>
+                                    <td>removeMember</td>
+                                    <td>characterId: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>メンバーを削除する</td>
+                                </tr>
+                                <tr>
+                                    <td>reorderMembers</td>
+                                    <td>order: string[]</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>メンバーの順序を変更する</td>
+                                </tr>
+                                <tr>
+                                    <td>getCurrentParty</td>
+                                    <td>-</td>
+                                    <td>Party</td>
+                                    <td>現在のパーティ情報を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>getPartyStats</td>
+                                    <td>-</td>
+                                    <td>PartyStats</td>
+                                    <td>パーティステータスを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>canAddMember</td>
+                                    <td>characterId: string</td>
+                                    <td>boolean</td>
+                                    <td>メンバー追加可能か判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>setFormation</td>
+                                    <td>formation: Formation</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>フォーメーションを設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>emit</td>
+                                    <td>event: string, data: any</td>
+                                    <td>void</td>
+                                    <td>イベントを発行する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="core-engine">Core Engine</h2>
                         
@@ -203,58 +312,43 @@ const formationBonus = engine.calculateFormationBonus(party, formation);
 // パーティバランス判定
 const balance = engine.checkPartyBalance(party);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>パーティステータスの計算をカスタマイズできます：</p>
-                        <pre><code>import { PartyCalculator } from 'geasy-kit';
-
-class CustomPartyCalculator extends PartyCalculator {
-  calculatePartyStats(party) {
-    const baseStats = super.calculatePartyStats(party);
-    
-    // メンバー数によるボーナス
-    const memberBonus = party.members.length >= 4 ? 1.1 : 1.0;
-    
-    // ジョブバランスボーナス
-    const jobTypes = new Set(party.members.map(m => m.jobType));
-    const balanceBonus = jobTypes.size >= 3 ? 1.15 : 1.0;
-    
-    return {
-      ...baseStats,
-      totalHp: Math.floor(baseStats.totalHp * memberBonus),
-      totalAttack: Math.floor(baseStats.totalAttack * balanceBonus)
-    };
-  }
-}
-
-const game = new GEasyKit({
-  config: {
-    partyCalculator: new CustomPartyCalculator()
-  }
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>Core Engine - パーティ関連</h4>
-                            <pre><code>interface PartyCoreEngine {
-  // ステータス計算
-  calculatePartyStats(party: Party): PartyStats;
-  
-  // フォーメーション効果
-  calculateFormationBonus(
-    party: Party,
-    formation: Formation
-  ): FormationBonus;
-  
-  // バランス判定
-  checkPartyBalance(party: Party): BalanceResult;
-  
-  // パーティ制限チェック
-  canAddMember(
-    party: Party,
-    character: Character
-  ): boolean;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>calculatePartyStats</td>
+                                    <td>party: Party</td>
+                                    <td>PartyStats</td>
+                                    <td>パーティの総合ステータスを計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateFormationBonus</td>
+                                    <td>party: Party, formation: Formation</td>
+                                    <td>FormationBonus</td>
+                                    <td>フォーメーションによるボーナスを計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkPartyBalance</td>
+                                    <td>party: Party</td>
+                                    <td>BalanceResult</td>
+                                    <td>パーティバランスを判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>canAddMember</td>
+                                    <td>party: Party, character: Character</td>
+                                    <td>boolean</td>
+                                    <td>メンバー追加可能か判定する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2>次のステップ</h2>
                         <div class="card">
