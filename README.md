@@ -48,7 +48,7 @@ const battleController = rpg.controllers.battle();
 - ✅ サービス間の接続が自動化
 - ✅ 保守性と拡張性が向上
 
-詳しくは [依存関係管理ガイド](./docs/DEPENDENCY_MANAGEMENT.md) を参照してください。
+詳しくは [依存関係管理ガイド](./project-docs/DEPENDENCY_MANAGEMENT.md) を参照してください。
 
 ### 従来の方法: 個別にインスタンス化
 
@@ -117,32 +117,32 @@ rpg-core/
 
 ## ドキュメント
 
-📖 **[ドキュメントTOP](./docs/README.md)** - 完全なドキュメント構成とナビゲーション
+📖 **[ドキュメントTOP](./project-docs/README.md)** - 完全なドキュメント構成とナビゲーション
 
 ### 📚 クイックスタートガイド
 
 rpg-coreを理解するための推奨読書順序：
 
 1. **まず読む** - ライブラリの全体像を把握
-   - [実装要素.md](./docs/実装要素.md) - ライブラリが目指すものとスコープ
-   - [依存関係管理](./docs/DEPENDENCY_MANAGEMENT.md) - 依存関係の設定と管理（🆕推奨）
-   - [使用例](./docs/USAGE_EXAMPLES.md) - 実際の使用例
+   - [実装要素.md](./project-docs/実装要素.md) - ライブラリが目指すものとスコープ
+   - [依存関係管理](./project-docs/DEPENDENCY_MANAGEMENT.md) - 依存関係の設定と管理（🆕推奨）
+   - [使用例](./project-docs/USAGE_EXAMPLES.md) - 実際の使用例
    
 2. **次に読む** - アーキテクチャを理解
-   - [コアエンジン](./docs/コアエンジン.md) - Core Engineの役割と設計思想
-   - [サービス設計](./docs/サービス設計.md) - Service層の詳細設計
-   - [ヘッドレスUI設計](./docs/ヘッドレスUI設計.md) - UI層の設計
+   - [コアエンジン](./project-docs/コアエンジン.md) - Core Engineの役割と設計思想
+   - [サービス設計](./project-docs/サービス設計.md) - Service層の詳細設計
+   - [ヘッドレスUI設計](./project-docs/ヘッドレスUI設計.md) - UI層の設計
    
 3. **必要に応じて読む** - 実装したい機能の詳細
-   - [機能別ドキュメント](./docs/features/) - 各機能の詳細仕様
-   - [カスタマイズガイド](./docs/guides/) - ゲーム固有のカスタマイズ方法
+   - [機能別ドキュメント](./project-docs/features/) - 各機能の詳細仕様
+   - [カスタマイズガイド](./project-docs/guides/) - ゲーム固有のカスタマイズ方法
 
 ### 📂 主要なドキュメント
 
-- **[features/](./docs/features/)** - 機能別の詳細仕様（戦闘、アイテム、キャラクター成長など）
-- **[guides/](./docs/guides/)** - カスタマイズガイド集
-- **[project-management/](./docs/project-management/)** - 実装状況と課題管理
-- **[archive/](./docs/archive/)** - 過去の分析・計画文書（参考用）
+- **[features/](./project-docs/features/)** - 機能別の詳細仕様（戦闘、アイテム、キャラクター成長など）
+- **[guides/](./project-docs/guides/)** - カスタマイズガイド集
+- **[project-management/](./project-docs/project-management/)** - 実装状況と課題管理
+- **[archive/](./project-docs/archive/)** - 過去の分析・計画文書（参考用）
 
 ## ライセンス
 

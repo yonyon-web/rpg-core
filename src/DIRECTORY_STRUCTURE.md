@@ -329,10 +329,10 @@ tests/ui/QuestController.test.ts
 
 ## 参考資料
 
-- [コアエンジン設計](../docs/コアエンジン.md)
-- [サービス設計](../docs/サービス設計.md)
-- [ヘッドレスUI設計](../docs/ヘッドレスUI設計.md)
-- [src構成見直し提案](../docs/SRC_REORGANIZATION_SUMMARY.md)
+- [コアエンジン設計](../project-docs/コアエンジン.md)
+- [サービス設計](../project-docs/サービス設計.md)
+- [ヘッドレスUI設計](../project-docs/ヘッドレスUI設計.md)
+- [src構成見直し提案](../project-docs/SRC_REORGANIZATION_SUMMARY.md)
 
 ---
 
