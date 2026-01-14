@@ -10,9 +10,6 @@ export * from './ServiceContainer';
 export * from './GEasyKit';
 export * from './persistence';
 
-// Backward compatibility - export old name
-export { GEasyKit as RPGCore, GEasyKitOptions as RPGCoreOptions } from './GEasyKit';
-
 // Character core
 export * from './character';
 
