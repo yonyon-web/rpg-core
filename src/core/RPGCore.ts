@@ -163,7 +163,12 @@ export class RPGCore {
     );
     
     this._container.register('enhanceService', (c) => 
-      new EnhanceService({}, c.resolve('eventBus'))
+      new EnhanceService({
+        maxLevel: 10,
+        baseSuccessRate: 0.9,
+        successRateDecay: 0.05,
+        failurePenalty: 'none'
+      }, c.resolve('eventBus'))
     );
     
     this._container.register('shopService', (c) => {
@@ -178,12 +183,12 @@ export class RPGCore {
       return new ShopService(defaultShop, c.resolve('inventoryService'), c.resolve('eventBus'));
     });
     
-    this._container.register('commandService', (c) => 
-      new CommandService(c.resolve('config'))
+    this._container.register('commandService', () => 
+      new CommandService()
     );
     
-    this._container.register('enemyAIService', (c) => 
-      new EnemyAIService(c.resolve('config'))
+    this._container.register('enemyAIService', () => 
+      new EnemyAIService()
     );
     
     this._container.register('enemyGroupService', () => 
@@ -194,8 +199,8 @@ export class RPGCore {
       new SaveLoadService()
     );
     
-    this._container.register('simulationService', (c) => 
-      new SimulationService(c.resolve('config'))
+    this._container.register('simulationService', () => 
+      new SimulationService()
     );
     
     // BattleServiceは他のサービスに依存
@@ -261,7 +266,7 @@ export class RPGCore {
       jobChange: () => new JobChangeController(this.services.jobChange),
       statusEffect: () => new StatusEffectController(this.services.statusEffect),
       inventory: () => new InventoryController(this.services.inventory),
-      shop: () => new ShopController(this.services.shop),
+      shop: () => new ShopController(this.services.shop, this.services.inventory),
       command: () => new CommandController(this.services.command),
     };
   }

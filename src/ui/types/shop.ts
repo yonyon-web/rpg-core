@@ -8,9 +8,9 @@ export interface ShopUIState {
   /** 現在のステージ */
   stage: ShopUIStage;
   /** ショップのアイテム一覧 */
-  shopItems: ShopItem[];
+  shopItems: ShopUIItem[];
   /** 選択されたアイテム */
-  selectedItem: ShopItem | null;
+  selectedItem: ShopUIItem | null;
   /** 取引モード */
   mode: ShopMode;
   /** 取引数量 */
@@ -43,9 +43,9 @@ export interface ShopUIState {
 }
 
 /**
- * ショップアイテム
+ * ショップアイテム（UI用）
  */
-export interface ShopItem {
+export interface ShopUIItem {
   /** アイテム */
   item: Item;
   /** 購入価格 */
@@ -88,17 +88,17 @@ export type ShopSortBy = 'name' | 'price' | 'category';
  */
 export interface ShopEvents {
   /** ショップ開始 */
-  'shop-started': { items: ShopItem[]; playerMoney: number };
+  'shop-started': { items: ShopUIItem[]; playerMoney: number };
   /** モード変更 */
   'mode-changed': { mode: ShopMode };
   /** アイテム選択 */
-  'item-selected': { item: ShopItem };
+  'item-selected': { item: ShopUIItem };
   /** 購入実行 */
-  'item-bought': { item: ShopItem; quantity: number; totalPrice: number };
+  'item-bought': { item: ShopUIItem; quantity: number; totalPrice: number };
   /** 売却実行 */
-  'item-sold': { item: ShopItem; quantity: number; totalPrice: number };
+  'item-sold': { item: ShopUIItem; quantity: number; totalPrice: number };
   /** 取引失敗 */
-  'trade-failed': { item: ShopItem; reason: string };
+  'trade-failed': { item: ShopUIItem; reason: string };
   /** フィルタ変更 */
   'filter-changed': { filterType: ShopFilterType };
   /** ソート変更 */

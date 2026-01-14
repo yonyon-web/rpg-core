@@ -109,7 +109,7 @@ export class ShopService {
           itemId: shopItem.item.id, 
           quantity, 
           action: 'buy',
-          price: result.price
+          price: result.moneySpent || 0
         }
       });
     }
@@ -193,7 +193,7 @@ export class ShopService {
           itemId, 
           quantity, 
           action: 'sell',
-          price: result.price
+          price: result.moneyGained || 0
         }
       });
     }
