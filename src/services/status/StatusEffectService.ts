@@ -6,7 +6,7 @@
 import type { Combatant } from '../../types/battle/combatant';
 import type { StatusEffect, BaseStatusEffectType, BaseStatusEffectCategory } from '../../types/status/statusEffect';
 import type { BaseStats, DefaultStats } from '../../types/character/stats';
-import * as effects from '../../status/effects';
+import * as effects from '../../core/status/effects';
 
 /**
  * 状態異常操作の結果

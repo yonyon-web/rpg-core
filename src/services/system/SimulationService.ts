@@ -9,8 +9,8 @@ import type {
   BattleSimulationResult 
 } from '../../types/system/simulation';
 import type { Combatant } from '../../types/battle/combatant';
-import { filterAlive } from '../../combat/combatantState';
-import { MAX_SIMULATION_TURNS } from '../../combat/constants';
+import { filterAlive } from '../../core/combat/combatantState';
+import { MAX_SIMULATION_TURNS } from '../../core/combat/constants';
 
 /**
  * SimulationService

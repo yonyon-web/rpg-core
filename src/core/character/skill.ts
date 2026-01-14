@@ -3,9 +3,9 @@
  * スキル習得条件の検証に関する純粋な計算関数
  */
 
-import type { Character } from '../types/battle';
-import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication, SkillLevelUpCost } from '../types/character/skill';
-import type { UniqueId } from '../types/common';
+import type { Character } from '../../types/battle';
+import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication, SkillLevelUpCost } from '../../types/character/skill';
+import type { UniqueId } from '../../types/common';
 
 /**
  * スキル習得要件

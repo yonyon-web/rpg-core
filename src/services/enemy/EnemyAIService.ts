@@ -16,7 +16,7 @@ import {
 } from '../../types';
 import { Skill } from '../../types/character/skill';
 import { Combatant } from '../../types/battle/combatant';
-import { filterAlive, countAlive } from '../../combat/combatantState';
+import { filterAlive, countAlive } from '../../core/combat/combatantState';
 
 /**
  * EnemyAIServiceクラス

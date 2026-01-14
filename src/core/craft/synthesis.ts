@@ -9,9 +9,9 @@ import type {
   CraftRecipe, 
   MaterialRequirement,
   CraftRequirements 
-} from '../types/craft/craft';
-import type { UniqueId, Probability } from '../types/common';
-import type { Character } from '../types/battle';
+} from '../../types/craft/craft';
+import type { UniqueId, Probability } from '../../types/common';
+import type { Character } from '../../types/battle';
 
 /**
  * インベントリ内のアイテム情報

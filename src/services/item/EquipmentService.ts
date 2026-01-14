@@ -17,7 +17,7 @@ import type {
 } from '../../types/item/equipment';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as equipmentCore from '../../item/equipment';
+import * as equipmentCore from '../../core/item/equipment';
 
 /**
  * EquipmentService設定

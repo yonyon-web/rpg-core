@@ -3,8 +3,8 @@
  * パーティ構成の検証とフォーメーション計算に関する純粋な計算関数
  */
 
-import type { Combatant } from '../types/battle/combatant';
-import type { BaseStats, DefaultStats } from '../types/character/stats';
+import type { Combatant } from '../../types/battle/combatant';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
 
 /**
  * パーティにメンバーを追加可能かチェック

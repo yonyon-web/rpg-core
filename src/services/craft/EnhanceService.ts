@@ -12,7 +12,7 @@ import type {
 import type { UniqueId } from '../../types/common';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as enhance from '../../craft/enhance';
+import * as enhance from '../../core/craft/enhance';
 
 /**
  * リソース管理インターフェース

@@ -16,7 +16,7 @@ import type {
   InventoryStats,
   Item,
   UniqueId
-} from '../types';
+} from '../../types';
 
 /**
  * アイテムをインベントリに追加

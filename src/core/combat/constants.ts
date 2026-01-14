@@ -2,7 +2,7 @@
  * 戦闘関連の定数
  */
 
-import type { Skill } from '../types/character/skill';
+import type { Skill } from '../../types/character/skill';
 
 /**
  * 基本攻撃スキル

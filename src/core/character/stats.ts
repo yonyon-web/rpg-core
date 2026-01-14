@@ -2,7 +2,7 @@
  * キャラクターステータス計算モジュール
  */
 
-import { BaseStats } from '../types';
+import { BaseStats } from '../../types';
 
 /**
  * 修飾子を適用した最終ステータスを計算

@@ -3,8 +3,8 @@
  * アイテム使用条件の検証と効果計算に関する純粋な計算関数
  */
 
-import type { Combatant } from '../types/battle/combatant';
-import type { ConsumableItem, ItemEffect, ItemUseConditions } from '../types/item/item';
+import type { Combatant } from '../../types/battle/combatant';
+import type { ConsumableItem, ItemEffect, ItemUseConditions } from '../../types/item/item';
 
 /**
  * アイテムが使用可能かチェック

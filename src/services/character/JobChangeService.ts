@@ -8,7 +8,7 @@ import type { Job, JobHistory } from '../../types/character/job';
 import type { BaseStats, DefaultStats } from '../../types/character/stats';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as jobModule from '../../character/job';
+import * as jobModule from '../../core/character/job';
 
 /**
  * ジョブ変更結果

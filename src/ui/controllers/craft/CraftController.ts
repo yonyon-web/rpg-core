@@ -3,7 +3,7 @@ import type { InventoryService } from '../../../services/item/InventoryService';
 import type { Item } from '../../../types/item/item';
 import type { CraftRecipe } from '../../../types/craft/craft';
 import type { Character } from '../../../types/battle/battle';
-import type { InventoryItem } from '../../../craft/synthesis';
+import type { InventoryItem } from '../../../core/craft/synthesis';
 import { ObservableState } from '../../core/ObservableState';
 import { EventEmitter } from '../../core/EventEmitter';
 import type {

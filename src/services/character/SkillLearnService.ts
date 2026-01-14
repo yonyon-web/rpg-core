@@ -9,7 +9,7 @@ import type { UniqueId } from '../../types/common';
 import type { InventoryService } from '../item/InventoryService';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as skillModule from '../../character/skill';
+import * as skillModule from '../../core/character/skill';
 
 /**
  * スキル習得結果

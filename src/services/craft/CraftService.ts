@@ -13,7 +13,7 @@ import type { Character } from '../../types/battle/battle';
 import type { UniqueId } from '../../types/common';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as synthesis from '../../craft/synthesis';
+import * as synthesis from '../../core/craft/synthesis';
 
 /**
  * CraftService設定

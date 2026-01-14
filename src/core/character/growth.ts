@@ -3,9 +3,9 @@
  * レベルアップと経験値に関する純粋な計算関数
  */
 
-import type { BaseStats, DefaultStats } from '../types/character/stats';
-import type { Combatant } from '../types/battle/combatant';
-import type { BaseExpCurveType, DefaultExpCurveType, StatGrowthRates } from '../types/system/config';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
+import type { Combatant } from '../../types/battle/combatant';
+import type { BaseExpCurveType, DefaultExpCurveType, StatGrowthRates } from '../../types/system/config';
 import { filterAlive } from '../combat/combatantState';
 
 /**

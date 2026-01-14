@@ -14,9 +14,9 @@ import type { Combatant } from '../../../types/battle/combatant';
 import type { Skill } from '../../../types/character/skill';
 import type { Item } from '../../../types/item/item';
 import type { GameConfig } from '../../../types/system/config';
-import { calculateDamage } from '../../../combat/damage';
+import { calculateDamage } from '../../../core/combat/damage';
 import { defaultGameConfig } from '../../../config/defaultConfig';
-import { BASIC_ATTACK_SKILL } from '../../../combat/constants';
+import { BASIC_ATTACK_SKILL } from '../../../core/combat/constants';
 
 /**
  * CommandController クラス

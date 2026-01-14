@@ -13,8 +13,8 @@ import {
   GameConfig
 } from '../../types';
 import { Skill } from '../../types/character/skill';
-import { calculateDamage } from '../../combat/damage';
-import { checkSkillCost, consumeSkillCost } from '../../character/skillCost';
+import { calculateDamage } from '../../core/combat/damage';
+import { checkSkillCost, consumeSkillCost } from '../../core/character/skillCost';
 import { 
   BASIC_ATTACK_SKILL,
   DEFEND_POWER_MULTIPLIER,
@@ -24,7 +24,7 @@ import {
   MIN_ESCAPE_RATE,
   BASE_ESCAPE_RATE,
   ESCAPE_SPEED_FACTOR
-} from '../../combat/constants';
+} from '../../core/combat/constants';
 
 /**
  * BattleActionExecutorクラス

@@ -7,7 +7,7 @@ import type { Combatant } from '../../types/battle/combatant';
 import type { BaseStats, DefaultStats } from '../../types/character/stats';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as partyCore from '../../party/formation';
+import * as partyCore from '../../core/party/formation';
 
 /**
  * パーティ操作結果

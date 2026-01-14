@@ -3,10 +3,10 @@
  * ジョブ変更条件の検証と効果計算に関する純粋な計算関数
  */
 
-import type { Character } from '../types/battle';
-import type { Job, JobChangeRequirements, JobHistory } from '../types/character/job';
-import type { UniqueId } from '../types/common';
-import type { BaseStats, DefaultStats } from '../types/character/stats';
+import type { Character } from '../../types/battle';
+import type { Job, JobChangeRequirements, JobHistory } from '../../types/character/job';
+import type { UniqueId } from '../../types/common';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
 
 /**
  * ジョブ変更が可能かチェック

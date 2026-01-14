@@ -2,7 +2,7 @@
  * 行動順計算モジュール
  */
 
-import { Combatant, GameConfig } from '../types';
+import { Combatant, GameConfig } from '../../types';
 
 /**
  * 戦闘者の行動順を計算

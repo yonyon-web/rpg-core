@@ -3,15 +3,15 @@
  * 装備の検証と効果計算に関する純粋な計算関数
  */
 
-import type { BaseStats, DefaultStats } from '../types/character/stats';
-import type { Combatant } from '../types/battle/combatant';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
+import type { Combatant } from '../../types/battle/combatant';
 import type { 
   Equipment, 
   BaseEquipmentSlot, 
   DefaultEquipmentSlot,
   BaseEquipmentType, 
   DefaultEquipmentType 
-} from '../types/item/equipment';
+} from '../../types/item/equipment';
 
 /**
  * 装備可能かチェック

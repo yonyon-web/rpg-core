@@ -5,8 +5,8 @@
  * すべての計算ロジックを提供します。
  */
 
-import type { EnhanceConfig, EnhancableEquipment, EnhanceCost } from '../types/craft/craft';
-import type { Probability } from '../types/common';
+import type { EnhanceConfig, EnhancableEquipment, EnhanceCost } from '../../types/craft/craft';
+import type { Probability } from '../../types/common';
 
 /**
  * 強化成功率を計算する

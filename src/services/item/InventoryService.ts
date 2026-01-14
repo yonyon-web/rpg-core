@@ -37,7 +37,7 @@ import {
   getCategoryAvailableSlots,
   canAddToCategory,
   getCategorySlotStats
-} from '../../item/inventory';
+} from '../../core/item/inventory';
 
 /**
  * InventoryService

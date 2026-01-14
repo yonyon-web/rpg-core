@@ -2,7 +2,7 @@
  * 命中率とクリティカル判定モジュール
  */
 
-import { Combatant, Skill, GameConfig, DefaultStats } from '../types';
+import { Combatant, Skill, GameConfig, DefaultStats } from '../../types';
 
 /**
  * デフォルトの命中率計算式

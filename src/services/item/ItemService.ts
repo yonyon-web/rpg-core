@@ -7,7 +7,7 @@ import type { Combatant } from '../../types/battle/combatant';
 import type { ConsumableItem, ItemUseConditions, ItemUseResult } from '../../types/item/item';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as itemEffects from '../../item/effects';
+import * as itemEffects from '../../core/item/effects';
 
 /**
  * 使用可能アイテム情報

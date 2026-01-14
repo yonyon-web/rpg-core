@@ -27,7 +27,7 @@ import {
   defaultEquipmentSlotMapping,
   canEquip,
   type EquipmentSlotMapping
-} from '../../../item/equipment';
+} from '../../../core/item/equipment';
 
 /**
  * EquipmentController

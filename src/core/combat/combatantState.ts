@@ -3,8 +3,8 @@
  * 生存/戦闘不能判定などの共通ロジックを提供
  */
 
-import type { Combatant } from '../types/battle/combatant';
-import type { BaseStats } from '../types/character/stats';
+import type { Combatant } from '../../types/battle/combatant';
+import type { BaseStats } from '../../types/character/stats';
 
 /**
  * 戦闘者が生存しているかチェック

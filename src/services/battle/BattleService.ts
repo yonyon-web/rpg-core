@@ -16,9 +16,9 @@ import {
   BattleResult,
   GameConfig
 } from '../../types';
-import { calculateTurnOrder, checkPreemptiveStrike } from '../../combat/turnOrder';
+import { calculateTurnOrder, checkPreemptiveStrike } from '../../core/combat/turnOrder';
 import { defaultGameConfig } from '../../config/defaultConfig';
-import { filterAlive, isDead, allDead } from '../../combat/combatantState';
+import { filterAlive, isDead, allDead } from '../../core/combat/combatantState';
 import { BattleActionExecutor } from './BattleActionExecutor';
 import { RewardService } from '../system/RewardService';
 

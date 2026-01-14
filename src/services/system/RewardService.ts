@@ -14,7 +14,7 @@ import type {
 } from '../../types/system/reward';
 import type { EventBus } from '../../core/EventBus';
 import type { DataChangeEvent } from '../../types/system/events';
-import * as growth from '../../character/growth';
+import * as growth from '../../core/character/growth';
 
 /**
  * RewardService設定

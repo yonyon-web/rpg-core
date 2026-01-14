@@ -11,7 +11,7 @@ import type {
 } from '../../types/system/save';
 import type { DataChangeEvent, AutoSaveCompletedEvent, AutoSaveFailedEvent } from '../../types/system/events';
 import type { EventBus } from '../../core/EventBus';
-import * as persistence from '../../system/persistence';
+import * as persistence from '../../core/persistence';
 
 /**
  * SaveLoadService設定

@@ -2,7 +2,7 @@
  * ダメージ計算モジュール
  */
 
-import { Combatant, Skill, GameConfig, DamageResult, DefaultElement, DefaultElementResistance, DefaultStats } from '../types';
+import { Combatant, Skill, GameConfig, DamageResult, DefaultElement, DefaultElementResistance, DefaultStats } from '../../types';
 import { calculateHitRate, checkHit, calculateCriticalRate, checkCritical } from './accuracy';
 import { HEAL_VARIANCE, MIN_DAMAGE } from './constants';
 
