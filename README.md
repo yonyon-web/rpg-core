@@ -117,6 +117,13 @@ rpg-core/
 
 ## ドキュメント
 
+### 🏗️ プロジェクト構造の見直し提案
+
+src配下の構成見直しについて、複数の提案を作成しました：
+- 🎨 [ビジュアル図解](./docs/SRC_REORGANIZATION_VISUAL.md) - Before/After の視覚的比較（推奨から見る）
+- 📄 [要約版](./docs/SRC_REORGANIZATION_SUMMARY.md) - 4つの提案の概要と比較表
+- 📚 [詳細版](./docs/SRC_REORGANIZATION_PROPOSALS.md) - 各提案の完全な説明と実装計画
+
 ### 📚 読書ガイド
 
 rpg-coreを理解するための推奨読書順序：
