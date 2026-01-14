@@ -67,13 +67,27 @@
                         
                         <h3>アイテム使用フロー</h3>
                         <p>ItemControllerは以下の流れでアイテム使用を進行します：</p>
-                        <ol>
-                            <li><strong>使用開始</strong>: <code>start ItemUse(context)</code>で戦闘中orフィールドを指定</li>
-                            <li><strong>アイテム選択</strong>: <code>selectItem()</code>で使用するアイテムを選択</li>
-                            <li><strong>ターゲット選択</strong>: <code>selectTarget()</code>で対象を選択</li>
-                            <li><strong>使用実行</strong>: <code>executeItemUse()</code>でアイテム効果を適用</li>
-                            <li><strong>結果確認</strong>: 使用結果を取得し、次の操作へ</li>
-                        </ol>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">使用開始<br/><code>startItemUse()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">アイテム選択<br/><code>selectItem()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">ターゲット選択<br/><code>selectTarget()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">使用実行<br/><code>executeItemUse()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">結果確認</div>
+                            </div>
+                        </div>
 
                         <h3>フロー制御の関数</h3>
                         <p>アイテム使用の流れを変更するために以下の関数を使用できます：</p>

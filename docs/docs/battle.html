@@ -67,13 +67,36 @@
                         
                         <h3>戦闘フロー</h3>
                         <p>BattleControllerは以下の流れで戦闘を進行します：</p>
-                        <ol>
-                            <li><strong>戦闘開始</strong>: <code>startBattle()</code>でパーティと敵グループを設定</li>
-                            <li><strong>コマンド入力待ち</strong>: プレイヤーキャラクターの行動を<code>selectCommand()</code>で選択</li>
-                            <li><strong>ターン実行</strong>: <code>executeTurn()</code>で全ての行動を実行</li>
-                            <li><strong>勝敗判定</strong>: 戦闘終了条件を確認し、継続または終了</li>
-                            <li><strong>次のターン</strong>: ステップ2に戻る（戦闘が継続する場合）</li>
-                        </ol>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">戦闘開始<br/><code>startBattle()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">コマンド入力待ち<br/><code>selectCommand()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">ターン実行<br/><code>executeTurn()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">勝敗判定</div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">戦闘継続</span>
+                                        <div class="arrow-back">↑</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">戦闘終了</span>
+                                        <div class="arrow-down">↓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">終了</div>
+                            </div>
+                        </div>
 
                         <h3>フロー制御の関数</h3>
                         <p>戦闘の流れを変更するために以下の関数を使用できます：</p>
