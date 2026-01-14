@@ -65,56 +65,129 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
-                        <h3>基本的な使い方</h3>
-                        <p>ItemControllerとInventoryControllerを使って、アイテムUIの状態を管理します：</p>
-                        <pre><code>import { GEasyKit } from 'geasy-kit';
+                        <h3>アイテム使用フロー</h3>
+                        <p>ItemControllerは以下の流れでアイテム使用を進行します：</p>
+                        <ol>
+                            <li><strong>使用開始</strong>: <code>start ItemUse(context)</code>で戦闘中orフィールドを指定</li>
+                            <li><strong>アイテム選択</strong>: <code>selectItem()</code>で使用するアイテムを選択</li>
+                            <li><strong>ターゲット選択</strong>: <code>selectTarget()</code>で対象を選択</li>
+                            <li><strong>使用実行</strong>: <code>executeItemUse()</code>でアイテム効果を適用</li>
+                            <li><strong>結果確認</strong>: 使用結果を取得し、次の操作へ</li>
+                        </ol>
 
-const game = new GEasyKit();
-const itemController = game.controllers.item();
-const inventoryController = game.controllers.inventory();
+                        <h3>フロー制御の関数</h3>
+                        <p>アイテム使用の流れを変更するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>startItemUse(context)</code> - アイテム使用を開始</li>
+                            <li><code>selectItem(itemId)</code> - アイテムを選択</li>
+                            <li><code>selectTarget(targetId)</code> - 対象を選択</li>
+                            <li><code>executeItemUse()</code> - アイテムを使用</li>
+                            <li><code>cancel()</code> - アイテム使用をキャンセル</li>
+                        </ul>
 
-// アイテム使用の状態を購読
-itemController.subscribe((state) => {
-  console.log('アイテム使用状態:', state);
-  updateItemUI(state);
-});
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>phase</td>
+                                    <td>string</td>
+                                    <td>現在のフェーズ（'idle' | 'selecting_item' | 'selecting_target' | 'executing'）</td>
+                                </tr>
+                                <tr>
+                                    <td>context</td>
+                                    <td>'battle' | 'field'</td>
+                                    <td>使用コンテキスト</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedItem</td>
+                                    <td>Item | null</td>
+                                    <td>選択中のアイテム</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedTarget</td>
+                                    <td>string | null</td>
+                                    <td>選択中のターゲットID</td>
+                                </tr>
+                                <tr>
+                                    <td>availableItems</td>
+                                    <td>Item[]</td>
+                                    <td>使用可能なアイテム一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>availableTargets</td>
+                                    <td>Target[]</td>
+                                    <td>選択可能なターゲット一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>result</td>
+                                    <td>ItemUseResult | null</td>
+                                    <td>使用結果（実行後のみ）</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-// アイテムを使用
-await itemController.startItemUse('battle');
-await itemController.selectItem(itemId);
-await itemController.selectTarget(targetId);
-await itemController.executeItemUse();</code></pre>
-
-                        <h3>カスタマイズ方法</h3>
-                        <p>イベントを購読して、カスタム処理を追加できます：</p>
-                        <pre><code>// アイテム使用時のエフェクト
-itemController.on('itemUsed', (event) => {
-  showItemEffect(event.item, event.target);
-});
-
-// インベントリ変更時の処理
-inventoryController.on('itemAdded', (event) => {
-  console.log(\`アイテム追加: \${event.item.name}\`);
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>ItemController</h4>
-                            <pre><code>interface ItemController {
-  // 状態管理
-  getState(): ItemUseState;
-  subscribe(listener: (state: ItemUseState) => void): () => void;
-  
-  // アイテム使用
-  startItemUse(context: 'battle' | 'field'): Promise<void>;
-  selectItem(itemId: string): Promise<void>;
-  selectTarget(targetId: string): Promise<void>;
-  executeItemUse(): Promise<ItemUseResult>;
-  
-  // イベント購読
-  on(event: string, handler: (data: any) => void): () => void;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>startItemUse</td>
+                                    <td>context: 'battle' | 'field'</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>アイテム使用を開始する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectItem</td>
+                                    <td>itemId: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>アイテムを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectTarget</td>
+                                    <td>targetId: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>対象を選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>executeItemUse</td>
+                                    <td>-</td>
+                                    <td>Promise&lt;ItemUseResult&gt;</td>
+                                    <td>アイテムを使用する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>ItemUseState</td>
+                                    <td>現在の状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: ItemUseState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="service">Service</h2>
                         
@@ -135,54 +208,99 @@ inventoryService.addItem(itemId, quantity);
 inventoryService.removeItem(itemId, quantity);
 const items = inventoryService.getItems();</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>ItemServiceを拡張して、独自のアイテム効果を追加できます：</p>
-                        <pre><code>import { ItemService } from 'geasy-kit';
+                        <h3>メソッド一覧 - ItemService</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>startItemUse</td>
+                                    <td>context: 'battle' | 'field'</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>アイテム使用を開始する</td>
+                                </tr>
+                                <tr>
+                                    <td>getUsableItems</td>
+                                    <td>-</td>
+                                    <td>Item[]</td>
+                                    <td>使用可能なアイテムを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectItem</td>
+                                    <td>itemId: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>アイテムを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectTargets</td>
+                                    <td>targetIds: string[]</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>対象を選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>useItem</td>
+                                    <td>-</td>
+                                    <td>Promise&lt;ItemUseResult&gt;</td>
+                                    <td>アイテムを使用する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>ItemUseState</td>
+                                    <td>現在の状態を取得する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-class CustomItemService extends ItemService {
-  // カスタムアイテム効果
-  async executeItemEffect(item, target) {
-    // 独自の効果処理
-    if (item.type === 'custom') {
-      return this.executeCustomEffect(item, target);
-    }
-    
-    return super.executeItemEffect(item, target);
-  }
-  
-  executeCustomEffect(item, target) {
-    // カスタム効果の実装
-    return {
-      effect: 'custom',
-      value: item.power * 2
-    };
-  }
-}</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>ItemService / InventoryService</h4>
-                            <pre><code>class ItemService {
-  // アイテム使用
-  startItemUse(context: 'battle' | 'field'): Promise<void>;
-  getUsableItems(): Item[];
-  selectItem(itemId: string): Promise<void>;
-  selectTargets(targetIds: string[]): Promise<void>;
-  useItem(): Promise<ItemUseResult>;
-  
-  // 状態管理
-  getState(): ItemUseState;
-}
-
-class InventoryService {
-  // アイテム管理
-  addItem(itemId: string, quantity: number): void;
-  removeItem(itemId: string, quantity: number): boolean;
-  getItems(): Item[];
-  getItem(itemId: string): Item | undefined;
-  hasItem(itemId: string, quantity: number): boolean;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧 - InventoryService</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>addItem</td>
+                                    <td>itemId: string, quantity: number</td>
+                                    <td>void</td>
+                                    <td>アイテムを追加する</td>
+                                </tr>
+                                <tr>
+                                    <td>removeItem</td>
+                                    <td>itemId: string, quantity: number</td>
+                                    <td>boolean</td>
+                                    <td>アイテムを削除する</td>
+                                </tr>
+                                <tr>
+                                    <td>getItems</td>
+                                    <td>-</td>
+                                    <td>Item[]</td>
+                                    <td>全アイテムを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>getItem</td>
+                                    <td>itemId: string</td>
+                                    <td>Item | undefined</td>
+                                    <td>指定されたアイテムを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>hasItem</td>
+                                    <td>itemId: string, quantity: number</td>
+                                    <td>boolean</td>
+                                    <td>アイテムを所持しているか確認する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="core-engine">Core Engine</h2>
                         
@@ -201,62 +319,43 @@ const canUse = engine.checkItemUsable(item, user, context);
 // ターゲット取得
 const targets = engine.getItemTargets(item, context);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>アイテム効果の計算式をカスタマイズできます：</p>
-                        <pre><code>import { ItemEffectCalculator } from 'geasy-kit';
-
-class CustomItemEffectCalculator extends ItemEffectCalculator {
-  calculate(item, user, target) {
-    // 独自の計算式
-    if (item.type === 'heal') {
-      const baseHeal = item.power;
-      const userBonus = user.healingBonus || 0;
-      const finalHeal = baseHeal * (1 + userBonus / 100);
-      
-      return {
-        type: 'heal',
-        value: Math.floor(finalHeal)
-      };
-    }
-    
-    return super.calculate(item, user, target);
-  }
-}
-
-const game = new GEasyKit({
-  config: {
-    itemEffectCalculator: new CustomItemEffectCalculator()
-  }
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>Core Engine - アイテム関連</h4>
-                            <pre><code>interface ItemCoreEngine {
-  // アイテム効果計算
-  calculateItemEffect(
-    item: Item,
-    user: Character,
-    target: Character
-  ): ItemEffect;
-  
-  // 使用可否判定
-  checkItemUsable(
-    item: Item,
-    user: Character,
-    context: 'battle' | 'field'
-  ): boolean;
-  
-  // ターゲット取得
-  getItemTargets(
-    item: Item,
-    context: BattleContext
-  ): Character[];
-  
-  // インベントリ計算
-  calculateInventorySpace(items: Item[]): number;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>calculateItemEffect</td>
+                                    <td>item: Item, user: Character, target: Character</td>
+                                    <td>ItemEffect</td>
+                                    <td>アイテム効果を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkItemUsable</td>
+                                    <td>item: Item, user: Character, context: 'battle' | 'field'</td>
+                                    <td>boolean</td>
+                                    <td>アイテムが使用可能か判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>getItemTargets</td>
+                                    <td>item: Item, context: BattleContext</td>
+                                    <td>Character[]</td>
+                                    <td>選択可能なターゲットを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateInventorySpace</td>
+                                    <td>items: Item[]</td>
+                                    <td>number</td>
+                                    <td>インベントリの使用容量を計算する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2>次のステップ</h2>
                         <div class="card">
