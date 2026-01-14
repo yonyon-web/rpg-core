@@ -242,7 +242,7 @@ Phase 1が完了したら、最優先のBattleControllerから実装を開始し
 ## 🔗 関連リソース
 
 ### 内部ドキュメント
-- [実装状況.md](./実装状況.md) - 全体の実装状況
+- [実装状況.md](./project-management/実装状況.md) - 全体の実装状況
 - [サービス設計.md](./サービス設計.md) - Service層の設計
 - [コアエンジン.md](./コアエンジン.md) - Core Engineの設計
 
