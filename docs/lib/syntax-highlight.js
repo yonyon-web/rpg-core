@@ -18,8 +18,8 @@
         // Numbers
         const numbers = /\b(\d+\.?\d*)\b/g;
         
-        // Functions
-        const functions = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g;
+        // Functions (excluding keywords)
+        const functions = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?=\()/g;
         
         // Types (capitalized words often represent types)
         const types = /\b([A-Z][a-zA-Z0-9_$]*)\b/g;
@@ -48,7 +48,7 @@
         // Apply syntax highlighting
         code = code.replace(keywords, '<span class="hljs-keyword">$1</span>');
         code = code.replace(numbers, '<span class="hljs-number">$1</span>');
-        code = code.replace(functions, '<span class="hljs-function">$1</span>(');
+        code = code.replace(functions, '<span class="hljs-function">$1</span>');
         code = code.replace(types, '<span class="hljs-type">$1</span>');
         
         // Restore placeholders
