@@ -23,6 +23,14 @@ import { ServiceContainer } from './ServiceContainer';
 import { defaultGameConfig } from '../config/defaultConfig';
 import { EventBus } from './EventBus';
 import { BuilderRegistry } from '../utils/builders/BuilderRegistry';
+import { 
+  CharacterBuilder, 
+  EnemyBuilder, 
+  JobBuilder, 
+  SkillBuilder, 
+  ItemBuilder, 
+  EquipmentBuilder 
+} from '../utils/builders';
 
 // Services
 import { BattleService } from '../services/battle/BattleService';
@@ -321,5 +329,61 @@ export class GEasyKit {
    */
   get registry(): BuilderRegistry {
     return this._builderRegistry;
+  }
+
+  /**
+   * Builder ファクトリーメソッド
+   * 
+   * registryが自動的に注入されたBuilderを取得できます。
+   * 
+   * @example
+   * ```typescript
+   * const kit = new GEasyKit();
+   * 
+   * // registryを意識せずにBuilderを使用できる
+   * const fireball = kit.builder.skill('fireball', 'Fireball')
+   *   .type('magic')
+   *   .power(80)
+   *   .build(); // 自動的にregistryに登録される
+   * 
+   * // 名前で参照できる
+   * const mage = kit.builder.job('mage', 'Mage')
+   *   .availableSkillsByName(['Fireball'], kit.registry)
+   *   .build();
+   * ```
+   */
+  get builder() {
+    const registry = this._builderRegistry;
+    return {
+      /**
+       * CharacterBuilderを作成（registryが自動注入される）
+       */
+      character: (id: string, name: string) => new CharacterBuilder(id, name, registry),
+      
+      /**
+       * EnemyBuilderを作成（registryが自動注入される）
+       */
+      enemy: (id: string, name: string, enemyType: string) => new EnemyBuilder(id, name, enemyType, registry),
+      
+      /**
+       * JobBuilderを作成（registryが自動注入される）
+       */
+      job: (id: string, name: string) => new JobBuilder(id, name, registry),
+      
+      /**
+       * SkillBuilderを作成（registryが自動注入される）
+       */
+      skill: (id: string, name: string) => new SkillBuilder(id, name, registry),
+      
+      /**
+       * ItemBuilderを作成（registryが自動注入される）
+       */
+      item: (id: string, name: string) => new ItemBuilder(id, name, registry),
+      
+      /**
+       * EquipmentBuilderを作成（registryが自動注入される）
+       */
+      equipment: (id: string, name: string) => new EquipmentBuilder(id, name, registry),
+    };
   }
 }
