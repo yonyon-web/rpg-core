@@ -259,7 +259,7 @@ export class RPGCore {
       item: () => new ItemController(this.services.item),
       equipment: () => new EquipmentController(this.services.equipment),
       party: () => new PartyController(this.services.party),
-      craft: () => new CraftController(this.services.craft),
+      craft: () => new CraftController(this.services.craft, this.services.inventory),
       skillLearn: () => new SkillLearnController(this.services.skillLearn),
       reward: () => new RewardController(this.services.reward),
       enhance: () => new EnhanceController(this.services.enhance),

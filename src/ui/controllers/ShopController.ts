@@ -1,5 +1,6 @@
 import type { ShopService } from '../../services/ShopService';
 import type { InventoryService } from '../../services/InventoryService';
+import type { Character } from '../../types/battle';
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type {
@@ -15,15 +16,14 @@ import type {
 /**
  * ショップコントローラー
  * アイテムの購入・売却UIを管理します
- * 
- * Note: InventoryServiceとの連携はUI表示用のプレビューのみです。
- * 実際の取引処理（在庫管理、所持金変更）はShopService内で完結します。
  */
 export class ShopController {
   private state: ObservableState<ShopUIState>;
   private events: EventEmitter<ShopEvents>;
   private service: ShopService;
   private inventoryService: InventoryService;
+  private character: Character | null = null;
+  private shopItemIndices: Map<string, number> = new Map(); // Maps item ID to shop index
 
   constructor(service: ShopService, inventoryService: InventoryService) {
     this.service = service;
@@ -68,11 +68,25 @@ export class ShopController {
   }
 
   /**
+   * キャラクターを設定
+   * ショップの取引に使用されます
+   */
+  setCharacter(character: Character | null): void {
+    this.character = character;
+  }
+
+  /**
    * ショップ開始
    */
   startShopping(items: ShopUIItem[], playerMoney: number): void {
     const totalItems = items.length;
     const perPage = this.state.getState().pagination.perPage;
+
+    // Build index mapping
+    this.shopItemIndices.clear();
+    items.forEach((item, index) => {
+      this.shopItemIndices.set(item.item.id, index);
+    });
 
     this.state.setState({
       stage: 'browsing',
@@ -166,37 +180,37 @@ export class ShopController {
    */
   async executeTrade(): Promise<boolean> {
     const currentState = this.state.getState();
-    if (!currentState.selectedItem) return false;
+    if (!currentState.selectedItem || !this.character) return false;
 
     this.state.setState({ loading: { isLoading: true } });
 
     try {
       let result;
       if (currentState.mode === 'buy') {
-        // TODO: ShopController needs access to Character to call buyItem properly
-        // For now, passing stub values to make TypeScript compile
-        const dummyCharacter = { id: 'player', level: 1 } as any;
-        const shopItemIndex = 0; // TODO: Need to track actual shop item index
+        // Get the shop item index for buyItem
+        const shopItemIndex = this.shopItemIndices.get(currentState.selectedItem.item.id);
+        if (shopItemIndex === undefined) {
+          throw new Error('Shop item index not found');
+        }
+        
         result = this.service.buyItem(
-          dummyCharacter,
+          this.character,
           shopItemIndex,
           currentState.quantity
         );
       } else {
-        // TODO: ShopController needs access to Character to call sellItem properly
-        const dummyCharacter = { id: 'player', level: 1 } as any;
         result = this.service.sellItem(
-          dummyCharacter,
+          this.character,
           currentState.selectedItem.item.id,
           currentState.quantity
         );
       }
 
       if (result.success) {
-        // プレイヤーの所持金を更新
+        // Update player money based on transaction
         const newMoney = currentState.mode === 'buy'
-          ? currentState.playerMoney - currentState.totalPrice
-          : currentState.playerMoney + currentState.totalPrice;
+          ? currentState.playerMoney - (result.moneySpent || 0)
+          : currentState.playerMoney + (result.moneyGained || 0);
 
         this.state.setState({
           stage: 'completed',
@@ -208,13 +222,13 @@ export class ShopController {
           this.events.emit('item-bought', {
             item: currentState.selectedItem,
             quantity: currentState.quantity,
-            totalPrice: currentState.totalPrice,
+            totalPrice: result.moneySpent || 0,
           });
         } else {
           this.events.emit('item-sold', {
             item: currentState.selectedItem,
             quantity: currentState.quantity,
-            totalPrice: currentState.totalPrice,
+            totalPrice: result.moneyGained || 0,
           });
         }
 

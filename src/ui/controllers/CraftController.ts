@@ -1,6 +1,9 @@
 import type { CraftService } from '../../services/CraftService';
+import type { InventoryService } from '../../services/InventoryService';
 import type { Item } from '../../types/item';
 import type { CraftRecipe } from '../../types/craft';
+import type { Character } from '../../types/battle';
+import type { InventoryItem } from '../../craft/synthesis';
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type {
@@ -19,9 +22,12 @@ export class CraftController {
   private state: ObservableState<CraftUIState>;
   private events: EventEmitter<CraftEvents>;
   private service: CraftService;
+  private inventoryService: InventoryService;
+  private character: Character | null = null;
 
-  constructor(service: CraftService) {
+  constructor(service: CraftService, inventoryService: InventoryService) {
     this.service = service;
+    this.inventoryService = inventoryService;
     
     this.state = new ObservableState<CraftUIState>({
       stage: 'browsing',
@@ -55,6 +61,15 @@ export class CraftController {
     listener: (data: CraftEvents[K]) => void
   ): () => void {
     return this.events.on(event, listener);
+  }
+
+  /**
+   * キャラクターを設定
+   * クラフト要件チェックに使用されます
+   */
+  setCharacter(character: Character | null): void {
+    this.character = character;
+    this.checkCraftability();
   }
 
   /**
@@ -123,17 +138,16 @@ export class CraftController {
     });
 
     try {
-      // Note: This is a placeholder implementation.  
-      // CraftService.craft() requires recipe object, inventory, and character
-      // but this controller doesn't have access to inventory/character state.
-      // This should be refactored when inventory management is integrated.
       const recipe = this.service.getRecipe(currentState.selectedRecipe.id);
       if (!recipe) {
         throw new Error('Recipe not found');
       }
       
-      // TODO: Pass actual inventory and character when available
-      const result = this.service.craft(recipe, [], undefined);
+      // Get inventory items in the format expected by CraftService
+      const inventoryItems = this.getInventoryItems();
+      
+      // Execute craft with actual inventory and character
+      const result = this.service.craft(recipe, inventoryItems, this.character ?? undefined);
 
       if (result.success && result.item) {
         this.state.setState({
@@ -142,7 +156,6 @@ export class CraftController {
         });
 
         // Convert CraftedItemInfo to Item for the event
-        // Note: This is a simplified conversion; a full implementation would need proper mapping
         const resultItems = result.item ? [{
           id: result.item.id,
           name: result.item.name,
@@ -228,11 +241,33 @@ export class CraftController {
       return;
     }
 
-    // TODO: This method needs access to inventory to check material availability
-    // For now, we'll just set canCraft to false as we don't have inventory access
+    // Get inventory items for checking
+    const inventoryItems = this.getInventoryItems();
+    
+    // Check if recipe can be crafted
+    const recipeInfo = this.service.canCraft(
+      currentState.selectedRecipe,
+      inventoryItems,
+      this.character ?? undefined
+    );
+
+    // Convert missing materials to UI format
+    const missing: Array<{ itemId: string; required: number; current: number }> = [];
+    if (recipeInfo.missingMaterials) {
+      for (const material of recipeInfo.missingMaterials) {
+        const inventoryItem = inventoryItems.find(item => item.itemId === material.itemId);
+        const current = inventoryItem?.quantity || 0;
+        missing.push({
+          itemId: material.itemId,
+          required: material.quantity + current,
+          current,
+        });
+      }
+    }
+
     this.state.setState({
-      canCraft: false,
-      missingMaterials: [],
+      canCraft: recipeInfo.canCraft,
+      missingMaterials: missing,
     });
   }
 
@@ -278,8 +313,20 @@ export class CraftController {
    * レシピがクラフト可能かチェック
    */
   private canCraftRecipe(recipe: CraftRecipe): boolean {
-    // TODO: This method needs access to inventory to check material availability
-    // For now, return false as we don't have inventory access
-    return false;
+    const inventoryItems = this.getInventoryItems();
+    const recipeInfo = this.service.canCraft(recipe, inventoryItems, this.character ?? undefined);
+    return recipeInfo.canCraft;
+  }
+
+  /**
+   * インベントリアイテムを取得
+   * InventoryService から CraftService が期待する形式に変換
+   */
+  private getInventoryItems(): InventoryItem[] {
+    const inventory = this.inventoryService.getInventory();
+    return inventory.slots.map(slot => ({
+      itemId: slot.item.id,
+      quantity: slot.quantity
+    }));
   }
 }
