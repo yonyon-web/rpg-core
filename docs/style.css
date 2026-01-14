@@ -158,6 +158,59 @@ section {
     color: var(--text-dark);
 }
 
+/* ===== RPG Capabilities Section ===== */
+.rpg-capabilities {
+    background-color: var(--bg-white);
+}
+
+.capabilities-intro {
+    text-align: center;
+    font-size: 1.125rem;
+    color: var(--text-light);
+    margin-bottom: 3rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.capabilities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.capability-item {
+    background-color: var(--bg-light);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.capability-item:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.capability-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.capability-item h3 {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-dark);
+}
+
+.capability-item p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
 /* ===== Features Section ===== */
 .features {
     background-color: var(--bg-light);
@@ -451,6 +504,10 @@ code {
     
     .hero-buttons {
         flex-direction: column;
+    }
+    
+    .capabilities-grid {
+        grid-template-columns: 1fr;
     }
     
     .features-grid {
