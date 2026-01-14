@@ -20,7 +20,7 @@ import {
   buyItem as buyItemCore,
   sellItem as sellItemCore,
   getAvailableItems as getAvailableItemsCore
-} from '../../shop/shop';
+} from '../../core/shop';
 
 /**
  * ShopService

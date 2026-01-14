@@ -27,3 +27,6 @@ export * from './party';
 
 // Status core
 export * from './status';
+
+// Shop core
+export * from './shop';

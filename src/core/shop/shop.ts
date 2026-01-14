@@ -4,10 +4,10 @@
  * - ミュータブルな操作（在庫更新）を含む
  */
 
-import type { Character } from '../types/battle';
-import type { Inventory } from '../types/item/item';
-import type { Shop, ShopItem, ShopTransaction } from '../types/item/shop';
-import { findItemSlot } from '../core/item/inventory';
+import type { Character } from '../../types/battle';
+import type { Inventory } from '../../types/item/item';
+import type { Shop, ShopItem, ShopTransaction } from '../../types/item/shop';
+import { findItemSlot } from '../item/inventory';
 
 /**
  * 購入価格を計算
