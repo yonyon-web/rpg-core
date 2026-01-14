@@ -188,38 +188,6 @@ const battleController = game.controllers.battle();</code></pre>
             </div>
         </section>
 
-        <!-- Architecture Section -->
-        <section class="architecture">
-            <div class="container">
-                <h2 class="section-title">アーキテクチャ</h2>
-                <div class="architecture-diagram">
-                    <div class="arch-layer">
-                        <div class="layer-box">UI（見た目・入力）</div>
-                        <div class="arrow">↓</div>
-                    </div>
-                    <div class="arch-layer">
-                        <div class="layer-box">Headless UI（選択・確認・キャンセル）</div>
-                        <div class="arrow">↓</div>
-                    </div>
-                    <div class="arch-layer">
-                        <div class="layer-box">JRPG Services（操作フロー）</div>
-                        <div class="arrow">↓</div>
-                    </div>
-                    <div class="arch-layer">
-                        <div class="layer-box">Core Engine（数値・ルール）</div>
-                        <div class="arrow">↓</div>
-                    </div>
-                    <div class="arch-layer">
-                        <div class="layer-box">Game State（永続可能な状態）</div>
-                    </div>
-                </div>
-                <p class="architecture-description">
-                    レイヤー化された設計により、各層が明確な責任を持ち、
-                    テストやカスタマイズが容易になっています。
-                </p>
-            </div>
-        </section>
-
         <!-- Call to Action -->
         <section class="cta">
             <div class="container">
