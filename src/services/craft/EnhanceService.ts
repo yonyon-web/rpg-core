@@ -8,11 +8,11 @@ import type {
   EnhanceResult,
   EnhancableEquipment,
   EnhanceCost 
-} from '../types/craft';
-import type { UniqueId } from '../types/common';
-import type { EventBus } from '../core/EventBus';
-import type { DataChangeEvent } from '../types/events';
-import * as enhance from '../craft/enhance';
+} from '../../types/craft';
+import type { UniqueId } from '../../types/common';
+import type { EventBus } from '../../core/EventBus';
+import type { DataChangeEvent } from '../../types/events';
+import * as enhance from '../../craft/enhance';
 
 /**
  * リソース管理インターフェース

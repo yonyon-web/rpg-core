@@ -3,11 +3,11 @@
  * アイテムの使用を管理
  */
 
-import type { Combatant } from '../types/combatant';
-import type { ConsumableItem, ItemUseConditions, ItemUseResult } from '../types/item';
-import type { EventBus } from '../core/EventBus';
-import type { DataChangeEvent } from '../types/events';
-import * as itemEffects from '../item/effects';
+import type { Combatant } from '../../types/combatant';
+import type { ConsumableItem, ItemUseConditions, ItemUseResult } from '../../types/item';
+import type { EventBus } from '../../core/EventBus';
+import type { DataChangeEvent } from '../../types/events';
+import * as itemEffects from '../../item/effects';
 
 /**
  * 使用可能アイテム情報

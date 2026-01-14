@@ -16,7 +16,7 @@ import type {
   BattleMessageType,
   BattleMessageData
 } from '../types/battle';
-import type { BattleService } from '../../services/BattleService';
+import type { BattleService } from '../../services/battle/BattleService';
 import type { Character, Enemy, BattleAction } from '../../types/battle';
 import type { Combatant } from '../../types/combatant';
 

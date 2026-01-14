@@ -15,9 +15,9 @@ import type {
   InventoryStats,
   Item,
   UniqueId
-} from '../types';
-import type { EventBus } from '../core/EventBus';
-import type { DataChangeEvent } from '../types/events';
+} from '../../types';
+import type { EventBus } from '../../core/EventBus';
+import type { DataChangeEvent } from '../../types/events';
 
 import {
   addItemToInventory,
@@ -37,7 +37,7 @@ import {
   getCategoryAvailableSlots,
   canAddToCategory,
   getCategorySlotStats
-} from '../item/inventory';
+} from '../../item/inventory';
 
 /**
  * InventoryService

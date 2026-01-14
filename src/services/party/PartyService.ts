@@ -3,11 +3,11 @@
  * パーティ構成とフォーメーション管理
  */
 
-import type { Combatant } from '../types/combatant';
-import type { BaseStats, DefaultStats } from '../types/stats';
-import type { EventBus } from '../core/EventBus';
-import type { DataChangeEvent } from '../types/events';
-import * as partyCore from '../party/formation';
+import type { Combatant } from '../../types/combatant';
+import type { BaseStats, DefaultStats } from '../../types/stats';
+import type { EventBus } from '../../core/EventBus';
+import type { DataChangeEvent } from '../../types/events';
+import * as partyCore from '../../party/formation';
 
 /**
  * パーティ操作結果

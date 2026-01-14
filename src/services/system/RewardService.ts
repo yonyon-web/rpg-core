@@ -3,18 +3,18 @@
  * 戦闘報酬の配分とレベルアップ処理を管理
  */
 
-import type { Combatant } from '../types/combatant';
-import type { BaseStats, DefaultStats } from '../types/stats';
-import type { BattleRewards } from '../types/battle';
-import type { BaseExpCurveType, DefaultExpCurveType } from '../types/config';
+import type { Combatant } from '../../types/combatant';
+import type { BaseStats, DefaultStats } from '../../types/stats';
+import type { BattleRewards } from '../../types/battle';
+import type { BaseExpCurveType, DefaultExpCurveType } from '../../types/config';
 import type { 
   ExpDistribution, 
   LevelUpResult, 
   RewardDistributionResult 
-} from '../types/reward';
-import type { EventBus } from '../core/EventBus';
-import type { DataChangeEvent } from '../types/events';
-import * as growth from '../character/growth';
+} from '../../types/reward';
+import type { EventBus } from '../../core/EventBus';
+import type { DataChangeEvent } from '../../types/events';
+import * as growth from '../../character/growth';
 
 /**
  * RewardService設定

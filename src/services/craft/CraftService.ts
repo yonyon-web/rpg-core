@@ -8,12 +8,12 @@ import type {
   CraftResult,
   MaterialRequirement,
   CraftedItemInfo 
-} from '../types/craft';
-import type { Character } from '../types/battle';
-import type { UniqueId } from '../types/common';
-import type { EventBus } from '../core/EventBus';
-import type { DataChangeEvent } from '../types/events';
-import * as synthesis from '../craft/synthesis';
+} from '../../types/craft';
+import type { Character } from '../../types/battle';
+import type { UniqueId } from '../../types/common';
+import type { EventBus } from '../../core/EventBus';
+import type { DataChangeEvent } from '../../types/events';
+import * as synthesis from '../../craft/synthesis';
 
 /**
  * CraftService設定

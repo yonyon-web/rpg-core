@@ -5,7 +5,7 @@
 
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
-import type { PartyService } from '../../services/PartyService';
+import type { PartyService } from '../../services/party/PartyService';
 import type { PartyUIState, PartyEvents, PartyUIStage } from '../types/party';
 import type { Combatant, BaseStats, DefaultStats } from '../../types';
 

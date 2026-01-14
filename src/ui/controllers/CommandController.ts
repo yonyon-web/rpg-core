@@ -8,7 +8,7 @@
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type { CommandUIState, CommandEvents, CommandUIStage } from '../types/command';
-import type { CommandService } from '../../services/CommandService';
+import type { CommandService } from '../../services/battle/CommandService';
 import type { Character, BattleAction, BattleState } from '../../types/battle';
 import type { Combatant } from '../../types/combatant';
 import type { Skill } from '../../types/skill';

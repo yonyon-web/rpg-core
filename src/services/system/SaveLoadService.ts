@@ -8,10 +8,10 @@ import type {
   SaveSlot, 
   SaveResult,
   LoadResult 
-} from '../types/save';
-import type { DataChangeEvent, AutoSaveCompletedEvent, AutoSaveFailedEvent } from '../types/events';
-import type { EventBus } from '../core/EventBus';
-import * as persistence from '../system/persistence';
+} from '../../types/save';
+import type { DataChangeEvent, AutoSaveCompletedEvent, AutoSaveFailedEvent } from '../../types/events';
+import type { EventBus } from '../../core/EventBus';
+import * as persistence from '../../system/persistence';
 
 /**
  * SaveLoadService設定

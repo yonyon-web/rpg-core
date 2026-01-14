@@ -5,7 +5,7 @@
 
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
-import type { InventoryService } from '../../services/InventoryService';
+import type { InventoryService } from '../../services/item/InventoryService';
 import type { 
   InventoryUIState, 
   InventoryEvents, 

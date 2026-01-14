@@ -7,7 +7,7 @@ import type { Character } from '../../types/battle';
 import type { Job, JobHistory } from '../../types/job';
 import type { BaseStats, DefaultStats } from '../../types/stats';
 import type { CursorIndex, UISortOrder } from './common';
-import type { AvailableJobInfo } from '../../services/JobChangeService';
+import type { AvailableJobInfo } from '../../services/character/JobChangeService';
 
 /**
  * ジョブ変更UIステージ

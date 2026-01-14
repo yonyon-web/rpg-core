@@ -1,5 +1,5 @@
-import type { CraftService } from '../../services/CraftService';
-import type { InventoryService } from '../../services/InventoryService';
+import type { CraftService } from '../../services/craft/CraftService';
+import type { InventoryService } from '../../services/item/InventoryService';
 import type { Item } from '../../types/item';
 import type { CraftRecipe } from '../../types/craft';
 import type { Character } from '../../types/battle';

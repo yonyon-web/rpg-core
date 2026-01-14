@@ -15,12 +15,12 @@ import {
   BattleRewards,
   BattleResult,
   GameConfig
-} from '../types';
-import { calculateTurnOrder, checkPreemptiveStrike } from '../combat/turnOrder';
-import { defaultGameConfig } from '../config/defaultConfig';
-import { filterAlive, isDead, allDead } from '../combat/combatantState';
+} from '../../types';
+import { calculateTurnOrder, checkPreemptiveStrike } from '../../combat/turnOrder';
+import { defaultGameConfig } from '../../config/defaultConfig';
+import { filterAlive, isDead, allDead } from '../../combat/combatantState';
 import { BattleActionExecutor } from './BattleActionExecutor';
-import { RewardService } from './RewardService';
+import { RewardService } from '../system/RewardService';
 
 /**
  * BattleServiceクラス

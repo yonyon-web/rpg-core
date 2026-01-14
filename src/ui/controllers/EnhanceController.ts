@@ -1,4 +1,4 @@
-import type { EnhanceService } from '../../services/EnhanceService';
+import type { EnhanceService } from '../../services/craft/EnhanceService';
 import type { EnhancableEquipment } from '../../types/craft';
 import type { BaseStats } from '../../types/stats';
 import { ObservableState } from '../core/ObservableState';

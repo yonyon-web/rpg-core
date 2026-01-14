@@ -11,10 +11,10 @@ import {
   EscapeResult,
   BattleState,
   GameConfig
-} from '../types';
-import { Skill } from '../types/skill';
-import { calculateDamage } from '../combat/damage';
-import { checkSkillCost, consumeSkillCost } from '../character/skillCost';
+} from '../../types';
+import { Skill } from '../../types/skill';
+import { calculateDamage } from '../../combat/damage';
+import { checkSkillCost, consumeSkillCost } from '../../character/skillCost';
 import { 
   BASIC_ATTACK_SKILL,
   DEFEND_POWER_MULTIPLIER,
@@ -24,7 +24,7 @@ import {
   MIN_ESCAPE_RATE,
   BASE_ESCAPE_RATE,
   ESCAPE_SPEED_FACTOR
-} from '../combat/constants';
+} from '../../combat/constants';
 
 /**
  * BattleActionExecutorクラス

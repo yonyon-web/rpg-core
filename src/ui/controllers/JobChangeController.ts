@@ -6,7 +6,7 @@
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type { JobChangeUIState, JobChangeEvents, JobChangeUIStage, JobFilterType, JobSortBy, StatsPreview } from '../types/jobChange';
-import type { JobChangeService, AvailableJobInfo } from '../../services/JobChangeService';
+import type { JobChangeService, AvailableJobInfo } from '../../services/character/JobChangeService';
 import type { Character } from '../../types/battle';
 import type { Job, JobHistory } from '../../types/job';
 import type { BaseStats, DefaultStats } from '../../types/stats';

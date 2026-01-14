@@ -6,7 +6,7 @@
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
 import type { RewardUIState, RewardEvents, RewardUIStage } from '../types/reward';
-import type { RewardService } from '../../services/RewardService';
+import type { RewardService } from '../../services/system/RewardService';
 import type { BattleRewards } from '../../types/battle';
 import type { Combatant } from '../../types/combatant';
 import type { BaseStats, DefaultStats } from '../../types/stats';

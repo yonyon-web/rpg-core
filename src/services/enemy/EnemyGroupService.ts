@@ -4,9 +4,9 @@
  * 戦闘に登場する敵グループの生成、管理、ドロップアイテムの決定を行う
  */
 
-import { Enemy, DropItem } from '../types';
-import { UniqueId } from '../types/common';
-import { DefaultStats } from '../types/stats';
+import { Enemy, DropItem } from '../../types';
+import { UniqueId } from '../../types/common';
+import { DefaultStats } from '../../types/stats';
 
 /**
  * 敵タイプ定義

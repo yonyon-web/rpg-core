@@ -24,23 +24,23 @@ import { defaultGameConfig } from '../config/defaultConfig';
 import { EventBus } from './EventBus';
 
 // Services
-import { BattleService } from '../services/BattleService';
-import { ItemService } from '../services/ItemService';
-import { EquipmentService } from '../services/EquipmentService';
-import { PartyService } from '../services/PartyService';
-import { StatusEffectService } from '../services/StatusEffectService';
-import { RewardService } from '../services/RewardService';
-import { SkillLearnService } from '../services/SkillLearnService';
-import { JobChangeService } from '../services/JobChangeService';
-import { CraftService } from '../services/CraftService';
-import { EnhanceService } from '../services/EnhanceService';
-import { SaveLoadService } from '../services/SaveLoadService';
-import { SimulationService } from '../services/SimulationService';
-import { InventoryService } from '../services/InventoryService';
-import { ShopService } from '../services/ShopService';
-import { CommandService } from '../services/CommandService';
-import { EnemyAIService } from '../services/EnemyAIService';
-import { EnemyGroupService } from '../services/EnemyGroupService';
+import { BattleService } from '../services/battle/BattleService';
+import { ItemService } from '../services/item/ItemService';
+import { EquipmentService } from '../services/item/EquipmentService';
+import { PartyService } from '../services/party/PartyService';
+import { StatusEffectService } from '../services/status/StatusEffectService';
+import { RewardService } from '../services/system/RewardService';
+import { SkillLearnService } from '../services/character/SkillLearnService';
+import { JobChangeService } from '../services/character/JobChangeService';
+import { CraftService } from '../services/craft/CraftService';
+import { EnhanceService } from '../services/craft/EnhanceService';
+import { SaveLoadService } from '../services/system/SaveLoadService';
+import { SimulationService } from '../services/system/SimulationService';
+import { InventoryService } from '../services/item/InventoryService';
+import { ShopService } from '../services/item/ShopService';
+import { CommandService } from '../services/battle/CommandService';
+import { EnemyAIService } from '../services/enemy/EnemyAIService';
+import { EnemyGroupService } from '../services/enemy/EnemyGroupService';
 
 // Controllers
 import { BattleController } from '../ui/controllers/BattleController';

@@ -5,7 +5,7 @@
 
 import { ObservableState } from '../core/ObservableState';
 import { EventEmitter } from '../core/EventEmitter';
-import type { ItemService } from '../../services/ItemService';
+import type { ItemService } from '../../services/item/ItemService';
 import type { 
   ItemUseUIState, 
   ItemUseEvents, 

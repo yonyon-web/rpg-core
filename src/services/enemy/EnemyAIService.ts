@@ -13,10 +13,10 @@ import {
   TargetEvaluation,
   AIDecision,
   AIStrategy
-} from '../types';
-import { Skill } from '../types/skill';
-import { Combatant } from '../types/combatant';
-import { filterAlive, countAlive } from '../combat/combatantState';
+} from '../../types';
+import { Skill } from '../../types/skill';
+import { Combatant } from '../../types/combatant';
+import { filterAlive, countAlive } from '../../combat/combatantState';
 
 /**
  * EnemyAIServiceクラス

@@ -16,7 +16,7 @@ import type {
   StatusEffectFilterType,
   StatusEffectSortBy
 } from '../types/statusEffect';
-import type { StatusEffectService } from '../../services/StatusEffectService';
+import type { StatusEffectService } from '../../services/status/StatusEffectService';
 import type { Combatant } from '../../types/combatant';
 import type { StatusEffect } from '../../types/statusEffect';
 

@@ -11,11 +11,11 @@ import {
   BattleAction,
   BattleState,
   Combatant
-} from '../types';
-import { Skill } from '../types/skill';
-import { UniqueId } from '../types/common';
-import { canUseSkill } from '../character/skillCost';
-import { filterAlive, isAlive } from '../combat/combatantState';
+} from '../../types';
+import { Skill } from '../../types/skill';
+import { UniqueId } from '../../types/common';
+import { canUseSkill } from '../../character/skillCost';
+import { filterAlive, isAlive } from '../../combat/combatantState';
 
 /**
  * CommandServiceクラス

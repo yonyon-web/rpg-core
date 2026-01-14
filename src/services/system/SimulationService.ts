@@ -7,10 +7,10 @@ import type {
   SimulationConfig, 
   SimulationResult,
   BattleSimulationResult 
-} from '../types/simulation';
-import type { Combatant } from '../types/combatant';
-import { filterAlive } from '../combat/combatantState';
-import { MAX_SIMULATION_TURNS } from '../combat/constants';
+} from '../../types/simulation';
+import type { Combatant } from '../../types/combatant';
+import { filterAlive } from '../../combat/combatantState';
+import { MAX_SIMULATION_TURNS } from '../../combat/constants';
 
 /**
  * SimulationService
