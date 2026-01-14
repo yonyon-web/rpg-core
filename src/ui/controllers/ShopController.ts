@@ -70,9 +70,36 @@ export class ShopController {
   /**
    * キャラクターを設定
    * ショップの取引に使用されます
+   * 
+   * @param character - キャラクター。nullの場合はデフォルトキャラクターを使用（制限なしゲーム用）
    */
   setCharacter(character: Character | null): void {
     this.character = character;
+  }
+
+  /**
+   * 取引実行用のキャラクターを取得
+   * キャラクターが設定されていない場合は、制限チェックをパスするダミーキャラクターを返す
+   */
+  private getCharacterForTrade(): Character {
+    if (this.character) {
+      return this.character;
+    }
+    
+    // 制限のないゲーム用のデフォルトキャラクター
+    // すべての要件チェックをパスする最大レベルのキャラクター
+    return {
+      id: 'default-character',
+      name: 'Player',
+      level: 999,
+      job: '',
+      learnedSkills: [],
+      stats: {} as any,
+      statusEffects: [],
+      currentHp: 1,
+      currentMp: 0,
+      position: 0,
+    };
   }
 
   /**
@@ -180,12 +207,15 @@ export class ShopController {
    */
   async executeTrade(): Promise<boolean> {
     const currentState = this.state.getState();
-    if (!currentState.selectedItem || !this.character) return false;
+    if (!currentState.selectedItem) return false;
 
     this.state.setState({ loading: { isLoading: true } });
 
     try {
       let result;
+      // Use getCharacterForTrade() to support games without character restrictions
+      const character = this.getCharacterForTrade();
+      
       if (currentState.mode === 'buy') {
         // Get the shop item index for buyItem
         const shopItemIndex = this.shopItemIndices.get(currentState.selectedItem.item.id);
@@ -194,13 +224,13 @@ export class ShopController {
         }
         
         result = this.service.buyItem(
-          this.character,
+          character,
           shopItemIndex,
           currentState.quantity
         );
       } else {
         result = this.service.sellItem(
-          this.character,
+          character,
           currentState.selectedItem.item.id,
           currentState.quantity
         );

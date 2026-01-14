@@ -66,10 +66,37 @@ export class CraftController {
   /**
    * キャラクターを設定
    * クラフト要件チェックに使用されます
+   * 
+   * @param character - キャラクター。nullの場合はデフォルトキャラクターを使用（制限なしゲーム用）
    */
   setCharacter(character: Character | null): void {
     this.character = character;
     this.checkCraftability();
+  }
+
+  /**
+   * クラフト実行用のキャラクターを取得
+   * キャラクターが設定されていない場合は、制限チェックをパスするダミーキャラクターを返す
+   */
+  private getCharacterForCraft(): Character {
+    if (this.character) {
+      return this.character;
+    }
+    
+    // 制限のないゲーム用のデフォルトキャラクター
+    // すべての要件チェックをパスする最大レベルのキャラクター
+    return {
+      id: 'default-character',
+      name: 'Player',
+      level: 999,
+      job: '',
+      learnedSkills: [],
+      stats: {} as any,
+      statusEffects: [],
+      currentHp: 1,
+      currentMp: 0,
+      position: 0,
+    };
   }
 
   /**
@@ -147,7 +174,8 @@ export class CraftController {
       const inventoryItems = this.getInventoryItems();
       
       // Execute craft with actual inventory and character
-      const result = this.service.craft(recipe, inventoryItems, this.character ?? undefined);
+      // Use getCharacterForCraft() to support games without character restrictions
+      const result = this.service.craft(recipe, inventoryItems, this.getCharacterForCraft());
 
       if (result.success && result.item) {
         this.state.setState({
@@ -245,10 +273,11 @@ export class CraftController {
     const inventoryItems = this.getInventoryItems();
     
     // Check if recipe can be crafted
+    // Use getCharacterForCraft() to support games without character restrictions
     const recipeInfo = this.service.canCraft(
       currentState.selectedRecipe,
       inventoryItems,
-      this.character ?? undefined
+      this.getCharacterForCraft()
     );
 
     // Convert missing materials to UI format
@@ -314,7 +343,8 @@ export class CraftController {
    */
   private canCraftRecipe(recipe: CraftRecipe): boolean {
     const inventoryItems = this.getInventoryItems();
-    const recipeInfo = this.service.canCraft(recipe, inventoryItems, this.character ?? undefined);
+    // Use getCharacterForCraft() to support games without character restrictions
+    const recipeInfo = this.service.canCraft(recipe, inventoryItems, this.getCharacterForCraft());
     return recipeInfo.canCraft;
   }
 
