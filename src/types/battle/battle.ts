@@ -2,9 +2,9 @@
  * 戦闘関連の型定義
  */
 
-import { UniqueId } from './common';
+import { UniqueId } from '../common';
 import { Combatant } from './combatant';
-import { Skill, LearnedSkill } from './skill';
+import { Skill, LearnedSkill } from '../character/skill';
 
 /**
  * キャラクター（プレイヤー側の戦闘者）

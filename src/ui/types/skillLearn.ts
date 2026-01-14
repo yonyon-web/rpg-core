@@ -4,7 +4,7 @@
  */
 
 import type { Character } from '../../types/battle';
-import type { Skill } from '../../types/skill';
+import type { Skill } from '../../types/character/skill';
 import type { UniqueId } from '../../types/common';
 import type { UISortOrder, CursorIndex } from './common';
 import type { LearnableSkillInfo, SkillLearnCost } from '../../services/character/SkillLearnService';

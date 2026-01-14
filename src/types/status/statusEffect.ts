@@ -2,7 +2,7 @@
  * 状態異常の型定義
  */
 
-import { UniqueId, Timestamp } from './common';
+import { UniqueId, Timestamp } from '../common';
 
 /**
  * 状態異常タイプの基本型

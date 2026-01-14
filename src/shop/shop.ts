@@ -5,8 +5,8 @@
  */
 
 import type { Character } from '../types/battle';
-import type { Inventory } from '../types/item';
-import type { Shop, ShopItem, ShopTransaction } from '../types/shop';
+import type { Inventory } from '../types/item/item';
+import type { Shop, ShopItem, ShopTransaction } from '../types/item/shop';
 import { findItemSlot } from '../item/inventory';
 
 /**

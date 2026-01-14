@@ -8,11 +8,11 @@ import type {
   CraftResult,
   MaterialRequirement,
   CraftedItemInfo 
-} from '../../types/craft';
-import type { Character } from '../../types/battle';
+} from '../../types/craft/craft';
+import type { Character } from '../../types/battle/battle';
 import type { UniqueId } from '../../types/common';
 import type { EventBus } from '../../core/EventBus';
-import type { DataChangeEvent } from '../../types/events';
+import type { DataChangeEvent } from '../../types/system/events';
 import * as synthesis from '../../craft/synthesis';
 
 /**

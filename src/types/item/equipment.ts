@@ -2,8 +2,8 @@
  * 装備システムの型定義
  */
 
-import type { UniqueId } from './common';
-import type { BaseStats, DefaultStats } from './stats';
+import type { UniqueId } from '../common';
+import type { BaseStats, DefaultStats } from '../character/stats';
 
 /**
  * 装備スロットタイプの基底型

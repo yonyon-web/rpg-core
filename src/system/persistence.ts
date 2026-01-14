@@ -5,7 +5,7 @@
  * デシリアライズに関するロジックを提供します。
  */
 
-import type { GameState } from '../types/save';
+import type { GameState } from '../types/system/save';
 
 /**
  * 検証結果

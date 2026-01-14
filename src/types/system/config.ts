@@ -2,9 +2,9 @@
  * ゲーム設定の型定義
  */
 
-import { Probability } from './common';
-import type { BaseStats, DefaultStats } from './stats';
-import type { CustomFormulas } from './formulas';
+import { Probability } from '../common';
+import type { BaseStats, DefaultStats } from '../character/stats';
+import type { CustomFormulas } from '../core/formulas';
 
 /**
  * 戦闘設定

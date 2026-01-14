@@ -2,10 +2,10 @@
  * コマンド関連の型定義
  */
 
-import { UniqueId } from './common';
+import { UniqueId } from '../common';
 import { Character, BattleAction } from './battle';
 import { Combatant } from './combatant';
-import { Skill } from './skill';
+import { Skill } from '../character/skill';
 
 /**
  * コマンド選択段階

@@ -2,8 +2,8 @@
  * スキル関連の型定義
  */
 
-import { UniqueId, BaseElement, DefaultElement, Probability } from './common';
-import { BaseStatusEffectType, DefaultStatusEffectType } from './statusEffect';
+import { UniqueId, BaseElement, DefaultElement, Probability } from '../common';
+import { BaseStatusEffectType, DefaultStatusEffectType } from '../status/statusEffect';
 
 /**
  * スキルタイプの基底型

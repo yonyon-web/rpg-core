@@ -12,7 +12,7 @@ import {
   BattleState,
   GameConfig
 } from '../../types';
-import { Skill } from '../../types/skill';
+import { Skill } from '../../types/character/skill';
 import { calculateDamage } from '../../combat/damage';
 import { checkSkillCost, consumeSkillCost } from '../../character/skillCost';
 import { 

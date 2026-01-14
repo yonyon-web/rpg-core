@@ -2,7 +2,7 @@
  * シミュレーション関連の型定義
  */
 
-import type { Combatant } from './combatant';
+import type { Combatant } from '../battle/combatant';
 
 /**
  * シミュレーション設定

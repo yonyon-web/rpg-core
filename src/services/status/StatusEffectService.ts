@@ -3,9 +3,9 @@
  * 状態異常の付与、解除、更新を管理
  */
 
-import type { Combatant } from '../../types/combatant';
-import type { StatusEffect, BaseStatusEffectType, BaseStatusEffectCategory } from '../../types/statusEffect';
-import type { BaseStats, DefaultStats } from '../../types/stats';
+import type { Combatant } from '../../types/battle/combatant';
+import type { StatusEffect, BaseStatusEffectType, BaseStatusEffectCategory } from '../../types/status/statusEffect';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
 import * as effects from '../../status/effects';
 
 /**

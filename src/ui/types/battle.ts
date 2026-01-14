@@ -3,7 +3,7 @@
  */
 
 import type { Character, Enemy, BattleAction, BattleResult, BattleRewards } from '../../types/battle';
-import type { Combatant } from '../../types/combatant';
+import type { Combatant } from '../../types/battle/combatant';
 import type { ActionResult } from '../../types/battle';
 
 /**

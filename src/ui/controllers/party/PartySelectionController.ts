@@ -3,8 +3,8 @@
  * 複数のパーティから編成するパーティを選択する
  */
 
-import type { Combatant } from '../../../types/combatant';
-import type { BaseStats, DefaultStats } from '../../../types/stats';
+import type { Combatant } from '../../../types/battle/combatant';
+import type { BaseStats, DefaultStats } from '../../../types/character/stats';
 import { ObservableState } from '../../core/ObservableState';
 import { EventEmitter } from '../../core/EventEmitter';
 import type { PartySelectionUIState, PartySelectionEvents, PartyInfo } from '../../types/partySelection';

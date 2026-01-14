@@ -17,8 +17,8 @@ import type {
   StatusEffectSortBy
 } from '../../types/statusEffect';
 import type { StatusEffectService } from '../../../services/status/StatusEffectService';
-import type { Combatant } from '../../../types/combatant';
-import type { StatusEffect } from '../../../types/statusEffect';
+import type { Combatant } from '../../../types/battle/combatant';
+import type { StatusEffect } from '../../../types/status/statusEffect';
 
 /**
  * StatusEffectController クラス

@@ -2,8 +2,8 @@
  * PartySelection UI型定義
  */
 
-import type { Combatant } from '../../types/combatant';
-import type { BaseStats, DefaultStats } from '../../types/stats';
+import type { Combatant } from '../../types/battle/combatant';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
 
 /**
  * パーティ情報

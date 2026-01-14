@@ -3,9 +3,9 @@
  * ステータス効果の検証と管理に関する純粋な計算関数
  */
 
-import type { Combatant } from '../types/combatant';
-import type { StatusEffect, BaseStatusEffectType, BaseStatusEffectCategory } from '../types/statusEffect';
-import type { BaseStats } from '../types/stats';
+import type { Combatant } from '../types/battle/combatant';
+import type { StatusEffect, BaseStatusEffectType, BaseStatusEffectCategory } from '../types/status/statusEffect';
+import type { BaseStats } from '../types/character/stats';
 
 /**
  * 戦闘者が特定のステータス効果タイプを持っているかチェック

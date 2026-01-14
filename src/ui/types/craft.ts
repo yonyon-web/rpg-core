@@ -1,5 +1,5 @@
-import type { Item } from '../../types/item';
-import type { CraftRecipe } from '../../types/craft';
+import type { Item } from '../../types/item/item';
+import type { CraftRecipe } from '../../types/craft/craft';
 import type { LoadingState, ErrorState } from './common';
 
 /**

@@ -3,8 +3,8 @@
  * BattleServiceとCommandServiceで重複していたコスト検証・消費ロジックを共通化
  */
 
-import type { Skill } from '../types/skill';
-import type { Combatant } from '../types/combatant';
+import type { Skill } from '../types/character/skill';
+import type { Combatant } from '../types/battle/combatant';
 
 /**
  * スキルコストチェック結果

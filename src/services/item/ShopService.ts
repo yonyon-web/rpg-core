@@ -5,12 +5,12 @@
  * Core Engineの純粋な関数を利用してショップ管理を行う
  */
 
-import type { Character } from '../../types/battle';
-import type { Shop, ShopItem, ShopTransaction } from '../../types/shop';
-import type { UniqueId } from '../../types/item';
+import type { Character } from '../../types/battle/battle';
+import type { Shop, ShopItem, ShopTransaction } from '../../types/item/shop';
+import type { UniqueId } from '../../types/item/item';
 import type { InventoryService } from './InventoryService';
 import type { EventBus } from '../../core/EventBus';
-import type { DataChangeEvent } from '../../types/events';
+import type { DataChangeEvent } from '../../types/system/events';
 
 import {
   calculateBuyPrice,

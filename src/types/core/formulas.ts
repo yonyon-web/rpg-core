@@ -2,8 +2,10 @@
  * カスタマイズ可能な計算式の型定義
  */
 
-import type { Combatant, Skill, GameConfig } from './index';
-import type { BaseStats } from './stats';
+import type { Combatant } from '../battle/combatant';
+import type { Skill } from '../character/skill';
+import type { GameConfig } from '../system/config';
+import type { BaseStats } from '../character/stats';
 
 /**
  * 命中率計算式の型

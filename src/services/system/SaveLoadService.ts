@@ -8,8 +8,8 @@ import type {
   SaveSlot, 
   SaveResult,
   LoadResult 
-} from '../../types/save';
-import type { DataChangeEvent, AutoSaveCompletedEvent, AutoSaveFailedEvent } from '../../types/events';
+} from '../../types/system/save';
+import type { DataChangeEvent, AutoSaveCompletedEvent, AutoSaveFailedEvent } from '../../types/system/events';
 import type { EventBus } from '../../core/EventBus';
 import * as persistence from '../../system/persistence';
 

@@ -3,11 +3,11 @@
  * ジョブの変更を管理
  */
 
-import type { Character } from '../../types/battle';
-import type { Job, JobHistory } from '../../types/job';
-import type { BaseStats, DefaultStats } from '../../types/stats';
+import type { Character } from '../../types/battle/battle';
+import type { Job, JobHistory } from '../../types/character/job';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
 import type { EventBus } from '../../core/EventBus';
-import type { DataChangeEvent } from '../../types/events';
+import type { DataChangeEvent } from '../../types/system/events';
 import * as jobModule from '../../character/job';
 
 /**

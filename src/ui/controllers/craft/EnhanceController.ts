@@ -1,6 +1,6 @@
 import type { EnhanceService } from '../../../services/craft/EnhanceService';
-import type { EnhancableEquipment } from '../../../types/craft';
-import type { BaseStats } from '../../../types/stats';
+import type { EnhancableEquipment } from '../../../types/craft/craft';
+import type { BaseStats } from '../../../types/character/stats';
 import { ObservableState } from '../../core/ObservableState';
 import { EventEmitter } from '../../core/EventEmitter';
 import type {

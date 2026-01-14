@@ -2,7 +2,7 @@
  * ジョブ（職業）関連の型定義
  */
 
-import type { UniqueId } from './common';
+import type { UniqueId } from '../common';
 import type { BaseStats, DefaultStats } from './stats';
 import type { Skill } from './skill';
 

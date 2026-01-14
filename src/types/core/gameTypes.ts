@@ -3,19 +3,19 @@
  * - すべてのカスタム型を1箇所で定義し、プロジェクト全体で再利用可能にする
  */
 
-import { BaseStats, DefaultStats } from './stats';
+import { BaseStats, DefaultStats } from '../character/stats';
 import { 
   BaseStatusEffectType, 
   DefaultStatusEffectType,
   BaseStatusEffectCategory,
   DefaultStatusEffectCategory 
-} from './statusEffect';
-import { BaseElement, DefaultElement } from './common';
-import { BaseSkillType, DefaultSkillType, BaseTargetType, DefaultTargetType } from './skill';
-import { BaseExpCurveType, DefaultExpCurveType } from './config';
-import type { Combatant as BaseCombatant } from './combatant';
-import type { Skill as BaseSkill } from './skill';
-import type { GameConfig as BaseGameConfig } from './config';
+} from '../status/statusEffect';
+import { BaseElement, DefaultElement } from '../common';
+import { BaseSkillType, DefaultSkillType, BaseTargetType, DefaultTargetType } from '../character/skill';
+import { BaseExpCurveType, DefaultExpCurveType } from '../system/config';
+import type { Combatant as BaseCombatant } from '../battle/combatant';
+import type { Skill as BaseSkill } from '../character/skill';
+import type { GameConfig as BaseGameConfig } from '../system/config';
 
 /**
  * ゲーム型設定インターフェース

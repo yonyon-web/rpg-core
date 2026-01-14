@@ -8,10 +8,10 @@ import type {
   EnhanceResult,
   EnhancableEquipment,
   EnhanceCost 
-} from '../../types/craft';
+} from '../../types/craft/craft';
 import type { UniqueId } from '../../types/common';
 import type { EventBus } from '../../core/EventBus';
-import type { DataChangeEvent } from '../../types/events';
+import type { DataChangeEvent } from '../../types/system/events';
 import * as enhance from '../../craft/enhance';
 
 /**

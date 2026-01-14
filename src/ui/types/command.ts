@@ -3,10 +3,10 @@
  */
 
 import type { Character, BattleAction } from '../../types/battle';
-import type { Combatant } from '../../types/combatant';
-import type { Skill } from '../../types/skill';
-import type { Item } from '../../types/item';
-import type { CommandOption } from '../../types/command';
+import type { Combatant } from '../../types/battle/combatant';
+import type { Skill } from '../../types/character/skill';
+import type { Item } from '../../types/item/item';
+import type { CommandOption } from '../../types/battle/command';
 
 /**
  * コマンドUI段階

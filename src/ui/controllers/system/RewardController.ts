@@ -7,9 +7,9 @@ import { ObservableState } from '../../core/ObservableState';
 import { EventEmitter } from '../../core/EventEmitter';
 import type { RewardUIState, RewardEvents, RewardUIStage } from '../../types/reward';
 import type { RewardService } from '../../../services/system/RewardService';
-import type { BattleRewards } from '../../../types/battle';
-import type { Combatant } from '../../../types/combatant';
-import type { BaseStats, DefaultStats } from '../../../types/stats';
+import type { BattleRewards } from '../../../types/battle/battle';
+import type { Combatant } from '../../../types/battle/combatant';
+import type { BaseStats, DefaultStats } from '../../../types/character/stats';
 
 /**
  * RewardController

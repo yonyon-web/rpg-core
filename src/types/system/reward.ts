@@ -2,9 +2,9 @@
  * 報酬システムの型定義
  */
 
-import type { UniqueId } from './common';
-import type { BaseStats, DefaultStats } from './stats';
-import type { DropItem } from './battle';
+import type { UniqueId } from '../common';
+import type { BaseStats, DefaultStats } from '../character/stats';
+import type { DropItem } from '../battle/battle';
 
 /**
  * レベルアップ結果

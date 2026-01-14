@@ -57,7 +57,7 @@ import { InventoryController } from '../ui/controllers/item/InventoryController'
 import { ShopController } from '../ui/controllers/item/ShopController';
 import { CommandController } from '../ui/controllers/battle/CommandController';
 
-import type { GameConfig } from '../types/config';
+import type { GameConfig } from '../types/system/config';
 import type { Inventory, Shop } from '../types';
 
 /**

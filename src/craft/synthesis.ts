@@ -9,7 +9,7 @@ import type {
   CraftRecipe, 
   MaterialRequirement,
   CraftRequirements 
-} from '../types/craft';
+} from '../types/craft/craft';
 import type { UniqueId, Probability } from '../types/common';
 import type { Character } from '../types/battle';
 

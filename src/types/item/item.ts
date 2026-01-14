@@ -2,16 +2,16 @@
  * アイテム関連の型定義
  */
 
-import type { UniqueId } from './common';
-import type { BaseStats, DefaultStats } from './stats';
-import type { Combatant } from './combatant';
+import type { UniqueId } from '../common';
+import type { BaseStats, DefaultStats } from '../character/stats';
+import type { Combatant } from '../battle/combatant';
 import type { 
   BaseStatusEffectType, 
   DefaultStatusEffectType,
   BaseStatusEffectCategory,
   DefaultStatusEffectCategory 
-} from './statusEffect';
-import type { BaseTargetType, DefaultTargetType } from './skill';
+} from '../status/statusEffect';
+import type { BaseTargetType, DefaultTargetType } from '../character/skill';
 
 // Re-export UniqueId for convenience
 export type { UniqueId };

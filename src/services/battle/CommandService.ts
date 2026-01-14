@@ -12,7 +12,7 @@ import {
   BattleState,
   Combatant
 } from '../../types';
-import { Skill } from '../../types/skill';
+import { Skill } from '../../types/character/skill';
 import { UniqueId } from '../../types/common';
 import { canUseSkill } from '../../character/skillCost';
 import { filterAlive, isAlive } from '../../combat/combatantState';

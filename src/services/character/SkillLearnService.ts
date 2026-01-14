@@ -3,12 +3,12 @@
  * スキルの習得・忘却・レベルアップを管理
  */
 
-import type { Character } from '../../types/battle';
-import type { Skill, LearnedSkill } from '../../types/skill';
+import type { Character } from '../../types/battle/battle';
+import type { Skill, LearnedSkill } from '../../types/character/skill';
 import type { UniqueId } from '../../types/common';
 import type { InventoryService } from '../item/InventoryService';
 import type { EventBus } from '../../core/EventBus';
-import type { DataChangeEvent } from '../../types/events';
+import type { DataChangeEvent } from '../../types/system/events';
 import * as skillModule from '../../character/skill';
 
 /**

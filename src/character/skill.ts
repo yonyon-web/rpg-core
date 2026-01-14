@@ -4,7 +4,7 @@
  */
 
 import type { Character } from '../types/battle';
-import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication, SkillLevelUpCost } from '../types/skill';
+import type { Skill, LearnedSkill, SkillCost, StatusEffectApplication, SkillLevelUpCost } from '../types/character/skill';
 import type { UniqueId } from '../types/common';
 
 /**

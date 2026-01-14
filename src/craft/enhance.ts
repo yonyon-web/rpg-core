@@ -5,7 +5,7 @@
  * すべての計算ロジックを提供します。
  */
 
-import type { EnhanceConfig, EnhancableEquipment, EnhanceCost } from '../types/craft';
+import type { EnhanceConfig, EnhancableEquipment, EnhanceCost } from '../types/craft/craft';
 import type { Probability } from '../types/common';
 
 /**

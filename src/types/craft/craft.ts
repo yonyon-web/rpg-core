@@ -2,8 +2,8 @@
  * クラフト・合成関連の型定義
  */
 
-import type { UniqueId, Probability } from './common';
-import type { ConsumableItem, BaseItemType, DefaultItemType } from './item';
+import type { UniqueId, Probability } from '../common';
+import type { ConsumableItem, BaseItemType, DefaultItemType } from '../item/item';
 
 /**
  * クラフトレシピ

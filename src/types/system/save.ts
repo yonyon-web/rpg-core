@@ -2,8 +2,8 @@
  * セーブ/ロード関連の型定義
  */
 
-import type { Combatant } from './combatant';
-import type { ConsumableItem } from './item';
+import type { Combatant } from '../battle/combatant';
+import type { ConsumableItem } from '../item/item';
 
 /**
  * ゲーム状態

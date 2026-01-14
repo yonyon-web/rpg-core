@@ -6,7 +6,7 @@
 
 import { Enemy, DropItem } from '../../types';
 import { UniqueId } from '../../types/common';
-import { DefaultStats } from '../../types/stats';
+import { DefaultStats } from '../../types/character/stats';
 
 /**
  * 敵タイプ定義

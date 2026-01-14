@@ -4,9 +4,9 @@
  */
 
 import type { Character } from '../types/battle';
-import type { Job, JobChangeRequirements, JobHistory } from '../types/job';
+import type { Job, JobChangeRequirements, JobHistory } from '../types/character/job';
 import type { UniqueId } from '../types/common';
-import type { BaseStats, DefaultStats } from '../types/stats';
+import type { BaseStats, DefaultStats } from '../types/character/stats';
 
 /**
  * ジョブ変更が可能かチェック

@@ -17,7 +17,7 @@ import type {
   UniqueId
 } from '../../types';
 import type { EventBus } from '../../core/EventBus';
-import type { DataChangeEvent } from '../../types/events';
+import type { DataChangeEvent } from '../../types/system/events';
 
 import {
   addItemToInventory,

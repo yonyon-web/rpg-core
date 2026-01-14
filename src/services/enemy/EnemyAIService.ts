@@ -14,8 +14,8 @@ import {
   AIDecision,
   AIStrategy
 } from '../../types';
-import { Skill } from '../../types/skill';
-import { Combatant } from '../../types/combatant';
+import { Skill } from '../../types/character/skill';
+import { Combatant } from '../../types/battle/combatant';
 import { filterAlive, countAlive } from '../../combat/combatantState';
 
 /**

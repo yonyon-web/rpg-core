@@ -2,16 +2,16 @@
  * 戦闘者関連の型定義
  */
 
-import { UniqueId } from './common';
-import { BaseStats, DefaultStats } from './stats';
+import { UniqueId } from '../common';
+import { BaseStats, DefaultStats } from '../character/stats';
 import { 
   StatusEffect, 
   BaseStatusEffectType, 
   DefaultStatusEffectType,
   BaseStatusEffectCategory,
   DefaultStatusEffectCategory 
-} from './statusEffect';
-import type { EquippedItems, BaseEquipmentSlot, DefaultEquipmentSlot, BaseEquipmentType, DefaultEquipmentType } from './equipment';
+} from '../status/statusEffect';
+import type { EquippedItems, BaseEquipmentSlot, DefaultEquipmentSlot, BaseEquipmentType, DefaultEquipmentType } from '../item/equipment';
 
 /**
  * 戦闘者基本インターフェース
