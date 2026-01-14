@@ -7,7 +7,7 @@
 // System core
 export * from './EventBus';
 export * from './ServiceContainer';
-export * from './RPGCore';
+export * from './GEasyKit';
 export * from './persistence';
 
 // Character core

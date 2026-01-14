@@ -1,10 +1,10 @@
 /**
- * RPGCore Usage Examples
+ * GEasyKit Usage Examples
  * 
- * このファイルは、rpg-coreの依存関係管理システムの使用例を示します。
+ * このファイルは、GEasy-Kitの依存関係管理システムの使用例を示します。
  */
 
-import { RPGCore } from '../src/core/RPGCore';
+import { GEasyKit } from '../src/core/GEasyKit';
 import type { Character, Enemy } from '../src/types';
 
 /**
@@ -13,13 +13,13 @@ import type { Character, Enemy } from '../src/types';
 function basicExample() {
   console.log('=== Example 1: Basic Usage ===');
   
-  // 1. RPGCoreインスタンスを作成
-  const rpg = new RPGCore();
+  // 1. GEasyKitインスタンスを作成
+  const kit = new GEasyKit();
   
   // 2. サービスを取得（依存関係は自動解決）
-  const battleService = rpg.services.battle;
-  const itemService = rpg.services.item;
-  const partyService = rpg.services.party;
+  const battleService = kit.services.battle;
+  const itemService = kit.services.item;
+  const partyService = kit.services.party;
   
   console.log('Services initialized:', {
     battle: !!battleService,
@@ -28,8 +28,8 @@ function basicExample() {
   });
   
   // 3. コントローラーを作成
-  const battleController = rpg.controllers.battle();
-  const itemController = rpg.controllers.item();
+  const battleController = kit.controllers.battle();
+  const itemController = kit.controllers.item();
   
   console.log('Controllers created:', {
     battle: !!battleController,
@@ -43,7 +43,7 @@ function basicExample() {
 function customConfigExample() {
   console.log('\n=== Example 2: Custom Configuration ===');
   
-  const rpg = new RPGCore({
+  const kit = new GEasyKit({
     config: {
       damageFormula: {
         physicalDamageMultiplier: 3.0,
@@ -59,8 +59,8 @@ function customConfigExample() {
   });
   
   console.log('Custom config applied:', {
-    physicalMultiplier: rpg.config.damageFormula?.physicalDamageMultiplier,
-    magicMultiplier: rpg.config.damageFormula?.magicDamageMultiplier
+    physicalMultiplier: kit.config.damageFormula?.physicalDamageMultiplier,
+    magicMultiplier: kit.config.damageFormula?.magicDamageMultiplier
   });
 }
 
@@ -70,13 +70,13 @@ function customConfigExample() {
 function eventBusExample() {
   console.log('\n=== Example 3: EventBus Integration ===');
   
-  const rpg = new RPGCore({
+  const kit = new GEasyKit({
     useEventBus: true
   });
   
   // EventBusからイベントを購読
-  if (rpg.eventBus) {
-    rpg.eventBus.on('data-changed', (event: any) => {
+  if (kit.eventBus) {
+    kit.eventBus.on('data-changed', (event: any) => {
       console.log('Data changed:', event.type);
     });
     
@@ -96,13 +96,13 @@ class AnalyticsService {
 function customServiceExample() {
   console.log('\n=== Example 4: Custom Service ===');
   
-  const rpg = new RPGCore();
+  const kit = new GEasyKit();
   
   // カスタムサービスを登録
-  rpg.container.register('analytics', () => new AnalyticsService());
+  kit.container.register('analytics', () => new AnalyticsService());
   
   // カスタムサービスを使用
-  const analytics = rpg.container.resolve<AnalyticsService>('analytics');
+  const analytics = kit.container.resolve<AnalyticsService>('analytics');
   analytics.trackEvent('game-started', { timestamp: Date.now() });
   
   console.log('Custom service registered and used');
@@ -114,17 +114,17 @@ function customServiceExample() {
 function inspectServicesExample() {
   console.log('\n=== Example 5: Inspect Registered Services ===');
   
-  const rpg = new RPGCore();
+  const kit = new GEasyKit();
   
   // 登録されているサービスの一覧を取得
-  const services = rpg.container.getRegisteredServices();
+  const services = kit.container.getRegisteredServices();
   
   console.log('Registered services:', services.length);
   console.log('Service names:', services.slice(0, 5).join(', '), '...');
   
   // 特定のサービスが登録されているかチェック
-  console.log('Has battleService:', rpg.container.has('battleService'));
-  console.log('Has nonexistentService:', rpg.container.has('nonexistentService'));
+  console.log('Has battleService:', kit.container.has('battleService'));
+  console.log('Has nonexistentService:', kit.container.has('nonexistentService'));
 }
 
 // すべての例を実行

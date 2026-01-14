@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サンプル・デモ - rpg-core</title>
+    <title>サンプル・デモ - GEasy-Kit</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -11,13 +11,13 @@
         <nav class="nav">
             <div class="container">
                 <div class="nav-content">
-                    <a href="../index.html" class="logo">rpg-core</a>
+                    <a href="../index.html" class="logo">GEasy-Kit</a>
                     <ul class="nav-links">
                         <li><a href="../index.html">ホーム</a></li>
                         <li><a href="../docs/index.html">ドキュメント</a></li>
                         <li><a href="index.html">サンプル</a></li>
                         <li><a href="../api/index.html">API</a></li>
-                        <li><a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
                     </ul>
                 </div>
             </div>
@@ -29,7 +29,7 @@
             <div class="container">
                 <h1 class="section-title">サンプルコード・使用例</h1>
                 <p style="text-align: center; color: var(--text-light); margin-bottom: 3rem;">
-                    rpg-coreの実践的な使用例を紹介します。各サンプルは実際のゲーム開発で使えるコードです。
+                    GEasy-Kitの実践的な使用例を紹介します。各サンプルは実際のゲーム開発で使えるコードです。
                 </p>
 
                 <div class="examples-grid">
@@ -38,7 +38,7 @@
                         <h2>基本セットアップ</h2>
                         <span class="badge badge-primary">初級</span>
                         <p>RPGCoreの基本的な初期化とサービスへのアクセス方法</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 // 基本的な初期化
 const rpg = new RPGCore();
@@ -56,7 +56,7 @@ console.log('RPG Core initialized successfully!');</code></pre>
                         <h2>カスタム設定</h2>
                         <span class="badge badge-primary">初級</span>
                         <p>ゲーム固有の設定でライブラリをカスタマイズ</p>
-                        <pre><code>import { RPGCore, GameConfig } from 'rpg-core';
+                        <pre><code>import { RPGCore, GameConfig } from 'GEasy-Kit';
 
 const customConfig: Partial&lt;GameConfig&gt; = {
   maxLevel: 99,
@@ -78,7 +78,7 @@ console.log('Custom RPG Core initialized!');</code></pre>
                         <h2>戦闘システムの使用</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>戦闘の開始、コマンド実行、結果の取得</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const battleService = rpg.services.battle;
@@ -110,7 +110,7 @@ console.log('Battle result:', result);</code></pre>
                         <h2>キャラクター成長</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>経験値の付与とレベルアップの処理</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const growthService = rpg.services.growth;
@@ -139,7 +139,7 @@ if (result.leveledUp) {
                         <h2>アイテム管理</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>インベントリの操作とアイテムの使用</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const inventoryService = rpg.services.inventory;
@@ -167,7 +167,7 @@ console.log('Current inventory:', items);</code></pre>
                         <h2>装備システム</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>装備の変更と能力値の計算</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const equipmentService = rpg.services.equipment;
@@ -198,7 +198,7 @@ if (result.success) {
                         <h2>イベント処理</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>EventBusを使用したイベント駆動の処理</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore({ useEventBus: true });
 const eventBus = rpg.eventBus;
@@ -227,7 +227,7 @@ battleService.startBattle(/* ... */);</code></pre>
                         <h2>セーブ・ロード</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>ゲーム状態の保存と復元</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const saveService = rpg.services.save;
@@ -256,7 +256,7 @@ if (loadedState) {
                         <h2>カスタムダメージ計算</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>独自のダメージ計算式を実装</p>
-                        <pre><code>import { RPGCore, DamageCalculator } from 'rpg-core';
+                        <pre><code>import { RPGCore, DamageCalculator } from 'GEasy-Kit';
 
 class CustomDamageCalculator extends DamageCalculator {
   calculatePhysicalDamage(attacker, defender, skill) {
@@ -287,7 +287,7 @@ const rpg = new RPGCore({
                         <h2>パーティ編成</h2>
                         <span class="badge badge-primary">初級</span>
                         <p>パーティメンバーの追加・削除・並び替え</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const partyService = rpg.services.party;
@@ -318,7 +318,7 @@ console.log('Party:', party.members);</code></pre>
                         <h2>スキル習得</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>キャラクターのスキル習得と管理</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const skillService = rpg.services.skill;
@@ -347,7 +347,7 @@ if (result.success) {
                         <h2>状態異常管理</h2>
                         <span class="badge badge-secondary">中級</span>
                         <p>バフ・デバフ・状態異常の適用と管理</p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore();
 const statusService = rpg.services.status;
@@ -406,7 +406,7 @@ console.log('Active statuses:', statuses);</code></pre>
                     <div class="container">
                         <h2>もっとサンプルを見る</h2>
                         <p>GitHubリポジトリには、さらに多くのサンプルコードが用意されています</p>
-                        <a href="https://github.com/yonyon-web/rpg-core/tree/main/examples" class="btn btn-primary" target="_blank" rel="noopener">GitHubのexamplesを見る</a>
+                        <a href="https://github.com/yonyon-web/GEasy-Kit/tree/main/examples" class="btn btn-primary" target="_blank" rel="noopener">GitHubのexamplesを見る</a>
                     </div>
                 </div>
             </div>
@@ -415,10 +415,10 @@ console.log('Active statuses:', statuses);</code></pre>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 rpg-core. Licensed under ISC.</p>
+            <p>&copy; 2026 GEasy-Kit. Licensed under ISC.</p>
             <p>
-                <a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a> |
-                <a href="https://github.com/yonyon-web/rpg-core/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
                 <a href="../docs/index.html">Docs</a>
             </p>
         </div>

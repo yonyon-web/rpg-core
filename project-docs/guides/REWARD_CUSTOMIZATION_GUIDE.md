@@ -172,7 +172,7 @@ const service = new RewardService({
 Serviceを使わず、Core Engine関数を直接使うこともできます：
 
 ```typescript
-import * as growth from 'rpg-core/character/growth';
+import * as growth from 'GEasy-Kit/character/growth';
 
 // 経験値計算
 const expRequired = growth.getExpForLevel(5, {

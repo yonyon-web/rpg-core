@@ -1,7 +1,7 @@
 /**
  * Headless UI
  * 
- * rpg-coreのヘッドレスUI層
+ * GEasy-KitのヘッドレスUI層
  * フレームワーク非依存な状態管理とイベント処理を提供
  */
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ドキュメント - rpg-core</title>
+    <title>ドキュメント - GEasy-Kit</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -11,13 +11,13 @@
         <nav class="nav">
             <div class="container">
                 <div class="nav-content">
-                    <a href="../index.html" class="logo">rpg-core</a>
+                    <a href="../index.html" class="logo">GEasy-Kit</a>
                     <ul class="nav-links">
                         <li><a href="../index.html">ホーム</a></li>
                         <li><a href="index.html">ドキュメント</a></li>
                         <li><a href="../examples/index.html">サンプル</a></li>
                         <li><a href="../api/index.html">API</a></li>
-                        <li><a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
                     </ul>
                 </div>
             </div>
@@ -44,14 +44,14 @@
                     <div class="docs-content">
                         <h1 id="introduction">はじめに</h1>
                         <p>
-                            rpg-coreは、JRPG（日本のロールプレイングゲーム）スタイルのターン制RPGを作成するための
+                            GEasy-Kitは、JRPG（日本のロールプレイングゲーム）スタイルのターン制RPGを作成するための
                             TypeScriptライブラリです。このライブラリは、数値計算とゲームルールの判定を担当する
                             Core Engineを中心に設計されています。
                         </p>
 
                         <h2 id="installation">インストール</h2>
                         <p>npmを使用してインストールできます：</p>
-                        <pre><code>npm install rpg-core</code></pre>
+                        <pre><code>npm install GEasy-Kit</code></pre>
 
                         <h2 id="usage">基本的な使い方</h2>
                         
@@ -60,7 +60,7 @@
                             最も簡単な方法は、RPGCoreクラスを使用して、1カ所でライブラリ全体を初期化することです。
                             依存関係は自動的に解決されます。
                         </p>
-                        <pre><code>import { RPGCore } from 'rpg-core';
+                        <pre><code>import { RPGCore } from 'GEasy-Kit';
 
 // ライブラリ全体を初期化
 const rpg = new RPGCore({
@@ -87,14 +87,14 @@ const battleController = rpg.controllers.battle();</code></pre>
 
                         <h3>従来の方法: 個別にインスタンス化</h3>
                         <p>従来の手動インスタンス化も引き続きサポートされています：</p>
-                        <pre><code>import { BattleService, ItemService, defaultGameConfig } from 'rpg-core';
+                        <pre><code>import { BattleService, ItemService, defaultGameConfig } from 'GEasy-Kit';
 
 const config = defaultGameConfig;
 const battleService = new BattleService(config);
 const itemService = new ItemService();</code></pre>
 
                         <h2 id="architecture">アーキテクチャ</h2>
-                        <p>rpg-coreは、以下のレイヤー構造を持っています：</p>
+                        <p>GEasy-Kitは、以下のレイヤー構造を持っています：</p>
                         
                         <div class="card">
                             <h3>レイヤー構造</h3>
@@ -116,7 +116,7 @@ const itemService = new ItemService();</code></pre>
                         </ul>
 
                         <h2 id="features">主要機能</h2>
-                        <p>rpg-coreは、以下の主要機能を提供します：</p>
+                        <p>GEasy-Kitは、以下の主要機能を提供します：</p>
 
                         <h3>🎮 戦闘・操作</h3>
                         <ul>
@@ -159,11 +159,11 @@ const itemService = new ItemService();</code></pre>
                         </ul>
 
                         <h2 id="customization">カスタマイズ</h2>
-                        <p>rpg-coreは、ゲーム固有のルールに対応できる拡張性を備えています。</p>
+                        <p>GEasy-Kitは、ゲーム固有のルールに対応できる拡張性を備えています。</p>
 
                         <h3>設定のカスタマイズ</h3>
                         <p>ゲーム設定をカスタマイズすることで、独自のゲームバランスを実現できます：</p>
-                        <pre><code>import { RPGCore, GameConfig } from 'rpg-core';
+                        <pre><code>import { RPGCore, GameConfig } from 'GEasy-Kit';
 
 const customConfig: GameConfig = {
   maxLevel: 99,
@@ -210,7 +210,7 @@ npm run watch</code></pre>
                             <ul>
                                 <li><a href="../examples/index.html">サンプルコードを試す</a> - 実際の動作を確認</li>
                                 <li><a href="../api/index.html">APIリファレンスを読む</a> - 詳細なAPI仕様</li>
-                                <li><a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHubリポジトリ</a> - ソースコードとissues</li>
+                                <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHubリポジトリ</a> - ソースコードとissues</li>
                             </ul>
                         </div>
                     </div>
@@ -221,10 +221,10 @@ npm run watch</code></pre>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 rpg-core. Licensed under ISC.</p>
+            <p>&copy; 2026 GEasy-Kit. Licensed under ISC.</p>
             <p>
-                <a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a> |
-                <a href="https://github.com/yonyon-web/rpg-core/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
                 <a href="index.html">Docs</a>
             </p>
         </div>

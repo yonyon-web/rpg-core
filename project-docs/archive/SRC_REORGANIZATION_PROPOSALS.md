@@ -71,7 +71,7 @@ src/
 │   ├── system/              # システム基盤
 │   │   ├── EventBus.ts
 │   │   ├── ServiceContainer.ts
-│   │   ├── RPGCore.ts
+│   │   ├── GEasyKit.ts
 │   │   └── persistence.ts
 │   ├── config/              # 設定
 │   │   └── defaultConfig.ts
@@ -323,7 +323,7 @@ src/
 │   ├── core/                # システムコア
 │   │   ├── EventBus.ts
 │   │   ├── ServiceContainer.ts
-│   │   ├── RPGCore.ts
+│   │   ├── GEasyKit.ts
 │   │   └── persistence.ts
 │   ├── services/            # システムサービス
 │   │   ├── SaveLoadService.ts
@@ -419,7 +419,7 @@ src/
 │   ├── system/              # システム基盤（既存のcore/とsystem/を統合）
 │   │   ├── EventBus.ts
 │   │   ├── ServiceContainer.ts
-│   │   ├── RPGCore.ts
+│   │   ├── GEasyKit.ts
 │   │   └── persistence.ts
 │   └── index.ts
 │
@@ -574,7 +574,7 @@ src/
 ├── core/                    # system/を統合
 │   ├── EventBus.ts
 │   ├── ServiceContainer.ts
-│   ├── RPGCore.ts
+│   ├── GEasyKit.ts
 │   ├── persistence.ts       # system/から移動
 │   └── index.ts
 ├── craft/                   # 既存維持

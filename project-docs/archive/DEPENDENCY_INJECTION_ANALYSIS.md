@@ -166,7 +166,7 @@ addItem(item: Item, quantity: number): InventoryResult
 **評価: 適切な設計**
 - InventoryServiceは特定のインベントリを管理するサービス
 - 状態を持つことが適切
-- RPGCoreで自動的に初期化される
+- GEasyKitで自動的に初期化される
 
 ### 5. ShopService
 
@@ -297,7 +297,7 @@ constructor(
 }
 ```
 
-**RPGCoreでの登録:**
+**GEasyKitでの登録:**
 ```typescript
 this._container.register('actionExecutor', (c) =>
   new BattleActionExecutor(c.resolve('config'))

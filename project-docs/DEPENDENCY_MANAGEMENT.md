@@ -1,10 +1,10 @@
 # 依存関係管理システム (Dependency Management System)
 
-rpg-coreライブラリの依存関係管理システムの完全ガイド
+GEasy-Kitライブラリの依存関係管理システムの完全ガイド
 
 ## 概要
 
-rpg-coreは、サービス間およびコントローラー間の依存関係を自動的に解決するDependency Injection (DI) システムを提供します。このシステムにより、開発者は複雑な依存関係を気にすることなく、1カ所でアプリケーションを設定できます。
+GEasy-Kitは、サービス間およびコントローラー間の依存関係を自動的に解決するDependency Injection (DI) システムを提供します。このシステムにより、開発者は複雑な依存関係を気にすることなく、1カ所でアプリケーションを設定できます。
 
 ## 問題
 
@@ -36,26 +36,26 @@ const itemController = new ItemController(itemService);
 
 ## 解決策
 
-rpg-coreの依存関係管理システムを使用すると、すべての依存関係が自動的に解決されます：
+GEasy-Kitの依存関係管理システムを使用すると、すべての依存関係が自動的に解決されます：
 
 ```typescript
-// ✅ 新しい方法：RPGCoreクラスで一箇所設定
-import { RPGCore } from 'rpg-core';
+// ✅ 新しい方法：GEasyKitクラスで一箇所設定
+import { GEasyKit } from 'GEasy-Kit';
 
-const rpg = new RPGCore({
+const kit = new GEasyKit({
   config: customGameConfig,  // 省略可能
   useEventBus: true,         // 省略可能（デフォルト: true）
   initialInventory: myInventory  // 省略可能
 });
 
 // サービスに直接アクセス（依存関係は自動解決）
-const battleService = rpg.services.battle;
-const itemService = rpg.services.item;
-const craftService = rpg.services.craft;
+const battleService = kit.services.battle;
+const itemService = kit.services.item;
+const craftService = kit.services.craft;
 
 // コントローラーも簡単に取得
-const battleController = rpg.controllers.battle();
-const itemController = rpg.controllers.item();
+const battleController = kit.controllers.battle();
+const itemController = kit.controllers.item();
 ```
 
 ## 主要コンポーネント
@@ -65,7 +65,7 @@ const itemController = rpg.controllers.item();
 DIコンテナの実装。サービスの登録、解決、ライフタイム管理を担当します。
 
 ```typescript
-import { ServiceContainer } from 'rpg-core';
+import { ServiceContainer } from 'GEasy-Kit';
 
 const container = new ServiceContainer();
 
@@ -85,14 +85,14 @@ const service = container.resolve('myService');
 - **循環依存検出**: 循環依存を自動的に検出してエラーを投げる
 - **遅延初期化**: サービスは最初に使用される時に初期化される
 
-### 2. RPGCore
+### 2. GEasyKit
 
-rpg-coreの統一エントリーポイント。すべてのサービスとコントローラーにアクセスできます。
+GEasy-Kitの統一エントリーポイント。すべてのサービスとコントローラーにアクセスできます。
 
 ```typescript
-import { RPGCore } from 'rpg-core';
+import { GEasyKit } from 'GEasy-Kit';
 
-const rpg = new RPGCore({
+const kit = new GEasyKit({
   config: {
     // カスタムゲーム設定
     damageFormula: {
@@ -108,17 +108,17 @@ const rpg = new RPGCore({
 ### 基本的な使用
 
 ```typescript
-import { RPGCore } from 'rpg-core';
+import { GEasyKit } from 'GEasy-Kit';
 
-// 1. RPGCoreインスタンスを作成
-const rpg = new RPGCore();
+// 1. GEasyKitインスタンスを作成
+const kit = new GEasyKit();
 
 // 2. サービスを使用
-const battleService = rpg.services.battle;
+const battleService = kit.services.battle;
 await battleService.startBattle(party, enemies);
 
 // 3. コントローラーを作成
-const battleController = rpg.controllers.battle();
+const battleController = kit.controllers.battle();
 battleController.subscribe((state) => {
   console.log('Battle state:', state);
 });
@@ -127,7 +127,7 @@ battleController.subscribe((state) => {
 ### カスタム設定を使用
 
 ```typescript
-import { RPGCore, defaultGameConfig } from 'rpg-core';
+import { GEasyKit, defaultGameConfig } from 'GEasy-Kit';
 
 const customConfig = {
   ...defaultGameConfig,
@@ -137,7 +137,7 @@ const customConfig = {
   }
 };
 
-const rpg = new RPGCore({
+const kit = new GEasyKit({
   config: customConfig
 });
 ```
@@ -146,14 +146,14 @@ const rpg = new RPGCore({
 
 ```tsx
 import React, { createContext, useContext, useMemo } from 'react';
-import { RPGCore } from 'rpg-core';
+import { GEasyKit } from 'GEasy-Kit';
 
-// RPGCoreのコンテキストを作成
-const RPGContext = createContext<RPGCore | null>(null);
+// GEasyKitのコンテキストを作成
+const RPGContext = createContext<GEasyKit | null>(null);
 
 // プロバイダーコンポーネント
 export const RPGProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const rpg = useMemo(() => new RPGCore(), []);
+  const kit = useMemo(() => new GEasyKit(), []);
   
   return (
     <RPGContext.Provider value={rpg}>
@@ -164,17 +164,17 @@ export const RPGProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 // カスタムフック
 export const useRPG = () => {
-  const rpg = useContext(RPGContext);
-  if (!rpg) {
+  const kit = useContext(RPGContext);
+  if (!kit) {
     throw new Error('useRPG must be used within RPGProvider');
   }
-  return rpg;
+  return kit;
 };
 
 // コンポーネント内での使用
 const BattleComponent: React.FC = () => {
-  const rpg = useRPG();
-  const [controller] = useState(() => rpg.controllers.battle());
+  const kit = useRPG();
+  const [controller] = useState(() => kit.controllers.battle());
   
   useEffect(() => {
     const unsubscribe = controller.subscribe((state) => {
@@ -192,19 +192,19 @@ const BattleComponent: React.FC = () => {
 ```typescript
 // store/rpg.ts
 import { defineStore } from 'pinia';
-import { RPGCore } from 'rpg-core';
+import { GEasyKit } from 'GEasy-Kit';
 
 export const useRPGStore = defineStore('rpg', {
   state: () => ({
-    rpg: new RPGCore(),
+    rpg: new GEasyKit(),
   }),
   getters: {
-    battleService: (state) => state.rpg.services.battle,
-    itemService: (state) => state.rpg.services.item,
+    battleService: (state) => state.kit.services.battle,
+    itemService: (state) => state.kit.services.item,
   },
   actions: {
     getBattleController() {
-      return this.rpg.controllers.battle();
+      return this.kit.controllers.battle();
     },
   },
 });
@@ -237,7 +237,7 @@ onMounted(() => {
 高度な使用例として、独自のサービスをDIコンテナに登録できます：
 
 ```typescript
-import { RPGCore } from 'rpg-core';
+import { GEasyKit } from 'GEasy-Kit';
 
 // カスタムサービス
 class AnalyticsService {
@@ -246,56 +246,56 @@ class AnalyticsService {
   }
 }
 
-const rpg = new RPGCore();
+const kit = new GEasyKit();
 
 // カスタムサービスを登録
-rpg.container.register('analytics', () => new AnalyticsService());
+kit.container.register('analytics', () => new AnalyticsService());
 
 // カスタムサービスを使用
-const analytics = rpg.container.resolve<AnalyticsService>('analytics');
+const analytics = kit.container.resolve<AnalyticsService>('analytics');
 analytics.trackEvent('battle-started', { partySize: 4 });
 ```
 
 ## 利用可能なサービス
 
-RPGCoreインスタンスから以下のサービスにアクセスできます：
+GEasyKitインスタンスから以下のサービスにアクセスできます：
 
 ```typescript
-rpg.services.battle       // BattleService
-rpg.services.item         // ItemService
-rpg.services.equipment    // EquipmentService
-rpg.services.party        // PartyService
-rpg.services.statusEffect // StatusEffectService
-rpg.services.inventory    // InventoryService
-rpg.services.reward       // RewardService
-rpg.services.skillLearn   // SkillLearnService
-rpg.services.jobChange    // JobChangeService
-rpg.services.craft        // CraftService
-rpg.services.enhance      // EnhanceService
-rpg.services.shop         // ShopService
-rpg.services.command      // CommandService
-rpg.services.enemyAI      // EnemyAIService
-rpg.services.enemyGroup   // EnemyGroupService
-rpg.services.saveLoad     // SaveLoadService
-rpg.services.simulation   // SimulationService
+kit.services.battle       // BattleService
+kit.services.item         // ItemService
+kit.services.equipment    // EquipmentService
+kit.services.party        // PartyService
+kit.services.statusEffect // StatusEffectService
+kit.services.inventory    // InventoryService
+kit.services.reward       // RewardService
+kit.services.skillLearn   // SkillLearnService
+kit.services.jobChange    // JobChangeService
+kit.services.craft        // CraftService
+kit.services.enhance      // EnhanceService
+kit.services.shop         // ShopService
+kit.services.command      // CommandService
+kit.services.enemyAI      // EnemyAIService
+kit.services.enemyGroup   // EnemyGroupService
+kit.services.saveLoad     // SaveLoadService
+kit.services.simulation   // SimulationService
 ```
 
 ## 利用可能なコントローラー
 
 ```typescript
-rpg.controllers.battle()      // BattleController
-rpg.controllers.item()        // ItemController
-rpg.controllers.equipment()   // EquipmentController
-rpg.controllers.party()       // PartyController
-rpg.controllers.craft()       // CraftController
-rpg.controllers.skillLearn()  // SkillLearnController
-rpg.controllers.reward()      // RewardController
-rpg.controllers.enhance()     // EnhanceController
-rpg.controllers.jobChange()   // JobChangeController
-rpg.controllers.statusEffect() // StatusEffectController
-rpg.controllers.inventory()   // InventoryController
-rpg.controllers.shop()        // ShopController
-rpg.controllers.command()     // CommandController
+kit.controllers.battle()      // BattleController
+kit.controllers.item()        // ItemController
+kit.controllers.equipment()   // EquipmentController
+kit.controllers.party()       // PartyController
+kit.controllers.craft()       // CraftController
+kit.controllers.skillLearn()  // SkillLearnController
+kit.controllers.reward()      // RewardController
+kit.controllers.enhance()     // EnhanceController
+kit.controllers.jobChange()   // JobChangeController
+kit.controllers.statusEffect() // StatusEffectController
+kit.controllers.inventory()   // InventoryController
+kit.controllers.shop()        // ShopController
+kit.controllers.command()     // CommandController
 ```
 
 ## メリット
@@ -324,7 +324,7 @@ DIパターンに慣れていない開発者には、最初は理解が必要で
 
 **緩和策**: 
 - 豊富なドキュメントと例
-- RPGCoreクラスが複雑さを隠蔽
+- GEasyKitクラスが複雑さを隠蔽
 
 ### 2. デバッグの複雑さ
 依存関係が自動解決されるため、問題の原因を追跡しにくい場合があります。
@@ -366,11 +366,11 @@ container.resolve('serviceA'); // Error: Circular dependency detected
 - 必要に応じて、インターフェースやイベントバスを使用して疎結合にする
 
 ### マルチインスタンス
-複数のRPGCoreインスタンスを作成する場合、それぞれが独立したサービスのセットを持ちます。
+複数のGEasyKitインスタンスを作成する場合、それぞれが独立したサービスのセットを持ちます。
 
 ```typescript
-const rpg1 = new RPGCore();
-const rpg2 = new RPGCore();
+const rpg1 = new GEasyKit();
+const rpg2 = new GEasyKit();
 
 // rpg1とrpg2のサービスは完全に独立
 rpg1.services.battle !== rpg2.services.battle // true
@@ -380,7 +380,7 @@ rpg1.services.battle !== rpg2.services.battle // true
 
 ## まとめ
 
-rpg-coreの依存関係管理システムは、以下の利点を提供します：
+GEasy-Kitの依存関係管理システムは、以下の利点を提供します：
 
 ✅ **シンプルな初期化**: 1カ所で全体を設定  
 ✅ **自動依存解決**: 手動での依存管理が不要  
@@ -405,8 +405,8 @@ rpg-coreの依存関係管理システムは、以下の利点を提供します
 const battleService = new BattleService(config);
 
 // 新しいコード（推奨）
-const rpg = new RPGCore({ config });
-const battleService = rpg.services.battle;
+const kit = new GEasyKit({ config });
+const battleService = kit.services.battle;
 ```
 
 両方のアプローチが共存できるため、徐々に移行できます。

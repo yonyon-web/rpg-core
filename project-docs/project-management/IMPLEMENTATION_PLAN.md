@@ -260,7 +260,7 @@
    }
    ```
 2. 各サービスがインターフェースを実装
-3. `RPGCore.registerServices` を更新してインターフェースに依存
+3. `GEasyKit.registerServices` を更新してインターフェースに依存
 
 **効果**: テスト容易性向上、拡張性向上
 

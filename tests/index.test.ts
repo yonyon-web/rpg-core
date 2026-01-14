@@ -1,6 +1,6 @@
 import { version, defaultGameConfig, calculatePhysicalDamage } from '../src/index';
 
-describe('rpg-core（パッケージ）', () => {
+describe('GEasy-Kit（パッケージ）', () => {
   describe('エクスポート', () => {
     it('バージョン文字列をエクスポートする', () => {
       expect(version).toBe('1.0.0');

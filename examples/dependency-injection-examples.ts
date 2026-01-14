@@ -5,26 +5,26 @@
  * This file provides examples demonstrating the dependency injection improvements.
  */
 
-import { RPGCore } from '../src/core/RPGCore';
+import { GEasyKit } from '../src/core/GEasyKit';
 import { BattleService } from '../src/services/battle/BattleService';
 import { RewardService } from '../src/services/system/RewardService';
 import { BattleActionExecutor } from '../src/services/battle/BattleActionExecutor';
 import { defaultGameConfig } from '../src/config/defaultConfig';
 
 /**
- * 例1: RPGCoreを使用した依存関係の自動注入
- * Example 1: Automatic dependency injection using RPGCore
+ * 例1: GEasyKitを使用した依存関係の自動注入
+ * Example 1: Automatic dependency injection using GEasyKit
  */
 function example1_AutomaticInjection() {
   console.log('=== Example 1: Automatic Dependency Injection ===\n');
   
-  // RPGCoreが全ての依存関係を自動的に解決
-  // RPGCore automatically resolves all dependencies
-  const rpg = new RPGCore();
+  // GEasyKitが全ての依存関係を自動的に解決
+  // GEasyKit automatically resolves all dependencies
+  const kit = new GEasyKit();
   
   // BattleServiceはRewardServiceとBattleActionExecutorが既に注入されている
   // BattleService already has RewardService and BattleActionExecutor injected
-  const battleService = rpg.services.battle;
+  const battleService = kit.services.battle;
   
   console.log('✅ BattleService initialized with dependencies');
   console.log('   - RewardService: injected');
@@ -106,16 +106,16 @@ function example3_CustomConfiguration() {
     },
   };
   
-  // カスタム設定でRPGCoreを初期化
-  // Initialize RPGCore with custom configuration
-  const rpg = new RPGCore({ config: customConfig });
+  // カスタム設定でGEasyKitを初期化
+  // Initialize GEasyKit with custom configuration
+  const kit = new GEasyKit({ config: customConfig });
   
-  const battleService = rpg.services.battle;
+  const battleService = kit.services.battle;
   
   console.log('✅ BattleService with custom config');
-  console.log(`   - Critical multiplier: ${rpg.config.combat.criticalMultiplier}x`);
-  console.log(`   - Max party size: ${rpg.config.balance.maxPartySize}`);
-  console.log(`   - Exp growth rate: ${rpg.config.growth.expGrowthRate}x\n`);
+  console.log(`   - Critical multiplier: ${kit.config.combat.criticalMultiplier}x`);
+  console.log(`   - Max party size: ${kit.config.balance.maxPartySize}`);
+  console.log(`   - Exp growth rate: ${kit.config.growth.expGrowthRate}x\n`);
 }
 
 /**
@@ -125,7 +125,7 @@ function example3_CustomConfiguration() {
 function example4_DataParameters() {
   console.log('=== Example 4: Data Parameters (Not Injected) ===\n');
   
-  const rpg = new RPGCore();
+  const kit = new GEasyKit();
   
   // これらはサービスではなくデータなので、メソッドパラメータとして渡す
   // These are data (not services), so they are passed as method parameters
@@ -135,8 +135,8 @@ function example4_DataParameters() {
   
   // 同じサービスで複数のパーティを処理できる
   // Can process multiple parties with the same service
-  rpg.services.party.addMember(party1, {} as any);
-  rpg.services.party.addMember(party2, {} as any);
+  kit.services.party.addMember(party1, {} as any);
+  kit.services.party.addMember(party2, {} as any);
   
   console.log('✅ Flexibility with data parameters');
   console.log('   - Same service can process multiple parties');
@@ -151,7 +151,7 @@ function example4_DataParameters() {
 function example5_ServiceContainer() {
   console.log('=== Example 5: Direct ServiceContainer Usage ===\n');
   
-  const rpg = new RPGCore();
+  const kit = new GEasyKit();
   
   // カスタムサービスを登録
   // Register a custom service
@@ -161,16 +161,16 @@ function example5_ServiceContainer() {
     }
   }
   
-  rpg.container.register('analytics', () => new AnalyticsService());
+  kit.container.register('analytics', () => new AnalyticsService());
   
   // カスタムサービスを解決
   // Resolve the custom service
-  const analytics = rpg.container.resolve<AnalyticsService>('analytics');
+  const analytics = kit.container.resolve<AnalyticsService>('analytics');
   analytics.trackBattle('battle-001');
   
   // 登録されているサービスの一覧を表示
   // Display registered services
-  const services = rpg.container.getRegisteredServices();
+  const services = kit.container.getRegisteredServices();
   console.log(`\n✅ Total registered services: ${services.length}`);
   console.log(`   Includes: battleService, itemService, analytics, etc.\n`);
 }
@@ -194,9 +194,9 @@ function example6_BackwardCompatibility() {
   
   // 新しい方法（推奨）
   // New way (recommended)
-  const rpg = new RPGCore();
-  const battleService3 = rpg.services.battle;
-  console.log('✅ New way recommended: rpg.services.battle\n');
+  const kit = new GEasyKit();
+  const battleService3 = kit.services.battle;
+  console.log('✅ New way recommended: kit.services.battle\n');
 }
 
 /**

@@ -77,7 +77,7 @@ type MMOEquipType =
 装備タイプとスロットの対応関係を定義します：
 
 ```typescript
-import { EquipmentService } from 'rpg-core';
+import { EquipmentService } from 'GEasy-Kit';
 
 // カスタムスロットとタイプを定義
 type MySlot = 'mainHand' | 'offHand' | 'head';

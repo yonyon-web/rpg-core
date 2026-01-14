@@ -358,10 +358,10 @@ export function createBattleStore(service: BattleService) {
 
 ### 今後の展開
 
-このヘッドレスUI実装により、rpg-coreは以下のようになります:
+このヘッドレスUI実装により、GEasy-Kitは以下のようになります:
 
 ```
-rpg-core v2.0.0
+GEasy-Kit v2.0.0
 ├── Core Engine (✅ 完了)
 ├── Service Layer (✅ 完了)
 └── Headless UI Layer (🔴 これから実装)

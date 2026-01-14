@@ -1,21 +1,21 @@
 /**
- * RPGCore - Central configuration and initialization system
+ * GEasyKit - Central configuration and initialization system
  * 
- * rpg-coreの全機能を一箇所で設定・初期化できるエントリーポイント
+ * GEasy-Kitの全機能を一箇所で設定・初期化できるエントリーポイント
  * 
  * @example
  * ```typescript
  * // 基本的な使い方
- * const rpg = new RPGCore({
+ * const kit = new GEasyKit({
  *   config: customGameConfig
  * });
  * 
  * // サービスを取得
- * const battleService = rpg.services.battle;
- * const itemService = rpg.services.item;
+ * const battleService = kit.services.battle;
+ * const itemService = kit.services.item;
  * 
  * // コントローラーを取得
- * const battleController = rpg.controllers.battle();
+ * const battleController = kit.controllers.battle();
  * ```
  */
 
@@ -62,9 +62,9 @@ import type { GameConfig } from '../types/system/config';
 import type { Inventory, Shop } from '../types';
 
 /**
- * RPGCore設定オプション
+ * GEasyKit設定オプション
  */
-export interface RPGCoreOptions {
+export interface GEasyKitOptions {
   /**
    * ゲーム設定（省略時はdefaultGameConfigを使用）
    */
@@ -82,11 +82,11 @@ export interface RPGCoreOptions {
 }
 
 /**
- * RPGCore クラス
+ * GEasyKit クラス
  * 
- * rpg-coreの全機能にアクセスするための統一インターフェース
+ * GEasy-Kitの全機能にアクセスするための統一インターフェース
  */
-export class RPGCore {
+export class GEasyKit {
   private _container: ServiceContainer;
   private _config: GameConfig;
   private _eventBus?: EventBus;
@@ -96,7 +96,7 @@ export class RPGCore {
    * 
    * @param options - 設定オプション
    */
-  constructor(options: RPGCoreOptions = {}) {
+  constructor(options: GEasyKitOptions = {}) {
     this._container = new ServiceContainer();
     this._config = options.config || defaultGameConfig;
     
@@ -112,7 +112,7 @@ export class RPGCore {
   /**
    * 全サービスを登録
    */
-  private registerServices(options: RPGCoreOptions): void {
+  private registerServices(options: GEasyKitOptions): void {
     // 基本サービス
     this._container.register('config', () => this._config);
     this._container.register('eventBus', () => this._eventBus);
@@ -287,10 +287,10 @@ export class RPGCore {
    * @example
    * ```typescript
    * // カスタムサービスを登録
-   * rpg.container.register('myService', () => new MyService());
+   * kit.container.register('myService', () => new MyService());
    * 
    * // カスタムサービスを解決
-   * const myService = rpg.container.resolve('myService');
+   * const myService = kit.container.resolve('myService');
    * ```
    */
   get container(): ServiceContainer {

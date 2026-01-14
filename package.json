@@ -1,7 +1,7 @@
 {
-  "name": "rpg-core",
+  "name": "geasy-kit",
   "version": "1.0.0",
-  "description": "ターン制RPGゲームを作る仕組みを提供するTypeScriptのライブラリ",
+  "description": "ゲーム開発を簡単にするTypeScriptライブラリ - ターン制RPGゲームを作る仕組みを提供",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -18,7 +18,9 @@
     "game",
     "turn-based",
     "typescript",
-    "jrpg"
+    "jrpg",
+    "game-development",
+    "geasy-kit"
   ],
   "author": "",
   "license": "ISC",

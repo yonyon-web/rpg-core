@@ -194,7 +194,7 @@ addItem(item: Item, quantity: number)
 **なぜ良いか:**
 - 特定のインベントリを管理するサービス
 - 状態を持つことが適切
-- RPGCoreで自動初期化
+- GEasyKitで自動初期化
 
 **結論:** 正しい設計
 
@@ -283,7 +283,7 @@ class BattleService {
 
 1. **BattleService改善**
    - RewardServiceとBattleActionExecutorをDI注入
-   - RPGCoreで適切に登録
+   - GEasyKitで適切に登録
    - テストで検証済み
 
 2. **包括的なドキュメント作成**
@@ -292,7 +292,7 @@ class BattleService {
    - ガイドライン
 
 3. **テストの追加**
-   - RPGCore DI テスト 10個
+   - GEasyKit DI テスト 10個
    - すべてのテストが成功（565テスト）
 
 ### 📝 変更不要
@@ -352,4 +352,4 @@ class BattleService {
    - **データ = パラメータ** が適切
    - この区別により、柔軟性とテスト容易性を両立
 
-**結論:** rpg-coreライブラリは既に優れた設計パターンに従っており、BattleServiceの改善以外は変更不要です。
+**結論:** GEasy-Kitライブラリは既に優れた設計パターンに従っており、BattleServiceの改善以外は変更不要です。

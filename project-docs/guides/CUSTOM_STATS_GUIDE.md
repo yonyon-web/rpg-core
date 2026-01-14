@@ -2,7 +2,7 @@
 
 ## 概要
 
-rpg-coreライブラリは、ゲームごとに異なるステータス項目を自由に定義できる柔軟な設計を採用しています。
+GEasy-Kitライブラリは、ゲームごとに異なるステータス項目を自由に定義できる柔軟な設計を採用しています。
 
 ## 設計思想
 
@@ -24,7 +24,7 @@ rpg-coreライブラリは、ゲームごとに異なるステータス項目を
 ### デフォルトステータスを使用
 
 ```typescript
-import { Combatant, DefaultStats } from 'rpg-core';
+import { Combatant, DefaultStats } from 'GEasy-Kit';
 
 // デフォルトのステータスを使用（型を明示的に指定しない場合）
 const hero: Combatant = {
@@ -54,7 +54,7 @@ const hero: Combatant = {
 ### カスタムステータスを定義
 
 ```typescript
-import { Combatant, BaseStats, calculateFinalStats } from 'rpg-core';
+import { Combatant, BaseStats, calculateFinalStats } from 'GEasy-Kit';
 
 // 独自のステータス型を定義
 interface MyGameStats extends BaseStats {
@@ -364,14 +364,14 @@ interface EnemyStats extends CoreStats {
 
 ```typescript
 // 変更前（引き続き動作）
-import { Combatant, Stats } from 'rpg-core';
+import { Combatant, Stats } from 'GEasy-Kit';
 
 const hero: Combatant = {
   stats: { /* DefaultStatsと同じ */ }
 };
 
 // 変更後（推奨）
-import { Combatant, DefaultStats } from 'rpg-core';
+import { Combatant, DefaultStats } from 'GEasy-Kit';
 
 const hero: Combatant<DefaultStats> = {
   stats: { /* ... */ }
@@ -404,7 +404,7 @@ A: ジェネリクスはコンパイル時に解決されるため、実行時�
 
 ## まとめ
 
-- rpg-coreのステータスシステムは完全にカスタマイズ可能
+- GEasy-Kitのステータスシステムは完全にカスタマイズ可能
 - `BaseStats`を継承して独自のステータス型を定義
 - ジェネリクスにより型安全性を維持
 - `DefaultStats`により後方互換性を確保

@@ -118,7 +118,7 @@ addItem(item: Item, quantity: number)
 **Why it's good:**
 - Manages a specific inventory instance
 - State is appropriate for this service
-- Correctly injected in RPGCore
+- Correctly injected in GEasyKit
 
 ## Design Guidelines
 
@@ -220,7 +220,7 @@ class BattleService {
 
 ### ✅ Completed
 - BattleService now properly injects RewardService and BattleActionExecutor
-- RPGCore correctly registers BattleActionExecutor
+- GEasyKit correctly registers BattleActionExecutor
 - Added comprehensive tests for dependency injection
 - Created detailed analysis documentation
 
@@ -236,7 +236,7 @@ class BattleService {
 All improvements are validated with comprehensive tests:
 
 ```typescript
-describe('RPGCore Dependency Injection', () => {
+describe('GEasyKit Dependency Injection', () => {
   it('should inject dependencies into BattleService');
   it('should return same instance for singleton services');
   it('should detect circular dependencies');
@@ -248,7 +248,7 @@ describe('RPGCore Dependency Injection', () => {
 
 ## Conclusion
 
-The rpg-core library demonstrates excellent separation between:
+The GEasy-Kit library demonstrates excellent separation between:
 - **Dependencies** (injected via constructor): Services, Config, EventBus
 - **Data** (passed as parameters): Character, Party, Inventory, Items
 

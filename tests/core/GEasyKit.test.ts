@@ -1,47 +1,47 @@
 /**
- * Tests for RPGCore
+ * Tests for GEasyKit
  * 依存関係注入システムのテスト
  */
 
-import { RPGCore } from '../../src/core/RPGCore';
+import { GEasyKit } from '../../src/core/GEasyKit';
 import { BattleService } from '../../src/services/battle/BattleService';
 import { RewardService } from '../../src/services/system/RewardService';
 
-describe('RPGCore', () => {
+describe('GEasyKit', () => {
   describe('Dependency Injection', () => {
-    it('should create RPGCore instance with default settings', () => {
-      const rpg = new RPGCore();
+    it('should create GEasyKit instance with default settings', () => {
+      const kit = new GEasyKit();
       
-      expect(rpg).toBeDefined();
-      expect(rpg.config).toBeDefined();
-      expect(rpg.eventBus).toBeDefined();
+      expect(kit).toBeDefined();
+      expect(kit.config).toBeDefined();
+      expect(kit.eventBus).toBeDefined();
     });
 
     it('should provide access to all services', () => {
-      const rpg = new RPGCore();
+      const kit = new GEasyKit();
       
-      expect(rpg.services.battle).toBeInstanceOf(BattleService);
-      expect(rpg.services.item).toBeDefined();
-      expect(rpg.services.equipment).toBeDefined();
-      expect(rpg.services.party).toBeDefined();
-      expect(rpg.services.statusEffect).toBeDefined();
-      expect(rpg.services.inventory).toBeDefined();
-      expect(rpg.services.reward).toBeInstanceOf(RewardService);
-      expect(rpg.services.skillLearn).toBeDefined();
-      expect(rpg.services.jobChange).toBeDefined();
-      expect(rpg.services.craft).toBeDefined();
-      expect(rpg.services.enhance).toBeDefined();
-      expect(rpg.services.shop).toBeDefined();
-      expect(rpg.services.command).toBeDefined();
-      expect(rpg.services.enemyAI).toBeDefined();
-      expect(rpg.services.enemyGroup).toBeDefined();
-      expect(rpg.services.saveLoad).toBeDefined();
-      expect(rpg.services.simulation).toBeDefined();
+      expect(kit.services.battle).toBeInstanceOf(BattleService);
+      expect(kit.services.item).toBeDefined();
+      expect(kit.services.equipment).toBeDefined();
+      expect(kit.services.party).toBeDefined();
+      expect(kit.services.statusEffect).toBeDefined();
+      expect(kit.services.inventory).toBeDefined();
+      expect(kit.services.reward).toBeInstanceOf(RewardService);
+      expect(kit.services.skillLearn).toBeDefined();
+      expect(kit.services.jobChange).toBeDefined();
+      expect(kit.services.craft).toBeDefined();
+      expect(kit.services.enhance).toBeDefined();
+      expect(kit.services.shop).toBeDefined();
+      expect(kit.services.command).toBeDefined();
+      expect(kit.services.enemyAI).toBeDefined();
+      expect(kit.services.enemyGroup).toBeDefined();
+      expect(kit.services.saveLoad).toBeDefined();
+      expect(kit.services.simulation).toBeDefined();
     });
 
     it('should inject dependencies into BattleService', () => {
-      const rpg = new RPGCore();
-      const battleService = rpg.services.battle;
+      const kit = new GEasyKit();
+      const battleService = kit.services.battle;
       
       // BattleServiceがRewardServiceとBattleActionExecutorを持っていることを確認
       expect(battleService).toBeDefined();
@@ -49,10 +49,10 @@ describe('RPGCore', () => {
     });
 
     it('should return same instance for singleton services', () => {
-      const rpg = new RPGCore();
+      const kit = new GEasyKit();
       
-      const battleService1 = rpg.services.battle;
-      const battleService2 = rpg.services.battle;
+      const battleService1 = kit.services.battle;
+      const battleService2 = kit.services.battle;
       
       expect(battleService1).toBe(battleService2);
     });
@@ -93,56 +93,56 @@ describe('RPGCore', () => {
         },
       };
 
-      const rpg = new RPGCore({ config: customConfig });
+      const kit = new GEasyKit({ config: customConfig });
       
-      expect(rpg.config.combat.criticalMultiplier).toBe(3.0);
-      expect(rpg.config.growth.expGrowthRate).toBe(1.5);
+      expect(kit.config.combat.criticalMultiplier).toBe(3.0);
+      expect(kit.config.growth.expGrowthRate).toBe(1.5);
     });
 
     it('should provide access to controllers', () => {
-      const rpg = new RPGCore();
+      const kit = new GEasyKit();
       
-      const battleController = rpg.controllers.battle();
-      const itemController = rpg.controllers.item();
+      const battleController = kit.controllers.battle();
+      const itemController = kit.controllers.item();
       
       expect(battleController).toBeDefined();
       expect(itemController).toBeDefined();
     });
 
     it('should allow custom service registration', () => {
-      const rpg = new RPGCore();
+      const kit = new GEasyKit();
       
       class CustomService {
         getValue() { return 42; }
       }
       
-      rpg.container.register('customService', () => new CustomService());
+      kit.container.register('customService', () => new CustomService());
       
-      const customService = rpg.container.resolve<CustomService>('customService');
+      const customService = kit.container.resolve<CustomService>('customService');
       expect(customService.getValue()).toBe(42);
     });
 
     it('should detect circular dependencies', () => {
-      const rpg = new RPGCore();
+      const kit = new GEasyKit();
       
-      rpg.container.register('serviceA', (c) => {
+      kit.container.register('serviceA', (c) => {
         return { b: c.resolve('serviceB') };
       });
       
-      rpg.container.register('serviceB', (c) => {
+      kit.container.register('serviceB', (c) => {
         return { a: c.resolve('serviceA') };
       });
       
       expect(() => {
-        rpg.container.resolve('serviceA');
+        kit.container.resolve('serviceA');
       }).toThrow('Circular dependency detected');
     });
   });
 
   describe('Service Container', () => {
     it('should list all registered services', () => {
-      const rpg = new RPGCore();
-      const services = rpg.container.getRegisteredServices();
+      const kit = new GEasyKit();
+      const services = kit.container.getRegisteredServices();
       
       expect(services.length).toBeGreaterThan(0);
       expect(services).toContain('battleService');
@@ -152,10 +152,10 @@ describe('RPGCore', () => {
     });
 
     it('should check if service is registered', () => {
-      const rpg = new RPGCore();
+      const kit = new GEasyKit();
       
-      expect(rpg.container.has('battleService')).toBe(true);
-      expect(rpg.container.has('nonexistentService')).toBe(false);
+      expect(kit.container.has('battleService')).toBe(true);
+      expect(kit.container.has('nonexistentService')).toBe(false);
     });
   });
 });
