@@ -1,7 +1,7 @@
 {
   "name": "geasy-kit",
   "version": "1.0.0",
-  "description": "ゲーム開発を簡単にするTypeScriptライブラリ - ターン制RPGゲームを作る仕組みを提供",
+  "description": "手軽で柔軟。GEasy Kitでゲーム開発をもっとシンプルに。",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

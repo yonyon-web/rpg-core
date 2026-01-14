@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="GEasy-Kit - ターン制RPGゲームを作成するためのTypeScriptライブラリ">
-    <title>GEasy-Kit - ターン制RPG TypeScriptライブラリ</title>
+    <meta name="description" content="GEasy Kit - 手軽で柔軟。ゲーム開発をもっとシンプルに。">
+    <title>GEasy Kit - 手軽で柔軟なゲーム開発ライブラリ</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,12 +12,11 @@
         <nav class="nav">
             <div class="container">
                 <div class="nav-content">
-                    <a href="index.html" class="logo">GEasy-Kit</a>
+                    <a href="index.html" class="logo">GEasy Kit</a>
                     <ul class="nav-links">
                         <li><a href="index.html">ホーム</a></li>
                         <li><a href="docs/index.html">ドキュメント</a></li>
-                        <li><a href="examples/index.html">サンプル</a></li>
-                        <li><a href="api/index.html">API</a></li>
+                        <li><a href="customization/index.html">カスタマイズ</a></li>
                         <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
                     </ul>
                 </div>
@@ -29,8 +28,8 @@
         <!-- Hero Section -->
         <section class="hero">
             <div class="container">
-                <h1 class="hero-title">GEasy-Kit</h1>
-                <p class="hero-subtitle">ターン制RPGゲームを作る仕組みを提供するTypeScriptライブラリ</p>
+                <h1 class="hero-title">GEasy Kit</h1>
+                <p class="hero-subtitle">手軽で柔軟。ゲーム開発をもっとシンプルに。</p>
                 <div class="hero-buttons">
                     <a href="#quick-start" class="btn btn-primary">はじめる</a>
                     <a href="https://github.com/yonyon-web/GEasy-Kit" class="btn btn-secondary" target="_blank" rel="noopener">GitHub</a>
@@ -41,8 +40,8 @@
         <!-- RPG Capabilities Section -->
         <section class="rpg-capabilities">
             <div class="container">
-                <h2 class="section-title">RPGで実現できること</h2>
-                <p class="capabilities-intro">GEasy-Kitを使うと、以下のようなJRPG要素を簡単に実装できます</p>
+                <h2 class="section-title">実現できること</h2>
+                <p class="capabilities-intro">GEasy Kitを使うと、以下のような要素を簡単に実装できます</p>
                 <div class="capabilities-grid">
                     <div class="capability-item">
                         <div class="capability-icon">⚔️</div>
@@ -111,27 +110,27 @@
         <!-- Features Section -->
         <section class="features">
             <div class="container">
-                <h2 class="section-title">特徴</h2>
+                <h2 class="section-title">GEasy Kitの特徴</h2>
                 <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">✨</div>
+                        <h3>手軽に始められる</h3>
+                        <p>シンプルなAPIで、すぐにゲーム開発を始められます。複雑な設定は不要です。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <h3>柔軟にカスタマイズ</h3>
+                        <p>ゲーム固有のルールに対応できる拡張性を備えた設計</p>
+                    </div>
                     <div class="feature-card">
                         <div class="feature-icon">🎯</div>
                         <h3>純粋な計算とルール</h3>
                         <p>UIや操作フローに依存しない、数値計算とゲームルールの判定に特化</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon">🔄</div>
-                        <h3>状態を持たない設計</h3>
-                        <p>Game Stateから必要なデータを受け取り、計算結果を返す決定論的な動作</p>
-                    </div>
-                    <div class="feature-card">
                         <div class="feature-icon">🧪</div>
                         <h3>テスト容易</h3>
                         <p>モックや単体テストが容易に書ける設計で、品質の高い開発が可能</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🎨</div>
-                        <h3>カスタマイズ可能</h3>
-                        <p>ゲーム固有のルールに対応できる拡張性を備えた設計</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">📘</div>
@@ -154,26 +153,26 @@
                 
                 <div class="install-section">
                     <h3>インストール</h3>
-                    <pre><code>npm install GEasy-Kit</code></pre>
+                    <pre><code>npm install geasy-kit</code></pre>
                 </div>
 
                 <div class="usage-section">
                     <h3>基本的な使い方</h3>
                     <div class="code-example">
-                        <pre><code>import { RPGCore } from 'GEasy-Kit';
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
 
 // ライブラリ全体を初期化
-const rpg = new RPGCore({
+const game = new GEasyKit({
   config: customGameConfig,  // 省略可能
   useEventBus: true          // 省略可能
 });
 
 // サービスに簡単にアクセス
-const battleService = rpg.services.battle;
-const itemService = rpg.services.item;
+const battleService = game.services.battle;
+const itemService = game.services.item;
 
 // コントローラーも簡単に作成
-const battleController = rpg.controllers.battle();</code></pre>
+const battleController = game.controllers.battle();</code></pre>
                     </div>
                 </div>
 
@@ -181,8 +180,7 @@ const battleController = rpg.controllers.battle();</code></pre>
                     <h3>次のステップ</h3>
                     <ul>
                         <li><a href="docs/index.html">ドキュメントを読む</a> - ライブラリの詳細な使い方を学ぶ</li>
-                        <li><a href="examples/index.html">サンプルを試す</a> - 実際の動作を確認する</li>
-                        <li><a href="api/index.html">APIリファレンス</a> - 利用可能なクラスとメソッドを確認</li>
+                        <li><a href="customization/index.html">カスタマイズガイド</a> - ゲーム固有の実装方法</li>
                     </ul>
                 </div>
             </div>
@@ -224,7 +222,7 @@ const battleController = rpg.controllers.battle();</code></pre>
         <section class="cta">
             <div class="container">
                 <h2>今すぐ始めましょう</h2>
-                <p>GEasy-Kitを使って、あなたのRPGゲームを作り始めましょう</p>
+                <p>GEasy Kitを使って、あなたのRPGゲームを作り始めましょう</p>
                 <div class="cta-buttons">
                     <a href="docs/index.html" class="btn btn-primary">ドキュメントを読む</a>
                     <a href="https://github.com/yonyon-web/GEasy-Kit" class="btn btn-outline" target="_blank" rel="noopener">GitHubで見る</a>
@@ -235,7 +233,7 @@ const battleController = rpg.controllers.battle();</code></pre>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 GEasy-Kit. Licensed under ISC.</p>
+            <p>&copy; 2026 GEasy Kit. Licensed under ISC.</p>
             <p>
                 <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
                 <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |

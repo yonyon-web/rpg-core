@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パーティ編成 - GEasy Kit</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="../index.html" class="logo">GEasy Kit</a>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">ホーム</a></li>
+                        <li><a href="index.html">ドキュメント</a></li>
+                        <li><a href="../customization/index.html">カスタマイズ</a></li>
+                        <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="docs-section">
+            <div class="container">
+                <div class="docs-layout">
+                    <aside class="docs-sidebar">
+                        <h3>パーティ編成</h3>
+                        <ul>
+                            <li><a href="#overview" class="active">機能の概要</a></li>
+                            <li><a href="#headless-ui">Headless UI</a></li>
+                            <li><a href="#service">Service</a></li>
+                            <li><a href="#core-engine">Core Engine</a></li>
+                        </ul>
+                        <h4 style="margin-top: 2rem;">関連ページ</h4>
+                        <ul>
+                            <li><a href="index.html">← ドキュメントTOP</a></li>
+                            <li><a href="status-effects.html">状態異常 →</a></li>
+                        </ul>
+                    </aside>
+
+                    <div class="docs-content">
+                        <h1 id="overview">パーティ編成</h1>
+                        
+                        <h2>機能の概要</h2>
+                        <p>
+                            パーティ編成システムは、メンバーの追加・削除、並び替え、パーティ管理を提供します。
+                            最大メンバー数の制限、メンバーの配置、パーティステータスの計算などが可能です。
+                        </p>
+
+                        <div class="card">
+                            <h3>🎯 主な機能</h3>
+                            <ul>
+                                <li><strong>メンバー管理</strong>: パーティへの追加・削除</li>
+                                <li><strong>並び替え</strong>: メンバーの順序変更</li>
+                                <li><strong>パーティステータス</strong>: 総合能力の計算</li>
+                                <li><strong>フォーメーション</strong>: 前衛・後衛の配置</li>
+                            </ul>
+                        </div>
+
+                        <h2 id="headless-ui">Headless UI</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>PartyControllerを使って、パーティUIの状態を管理します：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+const partyController = game.controllers.party();
+
+// パーティ状態の購読
+partyController.subscribe((state) => {
+  console.log('パーティ:', state.members);
+  updatePartyUI(state);
+});
+
+// メンバーを追加
+await partyController.addMember(characterId);
+
+// メンバーを削除
+await partyController.removeMember(characterId);
+
+// 並び替え
+await partyController.reorderMembers([char1, char2, char3]);</code></pre>
+
+                        <h3>カスタマイズ方法</h3>
+                        <p>イベントを購読して、カスタム処理を追加できます：</p>
+                        <pre><code>// メンバー追加時の処理
+partyController.on('memberAdded', (event) => {
+  console.log(\`\${event.character.name}がパーティに加わった！\`);
+  showJoinAnimation(event.character);
+});
+
+// メンバー削除時の処理
+partyController.on('memberRemoved', (event) => {
+  console.log(\`\${event.character.name}がパーティから離脱した\`);
+});</code></pre>
+
+                        <h3>プロパティとメソッドのリファレンス</h3>
+                        <div class="card">
+                            <h4>PartyController</h4>
+                            <pre><code>interface PartyController {
+  // 状態管理
+  getState(): PartyState;
+  subscribe(listener: (state: PartyState) => void): () => void;
+  
+  // パーティ制御
+  addMember(characterId: string): Promise<void>;
+  removeMember(characterId: string): Promise<void>;
+  reorderMembers(order: string[]): Promise<void>;
+  setFormation(formation: Formation): Promise<void>;
+  
+  // イベント購読
+  on(event: string, handler: (data: any) => void): () => void;
+}</code></pre>
+                        </div>
+
+                        <h2 id="service">Service</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>PartyServiceはパーティ管理を行います：</p>
+                        <pre><code>const partyService = game.services.party;
+
+// メンバーを追加
+await partyService.addMember(characterId);
+
+// メンバーを削除
+await partyService.removeMember(characterId);
+
+// パーティ情報を取得
+const party = partyService.getCurrentParty();
+console.log('メンバー数:', party.members.length);
+console.log('平均レベル:', party.averageLevel);
+
+// パーティステータス
+const stats = partyService.getPartyStats();
+console.log('総HP:', stats.totalHp);
+console.log('総攻撃力:', stats.totalAttack);</code></pre>
+
+                        <h3>カスタマイズ方法</h3>
+                        <p>PartyServiceを拡張して、独自のパーティルールを追加できます：</p>
+                        <pre><code>import { PartyService } from 'geasy-kit';
+
+class CustomPartyService extends PartyService {
+  // カスタムパーティ制限
+  async addMember(characterId) {
+    const party = this.getCurrentParty();
+    
+    // 同じジョブは2人まで
+    const character = this.getCharacter(characterId);
+    const sameJobCount = party.members.filter(
+      m => m.job === character.job
+    ).length;
+    
+    if (sameJobCount >= 2) {
+      throw new Error('同じジョブは2人までです');
+    }
+    
+    return super.addMember(characterId);
+  }
+}</code></pre>
+
+                        <h3>プロパティとメソッドのリファレンス</h3>
+                        <div class="card">
+                            <h4>PartyService</h4>
+                            <pre><code>class PartyService {
+  // メンバー管理
+  addMember(characterId: string): Promise<void>;
+  removeMember(characterId: string): Promise<void>;
+  reorderMembers(order: string[]): Promise<void>;
+  
+  // パーティ情報
+  getCurrentParty(): Party;
+  getPartyStats(): PartyStats;
+  canAddMember(characterId: string): boolean;
+  
+  // フォーメーション
+  setFormation(formation: Formation): Promise<void>;
+  
+  // イベント発行
+  emit(event: string, data: any): void;
+}</code></pre>
+                        </div>
+
+                        <h2 id="core-engine">Core Engine</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>Core Engineはパーティステータスの計算を行います：</p>
+                        <pre><code>const engine = game.engine;
+
+// パーティステータス計算
+const stats = engine.calculatePartyStats(party);
+console.log('総HP:', stats.totalHp);
+console.log('平均レベル:', stats.averageLevel);
+
+// フォーメーション効果
+const formationBonus = engine.calculateFormationBonus(party, formation);
+
+// パーティバランス判定
+const balance = engine.checkPartyBalance(party);</code></pre>
+
+                        <h3>カスタマイズ方法</h3>
+                        <p>パーティステータスの計算をカスタマイズできます：</p>
+                        <pre><code>import { PartyCalculator } from 'geasy-kit';
+
+class CustomPartyCalculator extends PartyCalculator {
+  calculatePartyStats(party) {
+    const baseStats = super.calculatePartyStats(party);
+    
+    // メンバー数によるボーナス
+    const memberBonus = party.members.length >= 4 ? 1.1 : 1.0;
+    
+    // ジョブバランスボーナス
+    const jobTypes = new Set(party.members.map(m => m.jobType));
+    const balanceBonus = jobTypes.size >= 3 ? 1.15 : 1.0;
+    
+    return {
+      ...baseStats,
+      totalHp: Math.floor(baseStats.totalHp * memberBonus),
+      totalAttack: Math.floor(baseStats.totalAttack * balanceBonus)
+    };
+  }
+}
+
+const game = new GEasyKit({
+  config: {
+    partyCalculator: new CustomPartyCalculator()
+  }
+});</code></pre>
+
+                        <h3>プロパティとメソッドのリファレンス</h3>
+                        <div class="card">
+                            <h4>Core Engine - パーティ関連</h4>
+                            <pre><code>interface PartyCoreEngine {
+  // ステータス計算
+  calculatePartyStats(party: Party): PartyStats;
+  
+  // フォーメーション効果
+  calculateFormationBonus(
+    party: Party,
+    formation: Formation
+  ): FormationBonus;
+  
+  // バランス判定
+  checkPartyBalance(party: Party): BalanceResult;
+  
+  // パーティ制限チェック
+  canAddMember(
+    party: Party,
+    character: Character
+  ): boolean;
+}</code></pre>
+                        </div>
+
+                        <h2>次のステップ</h2>
+                        <div class="card">
+                            <ul>
+                                <li><a href="character-growth.html">キャラクター成長</a> - メンバーの育成</li>
+                                <li><a href="battle.html">戦闘システム</a> - パーティで戦闘</li>
+                                <li><a href="../customization/index.html">カスタマイズガイド</a> - パーティシステムのカスタマイズ例</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 GEasy Kit. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
