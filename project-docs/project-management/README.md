@@ -1,6 +1,6 @@
 # プロジェクト管理文書
 
-このディレクトリには、rpg-coreプロジェクトの実装状況、進捗管理、課題管理に関する文書が含まれています。
+このディレクトリには、GEasy-Kitプロジェクトの実装状況、進捗管理、課題管理に関する文書が含まれています。
 
 ## 📊 含まれる文書
 
@@ -93,7 +93,7 @@
 - [実装要素.md](../実装要素.md) - ライブラリの全体像とスコープ
 - [サービス設計.md](../サービス設計.md) - Service層の詳細設計
 - [features/](../features/) - 各機能の詳細仕様
-- [GitHub Issues](https://github.com/yonyon-web/rpg-core/issues) - バグ報告と機能提案
+- [GitHub Issues](https://github.com/yonyon-web/GEasy-Kit/issues) - バグ報告と機能提案
 
 ## ⚠️ 注意事項
 

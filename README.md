@@ -1,10 +1,10 @@
-# rpg-core
+# GEasy-Kit
 
-ターン制RPGゲームを作る仕組みを提供するTypeScriptのライブラリ
+ゲーム開発を簡単にするTypeScriptライブラリ - ターン制RPGゲームを作る仕組みを提供
 
 ## 概要
 
-rpg-coreは、JRPG（日本のロールプレイングゲーム）スタイルのターン制RPGを作成するためのTypeScriptライブラリです。このライブラリは、数値計算とゲームルールの判定を担当するCore Engineを中心に設計されています。
+GEasy-Kitは、JRPG（日本のロールプレイングゲーム）スタイルのターン制RPGを作成するためのTypeScriptライブラリです。このライブラリは、数値計算とゲームルールの判定を担当するCore Engineを中心に設計されています。
 
 ## 特徴
 
@@ -18,28 +18,28 @@ rpg-coreは、JRPG（日本のロールプレイングゲーム）スタイル�
 ## インストール
 
 ```bash
-npm install rpg-core
+npm install geasy-kit
 ```
 
 ## 基本的な使い方
 
-### 新しい方法（推奨）: RPGCoreクラスを使用
+### 新しい方法（推奨）: GEasyKitクラスを使用
 
 ```typescript
-import { RPGCore } from 'rpg-core';
+import { GEasyKit } from 'geasy-kit';
 
 // 1カ所でライブラリ全体を初期化
-const rpg = new RPGCore({
+const kit = new GEasyKit({
   config: customGameConfig,  // 省略可能（デフォルト設定を使用）
   useEventBus: true          // 省略可能（デフォルト: true）
 });
 
 // サービスに簡単にアクセス（依存関係は自動解決）
-const battleService = rpg.services.battle;
-const itemService = rpg.services.item;
+const battleService = kit.services.battle;
+const itemService = kit.services.item;
 
 // コントローラーも簡単に作成
-const battleController = rpg.controllers.battle();
+const battleController = kit.controllers.battle();
 ```
 
 **メリット:**
@@ -55,7 +55,7 @@ const battleController = rpg.controllers.battle();
 従来の手動インスタンス化も引き続きサポートされています：
 
 ```typescript
-import { BattleService, ItemService, defaultGameConfig } from 'rpg-core';
+import { BattleService, ItemService, defaultGameConfig } from 'geasy-kit';
 
 const config = defaultGameConfig;
 const battleService = new BattleService(config);
@@ -104,7 +104,7 @@ npm run watch
 ## プロジェクト構造
 
 ```
-rpg-core/
+GEasy-Kit/
 ├── src/                 # TypeScriptソースコード
 │   └── index.ts        # エントリポイント
 ├── tests/              # テストファイル
@@ -121,7 +121,7 @@ rpg-core/
 
 ### 📚 クイックスタートガイド
 
-rpg-coreを理解するための推奨読書順序：
+GEasy-Kitを理解するための推奨読書順序：
 
 1. **まず読む** - ライブラリの全体像を把握
    - [実装要素.md](./project-docs/実装要素.md) - ライブラリが目指すものとスコープ

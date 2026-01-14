@@ -47,7 +47,7 @@ src/
 │  └─ system/         (5)          システム基盤
 │     ├─ EventBus.ts
 │     ├─ ServiceContainer.ts
-│     ├─ RPGCore.ts
+│     ├─ GEasyKit.ts
 │     └─ persistence.ts
 │
 ├─ services/                       🎯 Service層

@@ -1,6 +1,6 @@
 # 機能別ドキュメント
 
-このディレクトリには、rpg-coreが提供する各機能の詳細仕様が含まれています。
+このディレクトリには、GEasy-Kitが提供する各機能の詳細仕様が含まれています。
 
 ## 📂 カテゴリ別機能一覧
 
@@ -132,4 +132,4 @@
 - 追加してほしいサンプルコード
 - 新しい機能の提案
 
-[GitHub Issues](https://github.com/yonyon-web/rpg-core/issues)で教えてください。
+[GitHub Issues](https://github.com/yonyon-web/GEasy-Kit/issues)で教えてください。
