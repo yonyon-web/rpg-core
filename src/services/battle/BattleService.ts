@@ -34,11 +34,17 @@ export class BattleService {
   /**
    * コンストラクタ
    * @param config ゲーム設定（省略時はdefaultGameConfigを使用）
+   * @param rewardService 報酬サービス（省略時は新しいインスタンスを作成）
+   * @param actionExecutor アクション実行サービス（省略時は新しいインスタンスを作成）
    */
-  constructor(config?: GameConfig) {
+  constructor(
+    config?: GameConfig,
+    rewardService?: RewardService,
+    actionExecutor?: BattleActionExecutor
+  ) {
     this.config = config || defaultGameConfig;
-    this.actionExecutor = new BattleActionExecutor(this.config);
-    this.rewardService = new RewardService();
+    this.rewardService = rewardService || new RewardService();
+    this.actionExecutor = actionExecutor || new BattleActionExecutor(this.config);
   }
 
   /**
