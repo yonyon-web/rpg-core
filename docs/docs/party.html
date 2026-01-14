@@ -65,6 +65,79 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
+                        <h3>基本的な使い方</h3>
+                        <p>PartyControllerを使ってパーティを管理する基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+const partyController = game.controllers.party();
+
+// パーティを初期化
+partyController.initialize(existingParty);
+
+// 状態を購読
+partyController.subscribe((state) => {
+  console.log('パーティメンバー:', state.members);
+  console.log('平均レベル:', state.averageLevel);
+  updatePartyDisplay(state);
+});
+
+// イベントを購読
+partyController.on('member-added', (data) => {
+  console.log('メンバー追加:', data.member);
+  showAddMemberAnimation(data.member);
+});
+
+partyController.on('formation-changed', (data) => {
+  console.log('フォーメーション変更:', data.party);
+  updateFormationDisplay(data.party);
+});
+
+// メンバーを追加
+await partyController.addMember(newCharacter);
+
+// メンバーを並び替え
+await partyController.swapMembers(0, 2);</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>member-added</td>
+                                    <td>{ member, index }</td>
+                                    <td>メンバーが追加されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>member-removed</td>
+                                    <td>{ member, index }</td>
+                                    <td>メンバーが削除されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>member-swapped</td>
+                                    <td>{ fromIndex, toIndex }</td>
+                                    <td>メンバーの位置が入れ替わったとき</td>
+                                </tr>
+                                <tr>
+                                    <td>formation-changed</td>
+                                    <td>{ party }</td>
+                                    <td>フォーメーションが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>stage-changed</td>
+                                    <td>{ stage }</td>
+                                    <td>ステージが変更されたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
                         <h3>パーティ管理フロー</h3>
                         <p>PartyControllerは以下の流れでパーティ編成を管理します：</p>
                         <div class="flow-diagram">

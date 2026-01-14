@@ -65,6 +65,185 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
+                        <h3>基本的な使い方</h3>
+                        <p>ItemController、InventoryController、EquipmentControllerを使う基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+
+// アイテム使用
+const itemController = game.controllers.item();
+await itemController.startItemUse('battle'); // 'battle' or 'field'
+
+itemController.on('item-selected', (data) => {
+  console.log('選択されたアイテム:', data.item);
+  showItemInfo(data.item);
+});
+
+// インベントリ管理
+const inventoryController = game.controllers.inventory();
+inventoryController.on('filter-changed', (data) => {
+  console.log('フィルター変更:', data.filter);
+  updateInventoryDisplay();
+});
+
+// 装備変更
+const equipmentController = game.controllers.equipment();
+equipmentController.on('equipment-changed', (data) => {
+  console.log('装備変更:', data.slot, data.newEquipment);
+  updateCharacterStats(data.statChanges);
+});</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        
+                        <h4>ItemController</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>context-changed</td>
+                                    <td>{ context }</td>
+                                    <td>コンテキストが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>stage-changed</td>
+                                    <td>{ stage }</td>
+                                    <td>ステージが変更されたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>InventoryController</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>filter-changed</td>
+                                    <td>{ filter }</td>
+                                    <td>フィルターが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>sort-changed</td>
+                                    <td>{ sortBy, sortOrder }</td>
+                                    <td>ソート順が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-selected</td>
+                                    <td>{ slot }</td>
+                                    <td>アイテムが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-removed</td>
+                                    <td>{ item, quantity, success }</td>
+                                    <td>アイテムが削除されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-discarded</td>
+                                    <td>{ item, quantity }</td>
+                                    <td>アイテムが破棄されたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>EquipmentController</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>stage-changed</td>
+                                    <td>{ stage }</td>
+                                    <td>ステージが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>slot-selected</td>
+                                    <td>{ slot }</td>
+                                    <td>装備スロットが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>equipment-selected</td>
+                                    <td>{ equipment }</td>
+                                    <td>装備が選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>equipment-changed</td>
+                                    <td>{ slot, oldEquipment, newEquipment, statChanges }</td>
+                                    <td>装備が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>equipment-unequipped</td>
+                                    <td>{ slot, equipment }</td>
+                                    <td>装備が外されたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>ShopController</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>shop-started</td>
+                                    <td>{ items, playerMoney }</td>
+                                    <td>ショップが開始されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>mode-changed</td>
+                                    <td>{ mode }</td>
+                                    <td>モード（購入/売却）が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-selected</td>
+                                    <td>{ item }</td>
+                                    <td>アイテムが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>quantity-changed</td>
+                                    <td>{ quantity }</td>
+                                    <td>数量が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-bought</td>
+                                    <td>{ item, quantity, totalCost }</td>
+                                    <td>アイテムを購入したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-sold</td>
+                                    <td>{ item, quantity, totalValue }</td>
+                                    <td>アイテムを売却したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>trade-failed</td>
+                                    <td>{ reason }</td>
+                                    <td>取引が失敗したとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
                         <h3>アイテム使用フロー</h3>
                         <p>ItemControllerは以下の流れでアイテム使用を進行します：</p>
                         <div class="flow-diagram">
