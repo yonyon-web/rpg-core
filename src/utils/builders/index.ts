@@ -31,3 +31,4 @@ export { JobBuilder } from './JobBuilder';
 export { SkillBuilder } from './SkillBuilder';
 export { ItemBuilder } from './ItemBuilder';
 export { EquipmentBuilder } from './EquipmentBuilder';
+export { BuilderRegistry } from './BuilderRegistry';

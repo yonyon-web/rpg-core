@@ -34,6 +34,7 @@ import type { Enemy, DropItem, AIStrategy } from '../../types/battle/battle';
 import type { DefaultStats } from '../../types/character/stats';
 import type { Skill } from '../../types/character/skill';
 import type { StatusEffect } from '../../types/status/statusEffect';
+import type { BuilderRegistry } from './BuilderRegistry';
 
 export class EnemyBuilder {
   private enemy: Partial<Enemy>;
@@ -261,6 +262,24 @@ export class EnemyBuilder {
    */
   dropItems(items: DropItem[]): this {
     this.enemy.dropItems = items;
+    return this;
+  }
+
+  /**
+   * Add a drop item by name (requires registry)
+   * @param itemName - Item name
+   * @param probability - Drop probability (0.0-1.0)
+   * @param quantity - Drop quantity
+   * @param registry - BuilderRegistry to look up item ID
+   */
+  addDropItemByName(itemName: string, probability: number, quantity: number = 1, registry: BuilderRegistry): this {
+    const itemId = registry.getItemId(itemName);
+    if (itemId) {
+      if (!this.enemy.dropItems) {
+        this.enemy.dropItems = [];
+      }
+      this.enemy.dropItems.push({ itemId, probability, quantity });
+    }
     return this;
   }
 

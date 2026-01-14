@@ -4,6 +4,8 @@
 
 GEasy-Kitは、ゲームエンティティ（キャラクター、モンスター、ジョブ、アイテム、装備、スキル）を簡単に定義するためのBuilderパターンヘルパーを提供します。
 
+さらに、**BuilderRegistry**を使用することで、エンティティ間の関係をIDではなく**名前で参照**できるようになり、より直感的なゲームデータ定義が可能になります。
+
 ### 解決する課題
 
 従来の方法では、エンティティを定義する際に以下の問題がありました：
@@ -12,8 +14,9 @@ GEasy-Kitは、ゲームエンティティ（キャラクター、モンスタ�
 - 必須フィールドの記入漏れ
 - デフォルト値の重複定義
 - テストコードの可読性低下
+- **エンティティ間の関係を作る際にIDを覚えておく必要がある** ← NEW!
 
-Builderヘルパーを使用することで、これらの問題を解決し、より直感的で保守性の高いコードを書くことができます。
+Builderヘルパーと**BuilderRegistry**を使用することで、これらの問題を解決し、より直感的で保守性の高いコードを書くことができます。
 
 ## インストール
 
@@ -405,5 +408,209 @@ Builderヘルパーを使用することで：
 ✅ メソッドチェーンで直感的に定義できる
 ✅ テストコードの記述が楽になる
 ✅ タイプセーフで型エラーを防げる
+
+## BuilderRegistry - 名前でエンティティを参照
+
+### 概要
+
+`BuilderRegistry`を使用すると、エンティティ間の関係を**IDではなく名前で参照**できるようになります。これにより、複雑なIDを覚える必要がなくなり、より直感的なゲームデータ定義が可能になります。
+
+### 基本的な使い方
+
+```typescript
+import { BuilderRegistry, SkillBuilder, JobBuilder } from 'geasy-kit';
+
+// 1. レジストリを作成
+const registry = new BuilderRegistry();
+
+// 2. スキルを作成して登録
+const fireball = new SkillBuilder('fireball-id', 'Fireball')
+  .type('magic')
+  .power(80)
+  .build();
+
+registry.registerSkill(fireball);
+
+// 3. ジョブを作成する際に、スキルを名前で参照
+const mage = new JobBuilder('mage-id', 'Mage')
+  .description('A master of magic')
+  .availableSkillsByName(['Fireball'], registry) // IDではなく名前で参照！
+  .build();
+
+console.log(mage.availableSkills); // ['fireball-id']
+```
+
+### Before / After 比較
+
+**Before (IDを使用):**
+```typescript
+// IDを覚えておく必要がある
+const mage = new JobBuilder('mage', 'Mage')
+  .availableSkills(['fireball-id', 'ice-blast-id', 'heal-id']) // IDを記憶...
+  .build();
+```
+
+**After (名前を使用):**
+```typescript
+const registry = new BuilderRegistry();
+registry.registerSkill(fireball);
+registry.registerSkill(iceBlast);
+registry.registerSkill(heal);
+
+// 名前で参照できる！
+const mage = new JobBuilder('mage', 'Mage')
+  .availableSkillsByName(['Fireball', 'Ice Blast', 'Heal'], registry)
+  .build();
+```
+
+### 主な機能
+
+#### 1. スキルを名前で参照
+
+```typescript
+const registry = new BuilderRegistry();
+
+// スキルを登録
+const skill1 = new SkillBuilder('s1', 'Power Strike').build();
+const skill2 = new SkillBuilder('s2', 'Magic Missile').build();
+registry.registerSkill(skill1);
+registry.registerSkill(skill2);
+
+// ジョブで名前を使って参照
+const warrior = new JobBuilder('warrior', 'Warrior')
+  .availableSkillsByName(['Power Strike', 'Magic Missile'], registry)
+  .build();
+```
+
+#### 2. ジョブの前提条件を名前で参照
+
+```typescript
+// 基本ジョブを登録
+const apprentice = new JobBuilder('apprentice', 'Apprentice').build();
+const priest = new JobBuilder('priest', 'Priest').build();
+registry.registerJob(apprentice);
+registry.registerJob(priest);
+
+// 上位ジョブで前提条件を名前で指定
+const paladin = new JobBuilder('paladin', 'Paladin')
+  .requiredJobsByName(['Apprentice', 'Priest'], registry)
+  .build();
+```
+
+#### 3. 敵のドロップアイテムを名前で参照
+
+```typescript
+// アイテムを登録
+const scale = new ItemBuilder('scale-id', 'Dragon Scale').build();
+const gem = new ItemBuilder('gem-id', 'Rare Gem').build();
+registry.registerItem(scale);
+registry.registerItem(gem);
+
+// 敵のドロップを名前で定義
+const dragon = new EnemyBuilder('dragon', 'Dragon', 'dragon')
+  .addDropItemByName('Dragon Scale', 0.9, 3, registry)
+  .addDropItemByName('Rare Gem', 0.3, 1, registry)
+  .build();
+```
+
+#### 4. 一つずつ追加する方法
+
+```typescript
+const job = new JobBuilder('test', 'Test Job')
+  .addAvailableSkillByName('Skill 1', registry)
+  .addAvailableSkillByName('Skill 2', registry)
+  .addRequiredJobByName('Base Job', registry)
+  .build();
+```
+
+### 完全な例：ゲームデータのセットアップ
+
+```typescript
+import { BuilderRegistry, SkillBuilder, JobBuilder, ItemBuilder, EnemyBuilder } from 'geasy-kit';
+
+// レジストリを作成
+const registry = new BuilderRegistry();
+
+// 1. すべてのスキルを定義・登録
+const fireball = new SkillBuilder('fireball', 'Fireball')
+  .type('magic').power(80).build();
+const heal = new SkillBuilder('heal', 'Heal')
+  .type('heal').power(100).build();
+
+registry.registerSkill(fireball);
+registry.registerSkill(heal);
+
+// 2. 基本ジョブを定義・登録
+const apprentice = new JobBuilder('apprentice', 'Apprentice')
+  .availableSkillsByName(['Fireball'], registry)
+  .build();
+
+registry.registerJob(apprentice);
+
+// 3. 上位ジョブを定義（前提条件とスキルを名前で参照）
+const archmage = new JobBuilder('archmage', 'Archmage')
+  .requiredJobsByName(['Apprentice'], registry)
+  .availableSkillsByName(['Fireball', 'Heal'], registry)
+  .levelRequirement(20)
+  .build();
+
+// 4. アイテムを定義・登録
+const potion = new ItemBuilder('potion', 'Health Potion')
+  .type('consumable').build();
+const scale = new ItemBuilder('scale', 'Dragon Scale')
+  .type('material').build();
+
+registry.registerItem(potion);
+registry.registerItem(scale);
+
+// 5. 敵を定義（ドロップアイテムを名前で参照）
+const dragon = new EnemyBuilder('dragon', 'Ancient Dragon', 'dragon')
+  .level(30)
+  .hp(1000)
+  .addDropItemByName('Dragon Scale', 0.9, 3, registry)
+  .addDropItemByName('Health Potion', 0.5, 2, registry)
+  .build();
+
+console.log('Setup complete!');
+console.log('Archmage requires:', archmage.requiredJobs);
+console.log('Dragon drops:', dragon.dropItems);
+```
+
+### エラーハンドリング
+
+存在しないエンティティを参照した場合、そのエンティティは無視されます：
+
+```typescript
+const job = new JobBuilder('test', 'Test Job')
+  .availableSkillsByName(['Existing Skill', 'Non-Existent Skill'], registry)
+  .build();
+
+// 'Existing Skill' のみが追加され、'Non-Existent Skill' は無視される
+```
+
+### レジストリの管理
+
+```typescript
+// 登録されているエンティティ名を取得
+const skillNames = registry.getSkillNames();
+const itemNames = registry.getItemNames();
+
+// エンティティをIDで取得
+const skillId = registry.getSkillId('Fireball');
+
+// エンティティ自体を取得
+const skill = registry.getSkill('Fireball');
+
+// レジストリをクリア
+registry.clear();
+```
+
+### メリット
+
+✅ **IDを覚える必要がない** - 直感的な名前で参照
+✅ **可読性向上** - コードが読みやすくなる
+✅ **保守性向上** - エンティティ名の変更が容易
+✅ **エラー削減** - IDのタイポを防ぐ
+✅ **チーム開発** - IDを共有する必要がない
 
 詳細は各Builderクラスのドキュメントを参照してください。

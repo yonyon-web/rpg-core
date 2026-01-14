@@ -27,6 +27,7 @@
 import type { Job } from '../../types/character/job';
 import type { DefaultStats } from '../../types/character/stats';
 import type { UniqueId } from '../../types/common';
+import type { BuilderRegistry } from './BuilderRegistry';
 
 export class JobBuilder {
   private job: Partial<Job>;
@@ -111,6 +112,72 @@ export class JobBuilder {
       this.job.requiredJobs = [];
     }
     this.job.requiredJobs.push(jobId);
+    return this;
+  }
+
+  /**
+   * Set available skills by name (requires registry)
+   * @param skillNames - Array of skill names
+   * @param registry - BuilderRegistry to look up skill IDs
+   */
+  availableSkillsByName(skillNames: string[], registry: BuilderRegistry): this {
+    const skillIds: UniqueId[] = [];
+    for (const name of skillNames) {
+      const skillId = registry.getSkillId(name);
+      if (skillId) {
+        skillIds.push(skillId);
+      }
+    }
+    this.job.availableSkills = skillIds;
+    return this;
+  }
+
+  /**
+   * Add a single available skill by name (requires registry)
+   * @param skillName - Skill name
+   * @param registry - BuilderRegistry to look up skill ID
+   */
+  addAvailableSkillByName(skillName: string, registry: BuilderRegistry): this {
+    const skillId = registry.getSkillId(skillName);
+    if (skillId) {
+      if (!this.job.availableSkills) {
+        this.job.availableSkills = [];
+      }
+      this.job.availableSkills.push(skillId);
+    }
+    return this;
+  }
+
+  /**
+   * Set required jobs by name (requires registry)
+   * @param jobNames - Array of job names
+   * @param registry - BuilderRegistry to look up job IDs
+   */
+  requiredJobsByName(jobNames: string[], registry: BuilderRegistry): this {
+    const jobIds: UniqueId[] = [];
+    for (const name of jobNames) {
+      const jobId = registry.getJobId(name);
+      if (jobId) {
+        jobIds.push(jobId);
+      }
+    }
+    this.job.requiredJobs = jobIds;
+    return this;
+  }
+
+  /**
+   * Add a single required job by name (requires registry)
+   * @param jobName - Job name
+   * @param registry - BuilderRegistry to look up job ID
+   */
+  addRequiredJobByName(jobName: string, registry: BuilderRegistry): this {
+    const jobId = registry.getJobId(jobName);
+    if (jobId) {
+      if (!this.job.requiredJobs) {
+        this.job.requiredJobs = [];
+      }
+      this.job.requiredJobs.push(jobId);
+    }
     return this;
   }
 
