@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Engine - rpg-core</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="../index.html" class="logo">rpg-core</a>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">ホーム</a></li>
+                        <li><a href="index.html">ドキュメント</a></li>
+                        <li><a href="../customization/index.html">カスタマイズ</a></li>
+                        <li><a href="../examples/index.html">サンプル</a></li>
+                        <li><a href="../api/index.html">API</a></li>
+                        <li><a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="docs-section">
+            <div class="container">
+                <div class="docs-layout">
+                    <aside class="docs-sidebar">
+                        <h3>Core Engine</h3>
+                        <ul>
+                            <li><a href="#overview" class="active">機能の概要</a></li>
+                            <li><a href="#basic-usage">基本的な使い方</a></li>
+                            <li><a href="#customization">カスタマイズ方法</a></li>
+                            <li><a href="#reference">APIリファレンス</a></li>
+                        </ul>
+                        <h4 style="margin-top: 2rem;">関連ページ</h4>
+                        <ul>
+                            <li><a href="index.html">← ドキュメントTOP</a></li>
+                            <li><a href="headless-ui.html">Headless UI →</a></li>
+                            <li><a href="services.html">Services →</a></li>
+                        </ul>
+                    </aside>
+
+                    <div class="docs-content">
+                        <h1 id="overview">Core Engine</h1>
+                        
+                        <h2>機能の概要</h2>
+                        <p>
+                            Core Engineは、JRPGにおける<strong>数値計算とルール判定</strong>を担当する層です。
+                            純粋な関数として設計されており、同じ入力に対して常に同じ出力を返す決定論的な動作を保証します。
+                        </p>
+
+                        <div class="card">
+                            <h3>🎯 Core Engineの設計思想</h3>
+                            <ul>
+                                <li><strong>純粋な計算とルール</strong>: UIや操作フローに依存しない</li>
+                                <li><strong>状態を持たない</strong>: Game Stateから必要なデータを受け取り、計算結果を返す</li>
+                                <li><strong>決定論的</strong>: 同じ入力に対して常に同じ出力を返す</li>
+                                <li><strong>テスト容易</strong>: モックや単体テストが容易に書ける</li>
+                                <li><strong>カスタマイズ可能</strong>: ゲーム固有のルールに対応できる拡張性</li>
+                            </ul>
+                        </div>
+
+                        <h3>アーキテクチャにおける位置づけ</h3>
+                        <div class="architecture-diagram">
+                            <div class="arch-layer">
+                                <div class="layer-box">UI（見た目・入力）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">Headless UI（選択・確認・キャンセル）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">JRPG Services（操作フロー）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box" style="background: #4CAF50; color: white;">Core Engine（数値・ルール）← この層</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">Game State（永続可能な状態）</div>
+                            </div>
+                        </div>
+
+                        <h3>Core Engineの責任範囲</h3>
+                        <div class="card">
+                            <h4>✅ Core Engineが扱うもの</h4>
+                            <ul>
+                                <li><strong>数値計算</strong>: ダメージ、回復量、成長値など</li>
+                                <li><strong>ルール判定</strong>: クリティカル判定、命中判定、発動条件など</li>
+                                <li><strong>状態計算</strong>: ステータス計算、装備効果の適用など</li>
+                                <li><strong>成長計算</strong>: 経験値、レベルアップ時のステータス上昇など</li>
+                                <li><strong>ドロップ計算</strong>: アイテムドロップの抽選など</li>
+                            </ul>
+                            
+                            <h4>❌ Core Engineが扱わないもの</h4>
+                            <ul>
+                                <li>操作フローの管理（Serviceの責任）</li>
+                                <li>状態の保持（Game Stateの責任）</li>
+                                <li>UI描画や入力処理（UIレイヤーの責任）</li>
+                            </ul>
+                        </div>
+
+                        <h2 id="basic-usage">基本的な使い方</h2>
+                        
+                        <h3>Core Engineへのアクセス</h3>
+                        <p>RPGCoreクラスを通じてCore Engineにアクセスできます：</p>
+                        <pre><code>import { RPGCore } from 'rpg-core';
+
+const rpg = new RPGCore();
+const engine = rpg.engine;</code></pre>
+
+                        <h3>ダメージ計算の例</h3>
+                        <p>攻撃によるダメージを計算する：</p>
+                        <pre><code>// キャラクターと敵のデータ
+const attacker = {
+  id: 'char1',
+  attack: 50,
+  level: 10,
+  weapon: { attack: 30 }
+};
+
+const target = {
+  id: 'enemy1',
+  defense: 20,
+  level: 8
+};
+
+const skill = {
+  id: 'normalAttack',
+  power: 100,
+  type: 'physical'
+};
+
+// ダメージ計算
+const result = engine.calculateDamage(attacker, target, skill);
+
+console.log('ダメージ:', result.damage);
+console.log('クリティカル:', result.isCritical);
+console.log('弱点:', result.isWeakness);</code></pre>
+
+                        <h3>レベルアップ計算の例</h3>
+                        <p>経験値取得後のレベルアップを計算する：</p>
+                        <pre><code>const character = {
+  id: 'char1',
+  level: 10,
+  exp: 1000,
+  stats: { hp: 100, attack: 50, defense: 30 }
+};
+
+const gainedExp = 500;
+
+// レベルアップ計算
+const result = engine.calculateLevelUp(character, gainedExp);
+
+console.log('レベルアップ:', result.leveledUp);
+console.log('新しいレベル:', result.newLevel);
+console.log('ステータス上昇:', result.statGains);</code></pre>
+
+                        <h3>状態異常判定の例</h3>
+                        <p>状態異常が付与されるか判定する：</p>
+                        <pre><code>const skill = {
+  id: 'poisonAttack',
+  statusEffect: {
+    type: 'poison',
+    probability: 0.3,
+    duration: 3
+  }
+};
+
+const target = {
+  id: 'enemy1',
+  resistance: {
+    poison: 0.2  // 20%耐性
+  }
+};
+
+// 状態異常判定
+const result = engine.checkStatusEffect(skill, target);
+
+console.log('付与成功:', result.applied);
+console.log('実際の確率:', result.finalProbability);</code></pre>
+
+                        <h2 id="customization">カスタマイズ方法</h2>
+                        
+                        <h3>ダメージ計算式のカスタマイズ</h3>
+                        <p>独自のダメージ計算式を実装できます：</p>
+                        <pre><code>import { RPGCore, DamageCalculator } from 'rpg-core';
+
+// カスタムダメージ計算クラス
+class CustomDamageCalculator extends DamageCalculator {
+  calculate(attacker, target, skill) {
+    // 独自の計算式
+    const baseDamage = attacker.attack * skill.power / 100;
+    const defense = target.defense * 0.5;
+    const damage = Math.max(1, baseDamage - defense);
+    
+    // クリティカル判定
+    const isCritical = Math.random() < 0.1;
+    const finalDamage = isCritical ? damage * 2 : damage;
+    
+    return {
+      damage: Math.floor(finalDamage),
+      isCritical,
+      formula: 'custom'
+    };
+  }
+}
+
+// カスタム計算機を使用
+const rpg = new RPGCore({
+  config: {
+    damageCalculator: new CustomDamageCalculator()
+  }
+});</code></pre>
+
+                        <h3>成長曲線のカスタマイズ</h3>
+                        <p>経験値テーブルや成長率をカスタマイズできます：</p>
+                        <pre><code>import { RPGCore, GameConfig } from 'rpg-core';
+
+const customConfig: GameConfig = {
+  growth: {
+    // 経験値曲線の設定
+    expCurve: 'exponential',
+    expBase: 100,
+    expMultiplier: 1.5,
+    
+    // ステータス成長率
+    statGrowth: {
+      hp: (level) => level * 10 + 50,
+      attack: (level) => level * 2 + 10,
+      defense: (level) => level * 1.5 + 8,
+      speed: (level) => level * 1 + 5
+    },
+    
+    // 最大レベル
+    maxLevel: 99
+  }
+};
+
+const rpg = new RPGCore({ config: customConfig });</code></pre>
+
+                        <h3>ドロップ計算のカスタマイズ</h3>
+                        <p>アイテムドロップのロジックをカスタマイズできます：</p>
+                        <pre><code>import { DropCalculator } from 'rpg-core';
+
+class CustomDropCalculator extends DropCalculator {
+  calculate(enemy, dropTable, luck) {
+    const drops = [];
+    
+    for (const entry of dropTable) {
+      // 運の影響を大きくする
+      const adjustedRate = entry.rate * (1 + luck / 100);
+      
+      if (Math.random() < adjustedRate) {
+        drops.push({
+          itemId: entry.itemId,
+          quantity: this.rollQuantity(entry.minQty, entry.maxQty)
+        });
+      }
+    }
+    
+    return drops;
+  }
+  
+  private rollQuantity(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+}
+
+const rpg = new RPGCore({
+  config: {
+    dropCalculator: new CustomDropCalculator()
+  }
+});</code></pre>
+
+                        <h3>元素相性システムの追加</h3>
+                        <p>元素相性による倍率計算を追加できます：</p>
+                        <pre><code>import { DamageCalculator } from 'rpg-core';
+
+class ElementalDamageCalculator extends DamageCalculator {
+  // 元素相性テーブル
+  private elementalChart = {
+    fire: { water: 0.5, grass: 2.0, fire: 1.0 },
+    water: { fire: 2.0, grass: 0.5, water: 1.0 },
+    grass: { water: 2.0, fire: 0.5, grass: 1.0 }
+  };
+  
+  calculate(attacker, target, skill) {
+    // 基本ダメージ計算
+    const baseDamage = super.calculate(attacker, target, skill);
+    
+    // 元素相性を適用
+    const attackElement = skill.element || 'none';
+    const targetElement = target.element || 'none';
+    
+    let multiplier = 1.0;
+    if (this.elementalChart[attackElement]?.[targetElement]) {
+      multiplier = this.elementalChart[attackElement][targetElement];
+    }
+    
+    return {
+      ...baseDamage,
+      damage: Math.floor(baseDamage.damage * multiplier),
+      elementMultiplier: multiplier,
+      isWeakness: multiplier > 1.0,
+      isResistance: multiplier < 1.0
+    };
+  }
+}</code></pre>
+
+                        <h2 id="reference">APIリファレンス</h2>
+                        
+                        <h3>主要な計算機能</h3>
+
+                        <div class="card">
+                            <h4>⚔️ 戦闘計算</h4>
+                            <ul>
+                                <li><strong>calculateDamage()</strong> - ダメージ計算</li>
+                                <li><strong>calculateHeal()</strong> - 回復量計算</li>
+                                <li><strong>checkHit()</strong> - 命中判定</li>
+                                <li><strong>checkCritical()</strong> - クリティカル判定</li>
+                                <li><strong>checkStatusEffect()</strong> - 状態異常判定</li>
+                            </ul>
+
+                            <h4>📈 成長計算</h4>
+                            <ul>
+                                <li><strong>calculateLevelUp()</strong> - レベルアップ計算</li>
+                                <li><strong>calculateExpGain()</strong> - 経験値獲得量計算</li>
+                                <li><strong>calculateStatGrowth()</strong> - ステータス成長計算</li>
+                                <li><strong>getExpToNextLevel()</strong> - 次のレベルまでの経験値</li>
+                            </ul>
+
+                            <h4>🎲 確率・抽選</h4>
+                            <ul>
+                                <li><strong>rollDrop()</strong> - ドロップ抽選</li>
+                                <li><strong>rollCritical()</strong> - クリティカル抽選</li>
+                                <li><strong>rollStatusEffect()</strong> - 状態異常抽選</li>
+                                <li><strong>rollEscape()</strong> - 逃走判定</li>
+                            </ul>
+
+                            <h4>📊 ステータス計算</h4>
+                            <ul>
+                                <li><strong>calculateFinalStats()</strong> - 最終ステータス計算</li>
+                                <li><strong>applyEquipmentEffects()</strong> - 装備効果適用</li>
+                                <li><strong>applyBuffEffects()</strong> - バフ効果適用</li>
+                                <li><strong>calculateSpeed()</strong> - 行動順計算</li>
+                            </ul>
+                        </div>
+
+                        <h3>DamageCalculator - 詳細API</h3>
+                        <pre><code>interface DamageCalculator {
+  // ダメージ計算
+  calculate(
+    attacker: Combatant,
+    target: Combatant,
+    skill: Skill
+  ): DamageResult;
+}
+
+interface DamageResult {
+  damage: number;
+  isCritical: boolean;
+  isWeakness?: boolean;
+  isResistance?: boolean;
+  formula?: string;
+}</code></pre>
+
+                        <h3>GrowthCalculator - 詳細API</h3>
+                        <pre><code>interface GrowthCalculator {
+  // レベルアップ計算
+  calculateLevelUp(
+    character: Character,
+    expGain: number
+  ): LevelUpResult;
+  
+  // 必要経験値取得
+  getExpToNextLevel(currentLevel: number): number;
+  
+  // ステータス成長
+  calculateStatGrowth(
+    currentStats: Stats,
+    level: number
+  ): Stats;
+}
+
+interface LevelUpResult {
+  leveledUp: boolean;
+  newLevel: number;
+  statGains: Stats;
+  newSkills: Skill[];
+}</code></pre>
+
+                        <h3>DropCalculator - 詳細API</h3>
+                        <pre><code>interface DropCalculator {
+  // ドロップ計算
+  calculate(
+    enemy: Enemy,
+    dropTable: DropEntry[],
+    luck: number
+  ): DroppedItem[];
+}
+
+interface DropEntry {
+  itemId: string;
+  rate: number;
+  minQty: number;
+  maxQty: number;
+}
+
+interface DroppedItem {
+  itemId: string;
+  quantity: number;
+}</code></pre>
+
+                        <h2>次のステップ</h2>
+                        <div class="card">
+                            <ul>
+                                <li><a href="services.html">Services</a> - Core Engineを利用するServiceの詳細</li>
+                                <li><a href="headless-ui.html">Headless UI</a> - UI層の実装</li>
+                                <li><a href="../customization/index.html">カスタマイズガイド</a> - 具体的なカスタマイズ例</li>
+                                <li><a href="../examples/index.html">サンプルコード</a> - 実際の実装例</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 rpg-core. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/rpg-core/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Update active state
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Update active link on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('.docs-content h1, .docs-content h2');
+            const scrollPosition = window.scrollY + 100;
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionId = section.id;
+                
+                if (scrollPosition >= sectionTop) {
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    const activeLink = document.querySelector(`.docs-sidebar a[href="#${sectionId}"]`);
+                    if (activeLink) activeLink.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

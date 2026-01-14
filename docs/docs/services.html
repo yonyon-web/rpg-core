@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services - rpg-core</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="../index.html" class="logo">rpg-core</a>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">ホーム</a></li>
+                        <li><a href="index.html">ドキュメント</a></li>
+                        <li><a href="../customization/index.html">カスタマイズ</a></li>
+                        <li><a href="../examples/index.html">サンプル</a></li>
+                        <li><a href="../api/index.html">API</a></li>
+                        <li><a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="docs-section">
+            <div class="container">
+                <div class="docs-layout">
+                    <aside class="docs-sidebar">
+                        <h3>Services</h3>
+                        <ul>
+                            <li><a href="#overview" class="active">機能の概要</a></li>
+                            <li><a href="#basic-usage">基本的な使い方</a></li>
+                            <li><a href="#customization">カスタマイズ方法</a></li>
+                            <li><a href="#reference">APIリファレンス</a></li>
+                        </ul>
+                        <h4 style="margin-top: 2rem;">関連ページ</h4>
+                        <ul>
+                            <li><a href="index.html">← ドキュメントTOP</a></li>
+                            <li><a href="headless-ui.html">Headless UI →</a></li>
+                            <li><a href="core-engine.html">Core Engine →</a></li>
+                        </ul>
+                    </aside>
+
+                    <div class="docs-content">
+                        <h1 id="overview">Services</h1>
+                        
+                        <h2>機能の概要</h2>
+                        <p>
+                            Servicesは、ゲームの操作フローを管理する層です。rpg-coreは15種類のServiceを提供し、
+                            戦闘、アイテム管理、キャラクター成長など、様々なゲーム機能を実現します。
+                        </p>
+
+                        <div class="card">
+                            <h3>🎯 Serviceの役割</h3>
+                            <ul>
+                                <li><strong>操作フローの管理</strong>: いつ、何を、どの順で行うかを管理</li>
+                                <li><strong>状態の保持</strong>: 操作中の状態を保持し、中断・再開が可能</li>
+                                <li><strong>選択肢の提示</strong>: UIに提示する選択肢を生成</li>
+                                <li><strong>Core Engineへの委譲</strong>: 計算とルール判定はCore Engineに委譲</li>
+                                <li><strong>結果の整形</strong>: Core Engineの計算結果を整形して返却</li>
+                            </ul>
+                        </div>
+
+                        <h3>アーキテクチャにおける位置づけ</h3>
+                        <div class="architecture-diagram">
+                            <div class="arch-layer">
+                                <div class="layer-box">UI（見た目・入力）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">Headless UI（選択・確認・キャンセル）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box" style="background: #4CAF50; color: white;">JRPG Services（操作フロー）← この層</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">Core Engine（数値・ルール）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">Game State（永続可能な状態）</div>
+                            </div>
+                        </div>
+
+                        <h3>Serviceの責任範囲</h3>
+                        <div class="card">
+                            <h4>✅ Serviceが扱うもの</h4>
+                            <ul>
+                                <li>操作フローの管理（いつ、何を、どの順で）</li>
+                                <li>状態の保持と更新</li>
+                                <li>選択肢の提示と決定の受付</li>
+                                <li>Core Engineへの計算依頼</li>
+                                <li>結果の整形と返却</li>
+                            </ul>
+                            
+                            <h4>❌ Serviceが扱わないもの</h4>
+                            <ul>
+                                <li>数値計算やルール判定（Core Engineの責任）</li>
+                                <li>UI描画や入力処理（UIレイヤーの責任）</li>
+                            </ul>
+                        </div>
+
+                        <h2 id="basic-usage">基本的な使い方</h2>
+                        
+                        <h3>Serviceの初期化</h3>
+                        <p>RPGCoreクラスを使用して、すべてのServiceに簡単にアクセスできます：</p>
+                        <pre><code>import { RPGCore } from 'rpg-core';
+
+// RPGCoreを初期化（依存関係は自動解決）
+const rpg = new RPGCore({
+  config: customGameConfig,  // 省略可能
+  useEventBus: true          // 省略可能
+});
+
+// Serviceに簡単にアクセス
+const battleService = rpg.services.battle;
+const itemService = rpg.services.item;
+const partyService = rpg.services.party;</code></pre>
+
+                        <h3>BattleServiceの使用例</h3>
+                        <p>戦闘を開始し、ターンを進める例：</p>
+                        <pre><code>// 戦闘を開始
+await battleService.startBattle(playerParty, enemyGroup);
+
+// 現在の状態を取得
+const state = battleService.getState();
+console.log('現在のターン:', state.turnNumber);
+console.log('現在のフェーズ:', state.phase);
+
+// プレイヤーのコマンドを選択
+await battleService.selectCommand(playerId, {
+  type: 'attack',
+  targetId: enemyId
+});
+
+// ターンを進める
+await battleService.processTurn();
+
+// 戦闘が終了したか確認
+if (state.phase === 'ended') {
+  console.log('戦闘結果:', state.result);
+  console.log('報酬:', state.rewards);
+}</code></pre>
+
+                        <h3>ItemServiceの使用例</h3>
+                        <p>アイテムを使用する例：</p>
+                        <pre><code>// アイテム使用フローを開始
+await itemService.startItemUse(characterId);
+
+// 使用可能なアイテムを取得
+const availableItems = itemService.getAvailableItems();
+
+// アイテムを選択
+await itemService.selectItem(itemId);
+
+// ターゲットを選択
+await itemService.selectTarget(targetCharacterId);
+
+// アイテムを使用
+const result = await itemService.executeItemUse();
+console.log('回復量:', result.healAmount);</code></pre>
+
+                        <h3>PartyServiceの使用例</h3>
+                        <p>パーティを編成する例：</p>
+                        <pre><code>// パーティにメンバーを追加
+await partyService.addMember(characterId);
+
+// パーティからメンバーを削除
+await partyService.removeMember(characterId);
+
+// パーティの並び順を変更
+await partyService.reorderMembers([char1, char2, char3]);
+
+// 現在のパーティを取得
+const party = partyService.getCurrentParty();
+console.log('パーティメンバー:', party.members);</code></pre>
+
+                        <h2 id="customization">カスタマイズ方法</h2>
+                        
+                        <h3>イベントの購読</h3>
+                        <p>Serviceは様々なイベントを発行します。これらを購読してカスタム処理を実装できます：</p>
+                        <pre><code>// BattleServiceのイベントを購読
+battleService.on('battleStart', (event) => {
+  console.log('戦闘開始:', event);
+  // カスタム処理（ログ、通知など）
+});
+
+battleService.on('turnStart', (event) => {
+  console.log('ターン開始:', event.turnNumber);
+});
+
+battleService.on('damageDealt', (event) => {
+  console.log(`${event.attacker} が ${event.target} に ${event.damage} のダメージ`);
+});
+
+battleService.on('battleEnd', (event) => {
+  console.log('戦闘終了:', event.result);
+});</code></pre>
+
+                        <h3>カスタム設定の適用</h3>
+                        <p>ゲーム設定をカスタマイズして、独自のゲームバランスを実現できます：</p>
+                        <pre><code>import { RPGCore, GameConfig } from 'rpg-core';
+
+const customConfig: GameConfig = {
+  battle: {
+    maxTurns: 50,
+    escapeProbability: 0.5,
+    criticalHitRate: 0.1
+  },
+  character: {
+    maxLevel: 99,
+    expCurve: 'exponential',
+    statGrowthRate: 1.2
+  },
+  item: {
+    maxInventorySize: 99,
+    stackLimit: 99
+  }
+};
+
+const rpg = new RPGCore({ config: customConfig });</code></pre>
+
+                        <h3>Serviceの拡張</h3>
+                        <p>既存のServiceを拡張して、独自の機能を追加できます：</p>
+                        <pre><code>import { BattleService } from 'rpg-core';
+
+class CustomBattleService extends BattleService {
+  // カスタムメソッドを追加
+  async performComboAttack(attackerId: string, targetIds: string[]) {
+    // 独自のコンボ攻撃ロジック
+    const results = [];
+    for (const targetId of targetIds) {
+      const result = await this.performAttack(attackerId, targetId);
+      results.push(result);
+    }
+    return results;
+  }
+
+  // 既存メソッドをオーバーライド
+  async processTurn() {
+    console.log('カスタムターン処理');
+    return super.processTurn();
+  }
+}
+
+// カスタムServiceを使用
+const customBattleService = new CustomBattleService(config);</code></pre>
+
+                        <h2 id="reference">APIリファレンス</h2>
+                        
+                        <h3>提供されるService一覧</h3>
+
+                        <div class="card">
+                            <h4>🎮 戦闘・操作</h4>
+                            <ul>
+                                <li><strong>BattleService</strong> - 戦闘全体の進行管理</li>
+                                <li><strong>CommandService</strong> - 戦闘中のコマンド選択</li>
+                                <li><strong>ItemService</strong> - アイテム使用の流れ</li>
+                            </ul>
+
+                            <h4>🧠 敵に関するService</h4>
+                            <ul>
+                                <li><strong>EnemyAIService</strong> - 敵の行動自動決定</li>
+                                <li><strong>EnemyGroupService</strong> - 敵グループ管理</li>
+                            </ul>
+
+                            <h4>📈 成長・キャラクター</h4>
+                            <ul>
+                                <li><strong>SkillLearnService</strong> - スキル習得管理</li>
+                                <li><strong>JobChangeService</strong> - 職業・クラス変更</li>
+                                <li><strong>RewardService</strong> - 戦闘報酬処理</li>
+                            </ul>
+
+                            <h4>🎒 管理・編成</h4>
+                            <ul>
+                                <li><strong>InventoryService</strong> - インベントリ/バッグ管理</li>
+                                <li><strong>EquipmentService</strong> - 装備変更管理</li>
+                                <li><strong>PartyService</strong> - パーティ編成管理</li>
+                                <li><strong>StatusEffectService</strong> - 状態異常・バフ管理</li>
+                            </ul>
+
+                            <h4>🛠 クラフト・育成</h4>
+                            <ul>
+                                <li><strong>CraftService</strong> - アイテム合成管理</li>
+                                <li><strong>EnhanceService</strong> - 装備・キャラ強化</li>
+                            </ul>
+
+                            <h4>💾 システム・支援</h4>
+                            <ul>
+                                <li><strong>SaveLoadService</strong> - セーブ/ロード管理</li>
+                            </ul>
+                        </div>
+
+                        <h3>BattleService - 詳細API</h3>
+                        <pre><code>class BattleService {
+  // 戦闘開始
+  startBattle(party: Character[], enemies: Enemy[]): Promise&lt;void&gt;;
+  
+  // ターン処理
+  processTurn(): Promise&lt;void&gt;;
+  
+  // コマンド選択
+  selectCommand(
+    actorId: string,
+    command: Command
+  ): Promise&lt;void&gt;;
+  
+  // 状態取得
+  getState(): BattleState;
+  
+  // 戦闘終了
+  endBattle(result: 'victory' | 'defeat' | 'escaped'): Promise&lt;void&gt;;
+  
+  // イベント購読
+  on(event: string, handler: (data: any) => void): () => void;
+}</code></pre>
+
+                        <h3>ItemService - 詳細API</h3>
+                        <pre><code>class ItemService {
+  // アイテム使用開始
+  startItemUse(userId: string): Promise&lt;void&gt;;
+  
+  // 使用可能アイテム取得
+  getAvailableItems(): Item[];
+  
+  // アイテム選択
+  selectItem(itemId: string): Promise&lt;void&gt;;
+  
+  // ターゲット選択
+  selectTarget(targetId: string): Promise&lt;void&gt;;
+  
+  // アイテム使用実行
+  executeItemUse(): Promise&lt;ItemUseResult&gt;;
+  
+  // 状態取得
+  getState(): ItemUseState;
+}</code></pre>
+
+                        <h3>PartyService - 詳細API</h3>
+                        <pre><code>class PartyService {
+  // メンバー追加
+  addMember(characterId: string): Promise&lt;void&gt;;
+  
+  // メンバー削除
+  removeMember(characterId: string): Promise&lt;void&gt;;
+  
+  // 並び順変更
+  reorderMembers(order: string[]): Promise&lt;void&gt;;
+  
+  // 現在のパーティ取得
+  getCurrentParty(): Party;
+  
+  // パーティステータス取得
+  getPartyStats(): PartyStats;
+}</code></pre>
+
+                        <h2>次のステップ</h2>
+                        <div class="card">
+                            <ul>
+                                <li><a href="core-engine.html">Core Engine</a> - Serviceが利用するCore Engineの詳細</li>
+                                <li><a href="headless-ui.html">Headless UI</a> - Serviceを利用したUI実装</li>
+                                <li><a href="../customization/index.html">カスタマイズガイド</a> - 具体的なカスタマイズ例</li>
+                                <li><a href="../examples/index.html">サンプルコード</a> - 実際の実装例</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 rpg-core. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/rpg-core/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Update active state
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Update active link on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('.docs-content h1, .docs-content h2');
+            const scrollPosition = window.scrollY + 100;
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionId = section.id;
+                
+                if (scrollPosition >= sectionTop) {
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    const activeLink = document.querySelector(`.docs-sidebar a[href="#${sectionId}"]`);
+                    if (activeLink) activeLink.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

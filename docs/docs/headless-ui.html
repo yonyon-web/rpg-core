@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Headless UI - rpg-core</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="../index.html" class="logo">rpg-core</a>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">ホーム</a></li>
+                        <li><a href="index.html">ドキュメント</a></li>
+                        <li><a href="../customization/index.html">カスタマイズ</a></li>
+                        <li><a href="../examples/index.html">サンプル</a></li>
+                        <li><a href="../api/index.html">API</a></li>
+                        <li><a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="docs-section">
+            <div class="container">
+                <div class="docs-layout">
+                    <aside class="docs-sidebar">
+                        <h3>Headless UI</h3>
+                        <ul>
+                            <li><a href="#overview" class="active">機能の概要</a></li>
+                            <li><a href="#basic-usage">基本的な使い方</a></li>
+                            <li><a href="#customization">カスタマイズ方法</a></li>
+                            <li><a href="#reference">APIリファレンス</a></li>
+                        </ul>
+                        <h4 style="margin-top: 2rem;">関連ページ</h4>
+                        <ul>
+                            <li><a href="index.html">← ドキュメントTOP</a></li>
+                            <li><a href="services.html">Services →</a></li>
+                            <li><a href="core-engine.html">Core Engine →</a></li>
+                        </ul>
+                    </aside>
+
+                    <div class="docs-content">
+                        <h1 id="overview">Headless UI</h1>
+                        
+                        <h2>機能の概要</h2>
+                        <p>
+                            Headless UIは、<strong>ロジックと状態管理を提供するが、実際のレンダリングは行わない</strong>UIパターンです。
+                            rpg-coreのHeadless UI層は、Serviceを利用してゲームのUIロジックを提供し、
+                            React、Vue、Svelteなど任意のUIフレームワークで使用できます。
+                        </p>
+
+                        <div class="card">
+                            <h3>🎯 Headless UIのメリット</h3>
+                            <ul>
+                                <li><strong>フレームワーク非依存</strong>: React、Vue、Svelteなど任意のUIフレームワークで使用可能</li>
+                                <li><strong>ビジネスロジックの再利用</strong>: UI実装を変えても、ロジックは共通</li>
+                                <li><strong>テスタビリティ</strong>: UIレンダリングなしでロジックをテスト可能</li>
+                                <li><strong>柔軟性</strong>: デザインシステムやコンポーネントライブラリを自由に選択可能</li>
+                            </ul>
+                        </div>
+
+                        <h3>アーキテクチャにおける位置づけ</h3>
+                        <div class="architecture-diagram">
+                            <div class="arch-layer">
+                                <div class="layer-box">UI（見た目・入力）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box" style="background: #4CAF50; color: white;">Headless UI（選択・確認・キャンセル）← この層</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">JRPG Services（操作フロー）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">Core Engine（数値・ルール）</div>
+                                <div class="arrow">↓</div>
+                            </div>
+                            <div class="arch-layer">
+                                <div class="layer-box">Game State（永続可能な状態）</div>
+                            </div>
+                        </div>
+
+                        <h2 id="basic-usage">基本的な使い方</h2>
+                        
+                        <h3>コントローラーの初期化</h3>
+                        <p>Headless UIのコントローラーは、RPGCoreクラスから簡単に作成できます：</p>
+                        <pre><code>import { RPGCore } from 'rpg-core';
+
+// RPGCoreを初期化
+const rpg = new RPGCore();
+
+// Headless UIコントローラーを作成
+const battleController = rpg.controllers.battle();
+const itemController = rpg.controllers.item();</code></pre>
+
+                        <h3>状態の購読</h3>
+                        <p>コントローラーの状態変更を購読して、UIを更新します：</p>
+                        <pre><code>// 状態の購読
+const unsubscribe = battleController.subscribe((state) => {
+  console.log('戦闘状態が更新されました:', state);
+  // UIを更新する処理
+  updateBattleUI(state);
+});
+
+// 購読解除（コンポーネントのクリーンアップ時など）
+unsubscribe();</code></pre>
+
+                        <h3>アクションの実行</h3>
+                        <p>コントローラーのメソッドを呼び出して、ゲームのアクションを実行します：</p>
+                        <pre><code>// 戦闘を開始
+await battleController.startBattle(playerParty, enemyGroup);
+
+// コマンドを選択
+await battleController.selectCommand('attack', targetEnemy);
+
+// ターンを進める
+await battleController.nextTurn();</code></pre>
+
+                        <h3>Reactでの使用例</h3>
+                        <pre><code>import { useEffect, useState } from 'react';
+import { RPGCore } from 'rpg-core';
+
+function BattleScreen() {
+  const [rpg] = useState(() => new RPGCore());
+  const [battleState, setBattleState] = useState(null);
+
+  useEffect(() => {
+    const controller = rpg.controllers.battle();
+    
+    // 状態の購読
+    const unsubscribe = controller.subscribe((state) => {
+      setBattleState(state);
+    });
+
+    // 戦闘開始
+    controller.startBattle(playerParty, enemyGroup);
+
+    // クリーンアップ
+    return () => unsubscribe();
+  }, []);
+
+  if (!battleState) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h1>戦闘中</h1>
+      <p>ターン: {battleState.turnNumber}</p>
+      {/* UIコンポーネント */}
+    </div>
+  );
+}</code></pre>
+
+                        <h3>Vueでの使用例</h3>
+                        <pre><code>&lt;template&gt;
+  &lt;div v-if="battleState"&gt;
+    &lt;h1&gt;戦闘中&lt;/h1&gt;
+    &lt;p&gt;ターン: {{ battleState.turnNumber }}&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+import { ref, onMounted, onUnmounted } from 'vue';
+import { RPGCore } from 'rpg-core';
+
+export default {
+  setup() {
+    const rpg = new RPGCore();
+    const battleState = ref(null);
+    let unsubscribe;
+
+    onMounted(() => {
+      const controller = rpg.controllers.battle();
+      
+      unsubscribe = controller.subscribe((state) => {
+        battleState.value = state;
+      });
+
+      controller.startBattle(playerParty, enemyGroup);
+    });
+
+    onUnmounted(() => {
+      if (unsubscribe) unsubscribe();
+    });
+
+    return { battleState };
+  }
+};
+&lt;/script&gt;</code></pre>
+
+                        <h2 id="customization">カスタマイズ方法</h2>
+                        
+                        <h3>カスタムイベントの購読</h3>
+                        <p>コントローラーは様々なイベントを発行します。これらを購読してカスタム処理を実装できます：</p>
+                        <pre><code>// イベントの購読
+battleController.on('battleStart', (event) => {
+  console.log('戦闘開始:', event);
+  // カスタム処理（アニメーション、サウンドなど）
+});
+
+battleController.on('damageDealt', (event) => {
+  console.log('ダメージ:', event.damage);
+  // ダメージ表示のアニメーション
+});
+
+battleController.on('battleEnd', (event) => {
+  console.log('戦闘終了:', event.result);
+  // 結果表示
+});</code></pre>
+
+                        <h3>状態の選択的購読</h3>
+                        <p>状態の特定のプロパティのみを監視することもできます：</p>
+                        <pre><code>// ターン数のみを監視
+battleController.subscribe((state) => {
+  return state.turnNumber;
+}, (turnNumber) => {
+  console.log('ターンが変わりました:', turnNumber);
+});</code></pre>
+
+                        <h3>独自のUIコンポーネントとの統合</h3>
+                        <p>既存のUIコンポーネントライブラリと組み合わせて使用できます：</p>
+                        <pre><code>import { Button, Modal } from 'my-ui-library';
+
+function BattleUI({ controller }) {
+  const [state, setState] = useState(controller.getState());
+
+  useEffect(() => {
+    return controller.subscribe(setState);
+  }, [controller]);
+
+  return (
+    <div>
+      <Button onClick={() => controller.selectCommand('attack')}>
+        攻撃
+      </Button>
+      <Modal open={state.showingResults}>
+        {state.battleResult}
+      </Modal>
+    </div>
+  );
+}</code></pre>
+
+                        <h2 id="reference">APIリファレンス</h2>
+                        
+                        <h3>主要なコントローラー</h3>
+                        <p>rpg-coreは、以下のHeadless UIコントローラーを提供しています：</p>
+
+                        <div class="card">
+                            <h4>🎮 戦闘・操作</h4>
+                            <ul>
+                                <li><strong>BattleController</strong> - 戦闘全体の進行管理</li>
+                                <li><strong>CommandController</strong> - コマンド選択UI</li>
+                                <li><strong>ItemController</strong> - アイテム使用UI</li>
+                            </ul>
+
+                            <h4>📈 成長・キャラクター</h4>
+                            <ul>
+                                <li><strong>SkillLearnController</strong> - スキル習得UI</li>
+                                <li><strong>JobChangeController</strong> - ジョブ変更UI</li>
+                                <li><strong>RewardController</strong> - 報酬表示UI</li>
+                            </ul>
+
+                            <h4>🎒 管理・編成</h4>
+                            <ul>
+                                <li><strong>InventoryController</strong> - インベントリUI</li>
+                                <li><strong>EquipmentController</strong> - 装備変更UI</li>
+                                <li><strong>PartyController</strong> - パーティ編成UI</li>
+                            </ul>
+
+                            <h4>🛠 クラフト・育成</h4>
+                            <ul>
+                                <li><strong>CraftController</strong> - クラフトUI</li>
+                                <li><strong>EnhanceController</strong> - 強化UI</li>
+                            </ul>
+                        </div>
+
+                        <h3>共通メソッド</h3>
+                        <p>すべてのコントローラーは、以下の共通メソッドを持ちます：</p>
+                        <pre><code>interface BaseController&lt;TState&gt; {
+  // 現在の状態を取得
+  getState(): TState;
+  
+  // 状態変更を購読
+  subscribe(listener: (state: TState) => void): () => void;
+  
+  // イベントを購読
+  on(event: string, handler: (data: any) => void): () => void;
+  
+  // 状態をリセット
+  reset(): void;
+}</code></pre>
+
+                        <h2>次のステップ</h2>
+                        <div class="card">
+                            <ul>
+                                <li><a href="services.html">Services</a> - Headless UIが利用するServiceの詳細</li>
+                                <li><a href="core-engine.html">Core Engine</a> - 計算とルール判定の詳細</li>
+                                <li><a href="../customization/index.html">カスタマイズガイド</a> - 具体的なカスタマイズ例</li>
+                                <li><a href="../examples/index.html">サンプルコード</a> - 実際の実装例</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 rpg-core. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/rpg-core" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/rpg-core/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Update active state
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Update active link on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('.docs-content h1, .docs-content h2');
+            const scrollPosition = window.scrollY + 100;
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionId = section.id;
+                
+                if (scrollPosition >= sectionTop) {
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    const activeLink = document.querySelector(`.docs-sidebar a[href="#${sectionId}"]`);
+                    if (activeLink) activeLink.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
