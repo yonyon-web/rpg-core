@@ -65,60 +65,176 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
-                        <h3>基本的な使い方</h3>
-                        <p>StatusEffectControllerを使って、状態異常UIを管理します：</p>
-                        <pre><code>import { GEasyKit } from 'geasy-kit';
-
-const game = new GEasyKit();
-const statusController = game.controllers.statusEffect();
-
-// 状態異常の購読
-statusController.subscribe((state) => {
-  console.log('状態異常:', state.effects);
-  updateStatusIcons(state.effects);
-});
-
-// 状態異常を付与
-await statusController.applyStatusEffect(targetId, {
-  type: 'poison',
-  duration: 3,
-  power: 10
-});
-
-// 状態異常を解除
-await statusController.removeStatusEffect(targetId, 'poison');</code></pre>
-
-                        <h3>カスタマイズ方法</h3>
-                        <p>イベントを購読して、カスタム処理を追加できます：</p>
-                        <pre><code>// 状態異常付与時のエフェクト
-statusController.on('statusApplied', (event) => {
-  showStatusEffect(event.target, event.status);
-});
-
-// ターン経過時の処理
-statusController.on('statusTick', (event) => {
-  if (event.status.type === 'poison') {
-    showPoisonDamage(event.target, event.damage);
-  }
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>StatusEffectController</h4>
-                            <pre><code>interface StatusEffectController {
-  // 状態管理
-  getState(): StatusEffectState;
-  subscribe(listener: (state: StatusEffectState) => void): () => void;
-  
-  // 状態異常制御
-  applyStatusEffect(targetId: string, effect: StatusEffect): Promise<void>;
-  removeStatusEffect(targetId: string, effectType: string): Promise<void>;
-  tickStatusEffects(): Promise<void>;
-  
-  // イベント購読
-  on(event: string, handler: (data: any) => void): () => void;
-}</code></pre>
+                        <h3>状態異常フロー</h3>
+                        <p>StatusEffectControllerは以下の流れで状態異常を管理します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">状態異常付与<br/><code>applyStatusEffect()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">付与判定</div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">成功</span>
+                                        <div class="arrow-down">↓</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">失敗</span>
+                                        <div class="arrow-down">→終了</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">状態異常適用</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">ターン経過処理<br/><code>tickStatusEffects()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">継続効果発動</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">期限チェック</div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">継続</span>
+                                        <div class="arrow-back">↑</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">解除</span>
+                                        <div class="arrow-down">↓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">状態異常解除</div>
+                            </div>
                         </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>状態異常の流れを変更するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>applyStatusEffect(targetId, effect)</code> - 状態異常を付与</li>
+                            <li><code>removeStatusEffect(targetId, effectType)</code> - 状態異常を解除</li>
+                            <li><code>tickStatusEffects()</code> - ターン経過時の処理を実行</li>
+                            <li><code>getActiveEffects(characterId)</code> - 現在の状態異常を取得</li>
+                            <li><code>hasStatusEffect(characterId, effectType)</code> - 状態異常の有無を判定</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>effects</td>
+                                    <td>Map&lt;string, StatusEffect[]&gt;</td>
+                                    <td>キャラクターIDごとの状態異常リスト</td>
+                                </tr>
+                                <tr>
+                                    <td>activeCount</td>
+                                    <td>number</td>
+                                    <td>全体の状態異常数</td>
+                                </tr>
+                                <tr>
+                                    <td>processing</td>
+                                    <td>boolean</td>
+                                    <td>処理中かどうか</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>StatusEffect型の構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>type</td>
+                                    <td>string</td>
+                                    <td>状態異常の種類（'poison' | 'paralysis' | 'sleep'等）</td>
+                                </tr>
+                                <tr>
+                                    <td>duration</td>
+                                    <td>number</td>
+                                    <td>残りターン数</td>
+                                </tr>
+                                <tr>
+                                    <td>power</td>
+                                    <td>number</td>
+                                    <td>効果の強さ</td>
+                                </tr>
+                                <tr>
+                                    <td>source</td>
+                                    <td>string</td>
+                                    <td>付与元のキャラクターID</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>applyStatusEffect</td>
+                                    <td>targetId: string, effect: StatusEffect</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>状態異常を付与する</td>
+                                </tr>
+                                <tr>
+                                    <td>removeStatusEffect</td>
+                                    <td>targetId: string, effectType: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>状態異常を解除する</td>
+                                </tr>
+                                <tr>
+                                    <td>tickStatusEffects</td>
+                                    <td>-</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>全ての状態異常のターン経過処理を実行する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>StatusEffectState</td>
+                                    <td>現在の状態異常の状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: StatusEffectState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="service">Service</h2>
                         
@@ -142,48 +258,61 @@ await statusService.processStatusEffects();
 // 状態異常を解除
 await statusService.removeStatusEffect(characterId, 'poison');</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>StatusEffectServiceを拡張して、独自の状態異常を追加できます：</p>
-                        <pre><code>import { StatusEffectService } from 'geasy-kit';
-
-class CustomStatusEffectService extends StatusEffectService {
-  // カスタム状態異常
-  async applyStatusEffect(targetId, effect) {
-    // 独自の状態異常処理
-    if (effect.type === 'custom_burn') {
-      return this.applyBurnEffect(targetId, effect);
-    }
-    
-    return super.applyStatusEffect(targetId, effect);
-  }
-  
-  async applyBurnEffect(targetId, effect) {
-    // 火傷効果の実装
-    const damage = effect.power * 1.5;
-    this.emit('burnApplied', { targetId, damage });
-  }
-}</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>StatusEffectService</h4>
-                            <pre><code>class StatusEffectService {
-  // 状態異常管理
-  applyStatusEffect(targetId: string, effect: StatusEffect): Promise<void>;
-  removeStatusEffect(targetId: string, effectType: string): Promise<void>;
-  getActiveEffects(characterId: string): StatusEffect[];
-  
-  // ターン処理
-  processStatusEffects(): Promise<void>;
-  tickEffect(effect: StatusEffect): Promise<void>;
-  
-  // 判定
-  hasStatusEffect(characterId: string, effectType: string): boolean;
-  
-  // イベント発行
-  emit(event: string, data: any): void;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>applyStatusEffect</td>
+                                    <td>targetId: string, effect: StatusEffect</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>状態異常を付与する</td>
+                                </tr>
+                                <tr>
+                                    <td>removeStatusEffect</td>
+                                    <td>targetId: string, effectType: string</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>状態異常を解除する</td>
+                                </tr>
+                                <tr>
+                                    <td>getActiveEffects</td>
+                                    <td>characterId: string</td>
+                                    <td>StatusEffect[]</td>
+                                    <td>キャラクターの現在の状態異常を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>processStatusEffects</td>
+                                    <td>-</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>全キャラクターの状態異常を処理する</td>
+                                </tr>
+                                <tr>
+                                    <td>tickEffect</td>
+                                    <td>effect: StatusEffect</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>個別の状態異常のターン処理を実行する</td>
+                                </tr>
+                                <tr>
+                                    <td>hasStatusEffect</td>
+                                    <td>characterId: string, effectType: string</td>
+                                    <td>boolean</td>
+                                    <td>特定の状態異常を持っているか判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>emit</td>
+                                    <td>event: string, data: any</td>
+                                    <td>void</td>
+                                    <td>イベントを発行する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="core-engine">Core Engine</h2>
                         
@@ -200,69 +329,43 @@ const damage = engine.calculateStatusDamage(effect, target);
 // 状態異常耐性計算
 const resistance = engine.calculateStatusResistance(target, effectType);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>状態異常の計算式をカスタマイズできます：</p>
-                        <pre><code>import { StatusEffectCalculator } from 'geasy-kit';
-
-class CustomStatusEffectCalculator extends StatusEffectCalculator {
-  // カスタム付与確率計算
-  checkApplication(skill, target) {
-    const baseRate = skill.statusEffect.rate;
-    const resistance = target.resistance?.[skill.statusEffect.type] || 0;
-    
-    // 耐性による軽減を強化
-    const finalRate = baseRate * (1 - resistance * 1.5);
-    
-    return Math.random() < finalRate;
-  }
-  
-  // カスタムダメージ計算
-  calculateDamage(effect, target) {
-    const baseDamage = effect.power;
-    
-    // HPの割合でダメージ増加
-    const hpRatio = target.currentHp / target.maxHp;
-    const damageMultiplier = hpRatio < 0.3 ? 1.5 : 1.0;
-    
-    return Math.floor(baseDamage * damageMultiplier);
-  }
-}
-
-const game = new GEasyKit({
-  config: {
-    statusEffectCalculator: new CustomStatusEffectCalculator()
-  }
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>Core Engine - 状態異常関連</h4>
-                            <pre><code>interface StatusEffectCoreEngine {
-  // 付与判定
-  checkStatusEffectApplication(
-    skill: Skill,
-    target: Character
-  ): boolean;
-  
-  // ダメージ計算
-  calculateStatusDamage(
-    effect: StatusEffect,
-    target: Character
-  ): number;
-  
-  // 耐性計算
-  calculateStatusResistance(
-    target: Character,
-    effectType: string
-  ): number;
-  
-  // 効果計算
-  calculateStatusEffect(
-    effect: StatusEffect,
-    target: Character
-  ): EffectResult;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>checkStatusEffectApplication</td>
+                                    <td>skill: Skill, target: Character</td>
+                                    <td>boolean</td>
+                                    <td>状態異常が付与されるか判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateStatusDamage</td>
+                                    <td>effect: StatusEffect, target: Character</td>
+                                    <td>number</td>
+                                    <td>継続ダメージを計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateStatusResistance</td>
+                                    <td>target: Character, effectType: string</td>
+                                    <td>number</td>
+                                    <td>状態異常耐性を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateStatusEffect</td>
+                                    <td>effect: StatusEffect, target: Character</td>
+                                    <td>EffectResult</td>
+                                    <td>状態異常の効果を計算する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2>次のステップ</h2>
                         <div class="card">

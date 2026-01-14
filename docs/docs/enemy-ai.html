@@ -65,55 +65,139 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
-                        <h3>基本的な使い方</h3>
-                        <p>EnemyAIControllerを使って、敵AIの動作を管理します：</p>
-                        <pre><code>import { GEasyKit } from 'geasy-kit';
-
-const game = new GEasyKit();
-const aiController = game.controllers.enemyAI();
-
-// AI状態の購読
-aiController.subscribe((state) => {
-  console.log('AI思考中:', state.thinking);
-  updateAIIndicator(state);
-});
-
-// 敵の行動を決定
-const action = await aiController.decideAction(enemyId, battleState);
-
-// 行動を実行
-await aiController.executeAction(enemyId, action);</code></pre>
-
-                        <h3>カスタマイズ方法</h3>
-                        <p>イベントを購読して、カスタム処理を追加できます：</p>
-                        <pre><code>// 行動決定時の処理
-aiController.on('actionDecided', (event) => {
-  console.log(\`\${event.enemy.name}の行動: \${event.action.type}\`);
-  showEnemyThought(event.enemy, event.action);
-});
-
-// ターゲット選択時の処理
-aiController.on('targetSelected', (event) => {
-  showTargetIndicator(event.target);
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>EnemyAIController</h4>
-                            <pre><code>interface EnemyAIController {
-  // 状態管理
-  getState(): EnemyAIState;
-  subscribe(listener: (state: EnemyAIState) => void): () => void;
-  
-  // AI制御
-  decideAction(enemyId: string, context: BattleContext): Promise<Action>;
-  executeAction(enemyId: string, action: Action): Promise<void>;
-  setAIDifficulty(difficulty: 'easy' | 'normal' | 'hard'): void;
-  
-  // イベント購読
-  on(event: string, handler: (data: any) => void): () => void;
-}</code></pre>
+                        <h3>AI決定フロー</h3>
+                        <p>EnemyAIControllerは以下の流れで敵の行動を決定します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">行動決定開始<br/><code>decideAction()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">戦況分析</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">利用可能な行動を取得</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">各行動の評価</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">最適行動を選択</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">ターゲット選択</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">行動実行<br/><code>executeAction()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">行動完了</div>
+                            </div>
                         </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>敵AIの流れを変更するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>decideAction(enemyId, context)</code> - 敵の行動を決定</li>
+                            <li><code>executeAction(enemyId, action)</code> - 行動を実行</li>
+                            <li><code>setAIDifficulty(difficulty)</code> - AI難易度を設定</li>
+                            <li><code>evaluateAction(action, context)</code> - 行動の評価値を計算</li>
+                            <li><code>selectTarget(enemy, party)</code> - ターゲットを選択</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>thinking</td>
+                                    <td>boolean</td>
+                                    <td>AI思考中かどうか</td>
+                                </tr>
+                                <tr>
+                                    <td>currentEnemy</td>
+                                    <td>Enemy | null</td>
+                                    <td>現在思考中の敵</td>
+                                </tr>
+                                <tr>
+                                    <td>decidedAction</td>
+                                    <td>Action | null</td>
+                                    <td>決定した行動</td>
+                                </tr>
+                                <tr>
+                                    <td>difficulty</td>
+                                    <td>'easy' | 'normal' | 'hard'</td>
+                                    <td>AI難易度</td>
+                                </tr>
+                                <tr>
+                                    <td>evaluationScores</td>
+                                    <td>Map&lt;string, number&gt;</td>
+                                    <td>各行動の評価スコア</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>decideAction</td>
+                                    <td>enemyId: string, context: BattleContext</td>
+                                    <td>Promise&lt;Action&gt;</td>
+                                    <td>敵の行動を決定する</td>
+                                </tr>
+                                <tr>
+                                    <td>executeAction</td>
+                                    <td>enemyId: string, action: Action</td>
+                                    <td>Promise&lt;void&gt;</td>
+                                    <td>決定した行動を実行する</td>
+                                </tr>
+                                <tr>
+                                    <td>setAIDifficulty</td>
+                                    <td>difficulty: 'easy' | 'normal' | 'hard'</td>
+                                    <td>void</td>
+                                    <td>AI難易度を設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>EnemyAIState</td>
+                                    <td>現在のAI状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: EnemyAIState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="service">Service</h2>
                         
@@ -137,57 +221,55 @@ const groupActions = await aiService.decideGroupActions(enemyGroup, context);
 // AI難易度を設定
 aiService.setDifficulty('hard');</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>EnemyAIServiceを拡張して、独自のAIロジックを追加できます：</p>
-                        <pre><code>import { EnemyAIService } from 'geasy-kit';
-
-class CustomEnemyAIService extends EnemyAIService {
-  // カスタムAIロジック
-  async decideAction(enemyId, context) {
-    const enemy = this.getEnemy(enemyId);
-    const party = context.party;
-    
-    // HPが低い味方がいる場合は回復を優先
-    if (enemy.canHeal) {
-      const lowHpAlly = this.findLowHpAlly(context.enemies);
-      if (lowHpAlly && lowHpAlly.hp < lowHpAlly.maxHp * 0.3) {
-        return {
-          type: 'heal',
-          targetId: lowHpAlly.id
-        };
-      }
-    }
-    
-    // HPが低い敵を狙う戦術
-    const weakestTarget = this.findWeakestTarget(party);
-    return {
-      type: 'attack',
-      targetId: weakestTarget.id
-    };
-  }
-}</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>EnemyAIService</h4>
-                            <pre><code>class EnemyAIService {
-  // 行動決定
-  decideAction(enemyId: string, context: BattleContext): Promise<Action>;
-  decideGroupActions(enemies: Enemy[], context: BattleContext): Promise<Action[]>;
-  
-  // ターゲット選択
-  selectTarget(enemy: Enemy, party: Character[]): string;
-  
-  // 難易度設定
-  setDifficulty(difficulty: 'easy' | 'normal' | 'hard'): void;
-  
-  // 戦術評価
-  evaluateAction(action: Action, context: BattleContext): number;
-  
-  // イベント発行
-  emit(event: string, data: any): void;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>decideAction</td>
+                                    <td>enemyId: string, context: BattleContext</td>
+                                    <td>Promise&lt;Action&gt;</td>
+                                    <td>敵の行動を決定する</td>
+                                </tr>
+                                <tr>
+                                    <td>decideGroupActions</td>
+                                    <td>enemies: Enemy[], context: BattleContext</td>
+                                    <td>Promise&lt;Action[]&gt;</td>
+                                    <td>グループ全体の行動を決定する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectTarget</td>
+                                    <td>enemy: Enemy, party: Character[]</td>
+                                    <td>string</td>
+                                    <td>攻撃対象を選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>setDifficulty</td>
+                                    <td>difficulty: 'easy' | 'normal' | 'hard'</td>
+                                    <td>void</td>
+                                    <td>AI難易度を設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>evaluateAction</td>
+                                    <td>action: Action, context: BattleContext</td>
+                                    <td>number</td>
+                                    <td>行動の評価値を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>emit</td>
+                                    <td>event: string, data: any</td>
+                                    <td>void</td>
+                                    <td>イベントを発行する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2 id="core-engine">Core Engine</h2>
                         
@@ -204,79 +286,43 @@ const actionScore = engine.evaluateAction(action, context);
 // 脅威度計算
 const threat = engine.calculateThreat(character, context);</code></pre>
 
-                        <h3>カスタマイズ方法</h3>
-                        <p>AI評価の計算式をカスタマイズできます：</p>
-                        <pre><code>import { AIEvaluator } from 'geasy-kit';
-
-class CustomAIEvaluator extends AIEvaluator {
-  // カスタムターゲット評価
-  evaluateTarget(attacker, target) {
-    let score = 0;
-    
-    // HPが低い敵を優先（重み増加）
-    const hpRatio = target.currentHp / target.maxHp;
-    score += (1 - hpRatio) * 200;  // 標準は100
-    
-    // 回復役を優先
-    if (target.role === 'healer') {
-      score += 150;
-    }
-    
-    // 攻撃力が高い敵を優先
-    score += target.attack * 0.8;
-    
-    return score;
-  }
-  
-  // カスタム行動評価
-  evaluateAction(action, context) {
-    let score = super.evaluateAction(action, context);
-    
-    // ボス戦では防御的な行動を評価
-    if (context.isBossBattle && action.type === 'defend') {
-      score *= 1.5;
-    }
-    
-    return score;
-  }
-}
-
-const game = new GEasyKit({
-  config: {
-    aiEvaluator: new CustomAIEvaluator()
-  }
-});</code></pre>
-
-                        <h3>プロパティとメソッドのリファレンス</h3>
-                        <div class="card">
-                            <h4>Core Engine - AI関連</h4>
-                            <pre><code>interface AICoreEngine {
-  // ターゲット評価
-  evaluateTarget(
-    attacker: Enemy,
-    target: Character
-  ): number;
-  
-  // 行動評価
-  evaluateAction(
-    action: Action,
-    context: BattleContext
-  ): number;
-  
-  // 脅威度計算
-  calculateThreat(
-    character: Character,
-    context: BattleContext
-  ): number;
-  
-  // 最適行動選択
-  selectBestAction(
-    enemy: Enemy,
-    availableActions: Action[],
-    context: BattleContext
-  ): Action;
-}</code></pre>
-                        </div>
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>evaluateTarget</td>
+                                    <td>attacker: Enemy, target: Character</td>
+                                    <td>number</td>
+                                    <td>ターゲットの評価値を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>evaluateAction</td>
+                                    <td>action: Action, context: BattleContext</td>
+                                    <td>number</td>
+                                    <td>行動の評価値を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateThreat</td>
+                                    <td>character: Character, context: BattleContext</td>
+                                    <td>number</td>
+                                    <td>キャラクターの脅威度を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectBestAction</td>
+                                    <td>enemy: Enemy, availableActions: Action[], context: BattleContext</td>
+                                    <td>Action</td>
+                                    <td>利用可能な行動から最適なものを選択する</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <h2>次のステップ</h2>
                         <div class="card">
