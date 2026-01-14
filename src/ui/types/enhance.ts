@@ -1,4 +1,4 @@
-import type { EnhancableEquipment } from '../../types/craft';
+import type { EnhancableEquipment } from '../../types/craft/craft';
 import type { LoadingState, ErrorState } from './common';
 
 /**

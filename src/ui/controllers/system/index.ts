@@ -1,0 +1,5 @@
+/**
+ * システムコントローラーのエクスポート
+ */
+
+export * from './RewardController';

@@ -2,8 +2,8 @@
  * Tests for EnemyGroupService
  */
 
-import { EnemyGroupService, EnemyType, EnemyGroupType } from '../../src/services/EnemyGroupService';
-import { Skill } from '../../src/types/skill';
+import { EnemyGroupService, EnemyType, EnemyGroupType } from '../../src/services/enemy/EnemyGroupService';
+import { Skill } from '../../src/types/character/skill';
 
 describe('EnemyGroupService', () => {
   let enemyGroupService: EnemyGroupService;

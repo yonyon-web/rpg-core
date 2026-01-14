@@ -1,4 +1,4 @@
-import type { Item } from '../../types/item';
+import type { Item } from '../../types/item/item';
 import type { LoadingState, ErrorState } from './common';
 
 /**

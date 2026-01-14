@@ -1,20 +1,26 @@
 /**
  * Headless UI Controllers
  * 
- * ヘッドレスUIコントローラーをエクスポート
+ * ヘッドレスUIコントローラーをドメイン別にエクスポート
  */
 
-export { BattleController } from './BattleController';
-export { CommandController } from './CommandController';
-export { StatusEffectController } from './StatusEffectController';
-export { InventoryController } from './InventoryController';
-export { EquipmentController } from './EquipmentController';
-export { PartyController } from './PartyController';
-export { PartySelectionController } from './PartySelectionController';
-export { ItemController } from './ItemController';
-export { RewardController } from './RewardController';
-export { SkillLearnController } from './SkillLearnController';
-export { JobChangeController } from './JobChangeController';
-export { CraftController } from './CraftController';
-export { EnhanceController } from './EnhanceController';
-export { ShopController } from './ShopController';
+// 戦闘コントローラー
+export * from './battle';
+
+// キャラクターコントローラー
+export * from './character';
+
+// アイテムコントローラー
+export * from './item';
+
+// クラフトコントローラー
+export * from './craft';
+
+// パーティコントローラー
+export * from './party';
+
+// 状態異常コントローラー
+export * from './status';
+
+// システムコントローラー
+export * from './system';

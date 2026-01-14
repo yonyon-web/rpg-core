@@ -2,8 +2,8 @@
  * 状態異常UI関連の型定義
  */
 
-import type { Combatant } from '../../types/combatant';
-import type { StatusEffect } from '../../types/statusEffect';
+import type { Combatant } from '../../types/battle/combatant';
+import type { StatusEffect } from '../../types/status/statusEffect';
 
 /**
  * アクティブな状態異常（UI表示用）

@@ -2,7 +2,7 @@
  * Tests for accuracy module
  */
 
-import { calculateHitRate, checkHit, calculateCriticalRate, checkCritical } from '../../src/combat/accuracy';
+import { calculateHitRate, checkHit, calculateCriticalRate, checkCritical } from '../../src/core/combat/accuracy';
 import { Combatant, Skill, GameConfig } from '../../src/types';
 import { defaultGameConfig } from '../../src/config';
 

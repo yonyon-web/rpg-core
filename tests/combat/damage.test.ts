@@ -7,7 +7,7 @@ import {
   calculateMagicDamage,
   calculateHealAmount,
   calculateElementalModifier,
-} from '../../src/combat/damage';
+} from '../../src/core/combat/damage';
 import { Combatant, Skill, DefaultElementResistance } from '../../src/types';
 import { defaultGameConfig } from '../../src/config';
 

@@ -2,7 +2,7 @@
  * Tests for character stats module
  */
 
-import { calculateFinalStats, applyStatModifiers } from '../../src/character/stats';
+import { calculateFinalStats, applyStatModifiers } from '../../src/core/character/stats';
 import { DefaultStats } from '../../src/types';
 
 describe('キャラクターステータスモジュール', () => {

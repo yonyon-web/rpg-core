@@ -1,23 +1,29 @@
 /**
  * 型定義のエクスポート
+ * 
+ * ドメイン別にグループ化
  */
 
+// 共通型
 export * from './common';
-export * from './stats';
-export * from './statusEffect';
-export * from './combatant';
-export * from './skill';
-export * from './damage';
-export * from './config';
-export * from './formulas';
-export * from './gameTypes';
+
+// 戦闘型
 export * from './battle';
-export * from './command';
-export * from './reward';
-export * from './equipment';
-export * from './job';
+
+// キャラクター型
+export * from './character';
+
+// アイテム型
 export * from './item';
+
+// クラフト型
 export * from './craft';
-export * from './save';
-export * from './simulation';
-export * from './shop';
+
+// 状態異常型
+export * from './status';
+
+// システム型
+export * from './system';
+
+// コア型
+export * from './core';

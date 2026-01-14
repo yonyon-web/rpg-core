@@ -3,10 +3,10 @@
  * TDD implementation - tests written first
  */
 
-import { StatusEffectService } from '../../src/services/StatusEffectService';
-import type { Combatant } from '../../src/types/combatant';
-import type { StatusEffect } from '../../src/types/statusEffect';
-import type { DefaultStats } from '../../src/types/stats';
+import { StatusEffectService } from '../../src/services/status/StatusEffectService';
+import type { Combatant } from '../../src/types/battle/combatant';
+import type { StatusEffect } from '../../src/types/status/statusEffect';
+import type { DefaultStats } from '../../src/types/character/stats';
 
 describe('StatusEffectService', () => {
   function createCharacter(id: string): Combatant {

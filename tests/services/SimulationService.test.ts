@@ -2,9 +2,9 @@
  * SimulationService テスト
  */
 
-import { SimulationService } from '../../src/services/SimulationService';
-import type { Combatant } from '../../src/types/combatant';
-import type { Skill } from '../../src/types/skill';
+import { SimulationService } from '../../src/services/system/SimulationService';
+import type { Combatant } from '../../src/types/battle/combatant';
+import type { Skill } from '../../src/types/character/skill';
 
 describe('SimulationService', () => {
   let service: SimulationService;

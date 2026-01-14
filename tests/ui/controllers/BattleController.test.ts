@@ -2,8 +2,8 @@
  * BattleController のテスト
  */
 
-import { BattleController } from '../../../src/ui/controllers/BattleController';
-import { BattleService } from '../../../src/services/BattleService';
+import { BattleController } from '../../../src/ui/controllers/battle/BattleController';
+import { BattleService } from '../../../src/services/battle/BattleService';
 import type { Character, Enemy } from '../../../src/types/battle';
 
 describe('BattleController', () => {

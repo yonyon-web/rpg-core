@@ -1,22 +1,29 @@
 /**
  * Service層のエクスポート
+ * 
+ * 各ドメイン別にサービスをグループ化
  */
 
-export * from './BattleService';
-export * from './BattleActionExecutor';
-export * from './CommandService';
-export * from './EnemyAIService';
-export * from './EnemyGroupService';
-export * from './RewardService';
-export * from './EquipmentService';
-export * from './PartyService';
-export * from './StatusEffectService';
-export * from './SkillLearnService';
-export * from './JobChangeService';
-export * from './ItemService';
-export * from './CraftService';
-export * from './EnhanceService';
-export * from './SaveLoadService';
-export * from './SimulationService';
-export * from './InventoryService';
-export * from './ShopService';
+// 戦闘サービス
+export * from './battle';
+
+// キャラクターサービス
+export * from './character';
+
+// アイテムサービス
+export * from './item';
+
+// クラフトサービス
+export * from './craft';
+
+// パーティサービス
+export * from './party';
+
+// 敵サービス
+export * from './enemy';
+
+// 状態異常サービス
+export * from './status';
+
+// システムサービス
+export * from './system';

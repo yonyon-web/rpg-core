@@ -3,10 +3,10 @@
  * 報酬UI関連の型定義
  */
 
-import type { Combatant } from '../../types/combatant';
-import type { BaseStats, DefaultStats } from '../../types/stats';
-import type { Item } from '../../types/item';
-import type { ExpDistribution, LevelUpResult, RewardDistributionResult } from '../../types/reward';
+import type { Combatant } from '../../types/battle/combatant';
+import type { BaseStats, DefaultStats } from '../../types/character/stats';
+import type { Item } from '../../types/item/item';
+import type { ExpDistribution, LevelUpResult, RewardDistributionResult } from '../../types/system/reward';
 
 /**
  * 報酬表示ステージ

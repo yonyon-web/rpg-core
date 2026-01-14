@@ -3,9 +3,9 @@
  * TDD implementation - tests written first
  */
 
-import { PartyService } from '../../src/services/PartyService';
-import type { Combatant } from '../../src/types/combatant';
-import type { DefaultStats } from '../../src/types/stats';
+import { PartyService } from '../../src/services/party/PartyService';
+import type { Combatant } from '../../src/types/battle/combatant';
+import type { DefaultStats } from '../../src/types/character/stats';
 
 describe('PartyService', () => {
   function createCharacter(id: string, level: number = 1): Combatant {

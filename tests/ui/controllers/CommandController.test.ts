@@ -2,12 +2,12 @@
  * CommandController のテスト
  */
 
-import { CommandController } from '../../../src/ui/controllers/CommandController';
-import { CommandService } from '../../../src/services/CommandService';
+import { CommandController } from '../../../src/ui/controllers/battle/CommandController';
+import { CommandService } from '../../../src/services/battle/CommandService';
 import type { Character, BattleState } from '../../../src/types/battle';
 import type { Enemy } from '../../../src/types/battle';
-import type { Skill } from '../../../src/types/skill';
-import type { DefaultStats } from '../../../src/types/stats';
+import type { Skill } from '../../../src/types/character/skill';
+import type { DefaultStats } from '../../../src/types/character/stats';
 
 describe('CommandController', () => {
   let service: CommandService;

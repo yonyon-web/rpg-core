@@ -3,10 +3,10 @@
  * ジョブ変更サービスのテスト
  */
 
-import { JobChangeService } from '../../src/services/JobChangeService';
+import { JobChangeService } from '../../src/services/character/JobChangeService';
 import { Character } from '../../src/types/battle';
-import { Job, JobHistory } from '../../src/types/job';
-import { DefaultStats } from '../../src/types/stats';
+import { Job, JobHistory } from '../../src/types/character/job';
+import { DefaultStats } from '../../src/types/character/stats';
 
 describe('JobChangeService', () => {
   let service: JobChangeService;
