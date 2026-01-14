@@ -2,7 +2,7 @@
 
 ## 実装した方式
 
-rpg-coreライブラリに **Dependency Injection (DI)** パターンを実装し、以下の2つのコアコンポーネントを提供します：
+GEasy-Kitライブラリに **Dependency Injection (DI)** パターンを実装し、以下の2つのコアコンポーネントを提供します：
 
 ### 1. ServiceContainer
 - 軽量DIコンテナ
@@ -43,7 +43,7 @@ const battleController = new BattleController(battleService);
 ### 新しい方式（After）
 ```typescript
 // ✅ 自動で依存関係を解決
-import { RPGCore } from 'rpg-core';
+import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore({
   config: customGameConfig  // 省略可能
@@ -166,7 +166,7 @@ const myService = rpg.container.resolve('myService');
 - 必要に応じてトランジェントライフタイムを使用可能
 - 各サービスは状態を極力持たない設計
 
-**評価：** rpg-coreの設計思想（状態を持たないサービス）と整合性がある。
+**評価：** GEasy-Kitの設計思想（状態を持たないサービス）と整合性がある。
 
 ## 他の考慮事項
 

@@ -1,5 +1,5 @@
 /**
- * rpg-core - ターン制RPGゲームを作成するためのTypeScriptライブラリ
+ * GEasy-Kit - ターン制RPGゲームを作成するためのTypeScriptライブラリ
  * 
  * このライブラリは、JRPGスタイルのゲームにおける数値計算と
  * ルール判定を行うCore Engineを提供します。

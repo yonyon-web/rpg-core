@@ -1,10 +1,10 @@
 # 依存関係管理システム (Dependency Management System)
 
-rpg-coreライブラリの依存関係管理システムの完全ガイド
+GEasy-Kitライブラリの依存関係管理システムの完全ガイド
 
 ## 概要
 
-rpg-coreは、サービス間およびコントローラー間の依存関係を自動的に解決するDependency Injection (DI) システムを提供します。このシステムにより、開発者は複雑な依存関係を気にすることなく、1カ所でアプリケーションを設定できます。
+GEasy-Kitは、サービス間およびコントローラー間の依存関係を自動的に解決するDependency Injection (DI) システムを提供します。このシステムにより、開発者は複雑な依存関係を気にすることなく、1カ所でアプリケーションを設定できます。
 
 ## 問題
 
@@ -36,11 +36,11 @@ const itemController = new ItemController(itemService);
 
 ## 解決策
 
-rpg-coreの依存関係管理システムを使用すると、すべての依存関係が自動的に解決されます：
+GEasy-Kitの依存関係管理システムを使用すると、すべての依存関係が自動的に解決されます：
 
 ```typescript
 // ✅ 新しい方法：RPGCoreクラスで一箇所設定
-import { RPGCore } from 'rpg-core';
+import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore({
   config: customGameConfig,  // 省略可能
@@ -65,7 +65,7 @@ const itemController = rpg.controllers.item();
 DIコンテナの実装。サービスの登録、解決、ライフタイム管理を担当します。
 
 ```typescript
-import { ServiceContainer } from 'rpg-core';
+import { ServiceContainer } from 'GEasy-Kit';
 
 const container = new ServiceContainer();
 
@@ -87,10 +87,10 @@ const service = container.resolve('myService');
 
 ### 2. RPGCore
 
-rpg-coreの統一エントリーポイント。すべてのサービスとコントローラーにアクセスできます。
+GEasy-Kitの統一エントリーポイント。すべてのサービスとコントローラーにアクセスできます。
 
 ```typescript
-import { RPGCore } from 'rpg-core';
+import { RPGCore } from 'GEasy-Kit';
 
 const rpg = new RPGCore({
   config: {
@@ -108,7 +108,7 @@ const rpg = new RPGCore({
 ### 基本的な使用
 
 ```typescript
-import { RPGCore } from 'rpg-core';
+import { RPGCore } from 'GEasy-Kit';
 
 // 1. RPGCoreインスタンスを作成
 const rpg = new RPGCore();
@@ -127,7 +127,7 @@ battleController.subscribe((state) => {
 ### カスタム設定を使用
 
 ```typescript
-import { RPGCore, defaultGameConfig } from 'rpg-core';
+import { RPGCore, defaultGameConfig } from 'GEasy-Kit';
 
 const customConfig = {
   ...defaultGameConfig,
@@ -146,7 +146,7 @@ const rpg = new RPGCore({
 
 ```tsx
 import React, { createContext, useContext, useMemo } from 'react';
-import { RPGCore } from 'rpg-core';
+import { RPGCore } from 'GEasy-Kit';
 
 // RPGCoreのコンテキストを作成
 const RPGContext = createContext<RPGCore | null>(null);
@@ -192,7 +192,7 @@ const BattleComponent: React.FC = () => {
 ```typescript
 // store/rpg.ts
 import { defineStore } from 'pinia';
-import { RPGCore } from 'rpg-core';
+import { RPGCore } from 'GEasy-Kit';
 
 export const useRPGStore = defineStore('rpg', {
   state: () => ({
@@ -237,7 +237,7 @@ onMounted(() => {
 高度な使用例として、独自のサービスをDIコンテナに登録できます：
 
 ```typescript
-import { RPGCore } from 'rpg-core';
+import { RPGCore } from 'GEasy-Kit';
 
 // カスタムサービス
 class AnalyticsService {
@@ -380,7 +380,7 @@ rpg1.services.battle !== rpg2.services.battle // true
 
 ## まとめ
 
-rpg-coreの依存関係管理システムは、以下の利点を提供します：
+GEasy-Kitの依存関係管理システムは、以下の利点を提供します：
 
 ✅ **シンプルな初期化**: 1カ所で全体を設定  
 ✅ **自動依存解決**: 手動での依存管理が不要  

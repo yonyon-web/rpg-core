@@ -21,7 +21,7 @@ import {
   BaseExpCurveType,
   calculatePhysicalDamage,
   defaultGameConfig
-} from 'rpg-core';
+} from 'GEasy-Kit';
 
 // === プロジェクト用の型設定ファイル (src/types/myGameTypes.ts) ===
 
@@ -95,7 +95,7 @@ const empCannon: Skill = {
 
 // === デフォルト型を使う場合（最もシンプル） ===
 
-import { GameTypes as DefaultGameTypes } from 'rpg-core';
+import { GameTypes as DefaultGameTypes } from 'GEasy-Kit';
 
 // 型パラメータ不要
 type DefaultCombatant = DefaultGameTypes['Combatant'];
@@ -155,7 +155,7 @@ import {
   
   // Character modules
   calculateFinalStats,
-} from 'rpg-core';
+} from 'GEasy-Kit';
 ```
 
 ## Example 1: Basic Physical Combat
@@ -421,7 +421,7 @@ console.log(`Critical chance: ${(critRate * 100).toFixed(1)}%`);
 ## Example 7: Custom Game Configuration
 
 ```typescript
-import { GameConfig } from 'rpg-core';
+import { GameConfig } from 'GEasy-Kit';
 
 // Create a custom configuration
 const hardcoreConfig: GameConfig = {
@@ -471,7 +471,7 @@ To run these examples:
 
 1. Install the package:
 ```bash
-npm install rpg-core
+npm install GEasy-Kit
 ```
 
 2. Create a TypeScript file with the examples above
@@ -483,7 +483,7 @@ npx ts-node examples.ts
 
 ## Example 8: カスタムステータスの使用
 
-rpg-coreは、ゲームごとに自由にステータスを定義できます。
+GEasy-Kitは、ゲームごとに自由にステータスを定義できます。
 
 ```typescript
 import { 
@@ -491,7 +491,7 @@ import {
   BaseStats, 
   calculateFinalStats,
   StatusEffect 
-} from 'rpg-core';
+} from 'GEasy-Kit';
 
 // 独自のステータス型を定義
 interface MyGameStats extends BaseStats {
@@ -597,7 +597,7 @@ console.log(`遠距離攻撃: ${knight.stats.longRangeAttack}`);
 
 ## Example 9: カスタム状態異常の使用
 
-rpg-coreは、状態異常の種類とカテゴリも自由に定義できます。
+GEasy-Kitは、状態異常の種類とカテゴリも自由に定義できます。
 
 ```typescript
 import { 
@@ -606,7 +606,7 @@ import {
   DefaultStats,
   BaseStatusEffectType,
   BaseStatusEffectCategory 
-} from 'rpg-core';
+} from 'GEasy-Kit';
 
 // SF風の独自状態異常タイプを定義
 type SciFiEffectType = 
@@ -763,7 +763,7 @@ import {
   BaseStatusEffectType,
   BaseStatusEffectCategory,
   BaseExpCurveType
-} from 'rpg-core';
+} from 'GEasy-Kit';
 
 // SF風のカスタム属性
 type SciFiElement = 

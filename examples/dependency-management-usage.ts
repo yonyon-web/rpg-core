@@ -1,7 +1,7 @@
 /**
  * RPGCore Usage Examples
  * 
- * このファイルは、rpg-coreの依存関係管理システムの使用例を示します。
+ * このファイルは、GEasy-Kitの依存関係管理システムの使用例を示します。
  */
 
 import { RPGCore } from '../src/core/RPGCore';

@@ -2,7 +2,7 @@
 
 ## 概要
 
-rpg-coreライブラリは、ゲームごとに異なる要素を自由に定義できる柔軟な設計を採用しています。
+GEasy-Kitライブラリは、ゲームごとに異なる要素を自由に定義できる柔軟な設計を採用しています。
 
 **カスタマイズ可能な要素（Phase 1対応）:**
 1. ✅ **Stats（ステータス）** - HP、攻撃力、防御力など
@@ -21,7 +21,7 @@ rpg-coreライブラリは、ゲームごとに異なる要素を自由に定義
 #### 方法1: デフォルト型を使用（最もシンプル）
 
 ```typescript
-import { GameTypes } from 'rpg-core';
+import { GameTypes } from 'GEasy-Kit';
 
 // デフォルト型で十分な場合は型パラメータ不要
 type Combatant = GameTypes['Combatant'];
@@ -46,7 +46,7 @@ import {
   BaseSkillType,
   BaseTargetType,
   BaseExpCurveType
-} from 'rpg-core';
+} from 'GEasy-Kit';
 
 // === 1. カスタム型の定義 ===
 
@@ -205,7 +205,7 @@ src/
 
 **myGameTypes.ts:**
 ```typescript
-import { GameTypeConfig, GameTypes } from 'rpg-core';
+import { GameTypeConfig, GameTypes } from 'GEasy-Kit';
 
 // カスタム型定義
 interface MechStats { ... }
@@ -247,7 +247,7 @@ export const cyberWarrior: Combatant = { ... };
 #### 基本的な使い方
 
 ```typescript
-import { Combatant, BaseStats, DefaultStats } from 'rpg-core';
+import { Combatant, BaseStats, DefaultStats } from 'GEasy-Kit';
 
 // カスタムステータス定義
 interface MyStats extends BaseStats {
@@ -284,7 +284,7 @@ const hero: Combatant<MyStats> = {
 #### デフォルト状態異常を使用
 
 ```typescript
-import { Combatant, StatusEffect } from 'rpg-core';
+import { Combatant, StatusEffect } from 'GEasy-Kit';
 
 const hero: Combatant = {
   id: 'hero-1',
@@ -318,7 +318,7 @@ import {
   StatusEffect,
   BaseStatusEffectType,
   BaseStatusEffectCategory 
-} from 'rpg-core';
+} from 'GEasy-Kit';
 
 // カスタム状態異常タイプを定義
 type MyEffectType = 
@@ -369,7 +369,7 @@ const scifiHero: Combatant<
 #### スキルとの連携
 
 ```typescript
-import { Skill } from 'rpg-core';
+import { Skill } from 'GEasy-Kit';
 
 // カスタム状態異常を付与するスキル
 const shockBlast: Skill<MyEffectType> = {
@@ -406,7 +406,7 @@ const shockBlast: Skill<MyEffectType> = {
 #### デフォルト属性を使用
 
 ```typescript
-import { Skill, DefaultElement } from 'rpg-core';
+import { Skill, DefaultElement } from 'GEasy-Kit';
 
 const fireballSkill: Skill = {
   id: 'skill-fireball',
@@ -422,7 +422,7 @@ const fireballSkill: Skill = {
 #### カスタム属性を使用
 
 ```typescript
-import { Skill, BaseElement } from 'rpg-core';
+import { Skill, BaseElement } from 'GEasy-Kit';
 
 // SF風の属性を定義
 type SciFiElement = 
@@ -456,7 +456,7 @@ const empBlast: Skill<SciFiElement> = {
 #### カスタムスキルタイプを使用
 
 ```typescript
-import { Skill, BaseSkillType, DefaultElement, DefaultTargetType } from 'rpg-core';
+import { Skill, BaseSkillType, DefaultElement, DefaultTargetType } from 'GEasy-Kit';
 
 // アクションRPG風のスキルタイプ
 type ActionSkillType = 
@@ -489,7 +489,7 @@ const rushAttack: Skill<DefaultElement, ActionSkillType, DefaultTargetType> = {
 #### カスタム対象タイプを使用
 
 ```typescript
-import { Skill, BaseTargetType } from 'rpg-core';
+import { Skill, BaseTargetType } from 'GEasy-Kit';
 
 // 戦略ゲーム風の対象タイプ
 type TacticsTargetType = 
@@ -523,7 +523,7 @@ const areaAttack: Skill<DefaultElement, DefaultSkillType, TacticsTargetType> = {
 #### カスタム経験値曲線を使用
 
 ```typescript
-import { GameConfig, BaseExpCurveType } from 'rpg-core';
+import { GameConfig, BaseExpCurveType } from 'GEasy-Kit';
 
 // ローグライク風の経験値曲線
 type RoguelikeExpCurve = 
@@ -751,7 +751,7 @@ const skill: Skill<GameEffectType> = { /* ... */ };
 
 ```typescript
 // 変更前（引き続き動作）
-import { StatusEffect } from 'rpg-core';
+import { StatusEffect } from 'GEasy-Kit';
 
 const effect: StatusEffect = {
   type: 'poison',     // DefaultStatusEffectType
@@ -760,7 +760,7 @@ const effect: StatusEffect = {
 };
 
 // 変更後（推奨）
-import { StatusEffect, DefaultStatusEffectType, DefaultStatusEffectCategory } from 'rpg-core';
+import { StatusEffect, DefaultStatusEffectType, DefaultStatusEffectCategory } from 'GEasy-Kit';
 
 const effect: StatusEffect<DefaultStatusEffectType, DefaultStatusEffectCategory> = {
   type: 'poison',
@@ -795,7 +795,7 @@ A: `StatusEffect`インターフェースでは必須フィールドですが、
 
 ## まとめ
 
-- rpg-coreの状態異常システムは完全にカスタマイズ可能
+- GEasy-Kitの状態異常システムは完全にカスタマイズ可能
 - `BaseStatusEffectType`を使用して独自の状態異常タイプを定義
 - `BaseStatusEffectCategory`を使用して独自のカテゴリを定義
 - ジェネリクスにより型安全性を維持

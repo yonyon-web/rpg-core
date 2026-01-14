@@ -248,7 +248,7 @@ describe('RPGCore Dependency Injection', () => {
 
 ## Conclusion
 
-The rpg-core library demonstrates excellent separation between:
+The GEasy-Kit library demonstrates excellent separation between:
 - **Dependencies** (injected via constructor): Services, Config, EventBus
 - **Data** (passed as parameters): Character, Party, Inventory, Items
 

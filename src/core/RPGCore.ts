@@ -1,7 +1,7 @@
 /**
  * RPGCore - Central configuration and initialization system
  * 
- * rpg-coreの全機能を一箇所で設定・初期化できるエントリーポイント
+ * GEasy-Kitの全機能を一箇所で設定・初期化できるエントリーポイント
  * 
  * @example
  * ```typescript
@@ -84,7 +84,7 @@ export interface RPGCoreOptions {
 /**
  * RPGCore クラス
  * 
- * rpg-coreの全機能にアクセスするための統一インターフェース
+ * GEasy-Kitの全機能にアクセスするための統一インターフェース
  */
 export class RPGCore {
   private _container: ServiceContainer;

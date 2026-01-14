@@ -1,6 +1,6 @@
 # Headless UI 設計
 
-rpg-coreの15のServiceを利用するヘッドレスUIレイヤーの設計ドキュメント
+GEasy-Kitの15のServiceを利用するヘッドレスUIレイヤーの設計ドキュメント
 
 ## ヘッドレスUIとは
 
@@ -4945,4 +4945,4 @@ describe('BattleController', () => {
 - **EnemyGroupService**: BattleController開始時に敵グループ生成に使用
 - **SimulationService**: 高度な機能として、必要に応じて専用UIを実装
 
-このヘッドレスUI設計により、rpg-coreのServiceを任意のUIフレームワークで簡単に利用できるようになります。
+このヘッドレスUI設計により、GEasy-KitのServiceを任意のUIフレームワークで簡単に利用できるようになります。
