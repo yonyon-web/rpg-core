@@ -33,9 +33,7 @@
                         <h3>キャラクター成長</h3>
                         <ul>
                             <li><a href="#overview" class="active">機能の概要</a></li>
-                            <li><a href="#headless-ui">Headless UI</a></li>
-                            <li><a href="#service">Service</a></li>
-                            <li><a href="#core-engine">Core Engine</a></li>
+                            <li><a href="#controllers">コントローラー一覧</a></li>
                         </ul>
                         <h4 style="margin-top: 2rem;">関連ページ</h4>
                         <ul>
@@ -50,7 +48,7 @@
                         <h2>機能の概要</h2>
                         <p>
                             キャラクター成長システムは、経験値の獲得、レベルアップ、ステータス上昇、
-                            スキル習得などのキャラクターの成長を管理します。
+                            スキル習得、ジョブ変更などのキャラクターの成長を管理します。
                         </p>
 
                         <div class="card">
@@ -59,49 +57,66 @@
                                 <li><strong>経験値獲得</strong>: 戦闘やイベントからの経験値取得</li>
                                 <li><strong>レベルアップ</strong>: レベル上昇とステータス成長</li>
                                 <li><strong>スキル習得</strong>: レベルアップ時のスキル習得</li>
+                                <li><strong>ジョブ変更</strong>: キャラクターの職業変更</li>
                                 <li><strong>ステータス計算</strong>: 成長率に基づくステータス上昇</li>
                             </ul>
                         </div>
 
-                        <h2 id="headless-ui">Headless UI</h2>
+                        <h2 id="controllers">コントローラー一覧</h2>
+                        <p>キャラクター成長システムは以下のコントローラーで構成されています。各コントローラーの詳細は個別ページをご覧ください。</p>
+
+                        <div class="feature-list" style="margin-top: 2rem;">
+                            <div class="feature-list-item">
+                                <div class="feature-list-icon">✨</div>
+                                <div class="feature-list-content">
+                                    <h3><a href="skill-learn-controller.html">SkillLearnController</a></h3>
+                                    <p>キャラクターのスキル習得を管理します。レベルアップ時の新規スキル習得、スキルレベルアップ、スキル忘却などの機能を提供します。</p>
+                                </div>
+                                <a href="skill-learn-controller.html" class="feature-list-link">→</a>
+                            </div>
+
+                            <div class="feature-list-item">
+                                <div class="feature-list-icon">👤</div>
+                                <div class="feature-list-content">
+                                    <h3><a href="job-change-controller.html">JobChangeController</a></h3>
+                                    <p>キャラクターのジョブ（職業）変更を管理します。ジョブ選択、ステータスプレビュー、ジョブチェンジ実行などの機能を提供します。</p>
+                                </div>
+                                <a href="job-change-controller.html" class="feature-list-link">→</a>
+                            </div>
+
+                            <div class="feature-list-item">
+                                <div class="feature-list-icon">📊</div>
+                                <div class="feature-list-content">
+                                    <h3><a href="#growth-controller">GrowthController</a></h3>
+                                    <p>経験値の獲得、レベルアップ、ステータス上昇など、基本的な成長システムを管理します。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 id="growth-controller" style="margin-top: 3rem;">GrowthController</h2>
                         
                         <h3>基本的な使い方</h3>
-                        <p>SkillLearnController、JobChangeControllerを使う基本的な例です：</p>
+                        <p>GrowthControllerを使う基本的な例です：</p>
                         <pre><code>import { GEasyKit } from 'geasy-kit';
 
 const game = new GEasyKit();
 
-// スキル習得
-const skillLearnController = game.controllers.skillLearn();
-await skillLearnController.startSkillSelection(character);
+// 成長管理
+const growthController = game.controllers.growth();
 
-skillLearnController.on('skill-learned', (data) => {
-  console.log('スキル習得:', data.skill);
-  showSkillLearnedAnimation(data.skill);
+growthController.on('level-up', (data) => {
+  console.log('レベルアップ:', data.character, data.newLevel);
+  showLevelUpAnimation(data);
 });
 
-skillLearnController.on('skill-leveled-up', (data) => {
-  console.log('スキルレベルアップ:', data.skill, data.newLevel);
-});
-
-// ジョブチェンジ
-const jobChangeController = game.controllers.jobChange();
-await jobChangeController.startJobSelection(character);
-
-jobChangeController.on('job-changed', (data) => {
-  console.log('ジョブ変更:', data.oldJob, '→', data.newJob);
-  showJobChangeAnimation(data);
-});
-
-jobChangeController.on('stats-previewed', (data) => {
-  console.log('ステータスプレビュー:', data.preview);
-  showStatsComparison(data.preview);
+growthController.on('exp-gained', (data) => {
+  console.log('経験値獲得:', data.exp);
+  updateExpBar(data);
 });</code></pre>
 
                         <h3>イベント一覧</h3>
                         <p><code>on()</code>メソッドで購読できるイベントです：</p>
                         
-                        <h4>SkillLearnController</h4>
                         <table>
                             <thead>
                                 <tr>
@@ -112,102 +127,19 @@ jobChangeController.on('stats-previewed', (data) => {
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>skill-selection-started</td>
-                                    <td>{ character, skills }</td>
-                                    <td>スキル選択が開始されたとき</td>
+                                    <td>exp-gained</td>
+                                    <td>{ character, exp, totalExp }</td>
+                                    <td>経験値を獲得したとき</td>
                                 </tr>
                                 <tr>
-                                    <td>skill-selected</td>
-                                    <td>{ skill }</td>
-                                    <td>スキルが選択されたとき</td>
+                                    <td>level-up</td>
+                                    <td>{ character, oldLevel, newLevel, statGains }</td>
+                                    <td>レベルアップしたとき</td>
                                 </tr>
                                 <tr>
-                                    <td>skill-learned</td>
-                                    <td>{ skill, character }</td>
-                                    <td>スキルを習得したとき</td>
-                                </tr>
-                                <tr>
-                                    <td>skill-leveled-up</td>
-                                    <td>{ skill, oldLevel, newLevel }</td>
-                                    <td>スキルレベルが上がったとき</td>
-                                </tr>
-                                <tr>
-                                    <td>skill-forgotten</td>
-                                    <td>{ skill }</td>
-                                    <td>スキルを忘れたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>learn-failed</td>
-                                    <td>{ reason }</td>
-                                    <td>習得に失敗したとき</td>
-                                </tr>
-                                <tr>
-                                    <td>filter-changed</td>
-                                    <td>{ filterType }</td>
-                                    <td>フィルターが変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>sort-changed</td>
-                                    <td>{ sortBy, order }</td>
-                                    <td>ソート順が変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>selection-cancelled</td>
-                                    <td>{}</td>
-                                    <td>選択がキャンセルされたとき</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h4>JobChangeController</h4>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>イベント名</th>
-                                    <th>データ</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>job-selection-started</td>
-                                    <td>{ character, jobs }</td>
-                                    <td>ジョブ選択が開始されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>job-selected</td>
-                                    <td>{ job }</td>
-                                    <td>ジョブが選択されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>stats-previewed</td>
-                                    <td>{ preview }</td>
-                                    <td>ステータスがプレビューされたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>job-changed</td>
-                                    <td>{ oldJob, newJob, character }</td>
-                                    <td>ジョブが変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>job-change-failed</td>
-                                    <td>{ reason }</td>
-                                    <td>ジョブ変更に失敗したとき</td>
-                                </tr>
-                                <tr>
-                                    <td>filter-changed</td>
-                                    <td>{ filterType }</td>
-                                    <td>フィルターが変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>sort-changed</td>
-                                    <td>{ sortBy, order }</td>
-                                    <td>ソート順が変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>selection-cancelled</td>
-                                    <td>{}</td>
-                                    <td>選択がキャンセルされたとき</td>
+                                    <td>stats-increased</td>
+                                    <td>{ character, statGains }</td>
+                                    <td>ステータスが上昇したとき</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -356,139 +288,11 @@ jobChangeController.on('stats-previewed', (data) => {
                             </tbody>
                         </table>
 
-                        <h2 id="service">Service</h2>
-                        
-                        <h3>基本的な使い方</h3>
-                        <p>GrowthServiceとRewardServiceは成長管理を行います：</p>
-                        <pre><code>const growthService = game.services.growth;
-const rewardService = game.services.reward;
-
-// 経験値を付与
-await growthService.gainExperience(characterId, 100);
-
-// レベルアップ
-const result = await growthService.levelUp(characterId);
-console.log('新しいレベル:', result.newLevel);
-console.log('ステータス上昇:', result.statGains);
-console.log('習得スキル:', result.newSkills);
-
-// 戦闘報酬の付与
-const rewards = await rewardService.grantBattleRewards(party, enemyGroup);
-console.log('獲得経験値:', rewards.exp);
-console.log('獲得お金:', rewards.gold);</code></pre>
-
-                        <h3>メソッド一覧</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>メソッド</th>
-                                    <th>引数</th>
-                                    <th>戻り値</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>gainExperience</td>
-                                    <td>characterId: string, exp: number</td>
-                                    <td>Promise&lt;void&gt;</td>
-                                    <td>経験値を付与する</td>
-                                </tr>
-                                <tr>
-                                    <td>getExpToNextLevel</td>
-                                    <td>characterId: string</td>
-                                    <td>number</td>
-                                    <td>次のレベルまでの必要経験値を取得する</td>
-                                </tr>
-                                <tr>
-                                    <td>levelUp</td>
-                                    <td>characterId: string</td>
-                                    <td>Promise&lt;LevelUpResult&gt;</td>
-                                    <td>レベルアップを実行する</td>
-                                </tr>
-                                <tr>
-                                    <td>canLevelUp</td>
-                                    <td>characterId: string</td>
-                                    <td>boolean</td>
-                                    <td>レベルアップ可能か判定する</td>
-                                </tr>
-                                <tr>
-                                    <td>calculateStatGrowth</td>
-                                    <td>character: Character</td>
-                                    <td>Stats</td>
-                                    <td>ステータス成長値を計算する</td>
-                                </tr>
-                                <tr>
-                                    <td>emit</td>
-                                    <td>event: string, data: any</td>
-                                    <td>void</td>
-                                    <td>イベントを発行する</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h2 id="core-engine">Core Engine</h2>
-                        
-                        <h3>基本的な使い方</h3>
-                        <p>Core Engineは成長計算を行います：</p>
-                        <pre><code>const engine = game.engine;
-
-// 次のレベルまでの経験値
-const expNeeded = engine.getExpToNextLevel(currentLevel);
-
-// レベルアップ時のステータス上昇
-const statGains = engine.calculateStatGrowth(character, newLevel);
-
-// スキル習得判定
-const newSkills = engine.getLearnableSkills(character, newLevel);</code></pre>
-
-                        <h3>メソッド一覧</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>メソッド</th>
-                                    <th>引数</th>
-                                    <th>戻り値</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>getExpToNextLevel</td>
-                                    <td>level: number</td>
-                                    <td>number</td>
-                                    <td>次のレベルまでの必要経験値を計算する</td>
-                                </tr>
-                                <tr>
-                                    <td>calculateExpGain</td>
-                                    <td>enemy: Enemy, level: number</td>
-                                    <td>number</td>
-                                    <td>敵を倒した時の獲得経験値を計算する</td>
-                                </tr>
-                                <tr>
-                                    <td>calculateStatGrowth</td>
-                                    <td>character: Character, newLevel: number</td>
-                                    <td>Stats</td>
-                                    <td>レベルアップ時のステータス上昇を計算する</td>
-                                </tr>
-                                <tr>
-                                    <td>getLearnableSkills</td>
-                                    <td>character: Character, level: number</td>
-                                    <td>Skill[]</td>
-                                    <td>レベルで習得可能なスキルを取得する</td>
-                                </tr>
-                                <tr>
-                                    <td>checkLevelUp</td>
-                                    <td>character: Character</td>
-                                    <td>boolean</td>
-                                    <td>レベルアップ可能か判定する</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
                         <h2>次のステップ</h2>
                         <div class="card">
                             <ul>
+                                <li><a href="skill-learn-controller.html">SkillLearnController</a> - スキル習得の詳細</li>
+                                <li><a href="job-change-controller.html">JobChangeController</a> - ジョブ変更の詳細</li>
                                 <li><a href="battle.html">戦闘システム</a> - 経験値を獲得</li>
                                 <li><a href="party.html">パーティ編成</a> - パーティメンバーの管理</li>
                                 <li><a href="../customization/index.html">カスタマイズガイド</a> - 成長システムのカスタマイズ例</li>
