@@ -65,6 +65,87 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
+                        <h3>基本的な使い方</h3>
+                        <p>BattleControllerを使って戦闘を管理する基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+const battleController = game.controllers.battle();
+
+// 戦闘を開始
+await battleController.startBattle(playerParty, enemyGroup);
+
+// 状態を購読
+battleController.subscribe((state) => {
+  console.log('現在のフェーズ:', state.phase);
+  console.log('ターン数:', state.turnNumber);
+  updateUI(state); // UIを更新
+});
+
+// イベントを購読
+battleController.on('action-executed', (data) => {
+  console.log('行動実行:', data.action, data.result);
+  showActionAnimation(data);
+});
+
+// コマンド選択
+await battleController.selectCommand(playerId, {
+  type: 'attack',
+  targetId: enemyId
+});
+
+// ターンを実行
+await battleController.executeTurn();</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>battle-started</td>
+                                    <td>{ party, enemies }</td>
+                                    <td>戦闘が開始されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>turn-started</td>
+                                    <td>{ turnNumber, turnOrder }</td>
+                                    <td>ターンが開始されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>action-executed</td>
+                                    <td>{ action, result }</td>
+                                    <td>行動が実行されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>battle-ended</td>
+                                    <td>{ result, rewards }</td>
+                                    <td>戦闘が終了したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>animation-started</td>
+                                    <td>{ animation }</td>
+                                    <td>アニメーションが開始されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>animation-completed</td>
+                                    <td>{ animation }</td>
+                                    <td>アニメーションが完了したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>message-added</td>
+                                    <td>{ message }</td>
+                                    <td>メッセージが追加されたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
                         <h3>戦闘フロー</h3>
                         <p>BattleControllerは以下の流れで戦闘を進行します：</p>
                         <div class="flow-diagram">

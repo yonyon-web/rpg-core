@@ -65,6 +65,153 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
+                        <h3>基本的な使い方</h3>
+                        <p>SkillLearnController、JobChangeControllerを使う基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+
+// スキル習得
+const skillLearnController = game.controllers.skillLearn();
+await skillLearnController.startSkillSelection(character);
+
+skillLearnController.on('skill-learned', (data) => {
+  console.log('スキル習得:', data.skill);
+  showSkillLearnedAnimation(data.skill);
+});
+
+skillLearnController.on('skill-leveled-up', (data) => {
+  console.log('スキルレベルアップ:', data.skill, data.newLevel);
+});
+
+// ジョブチェンジ
+const jobChangeController = game.controllers.jobChange();
+await jobChangeController.startJobSelection(character);
+
+jobChangeController.on('job-changed', (data) => {
+  console.log('ジョブ変更:', data.oldJob, '→', data.newJob);
+  showJobChangeAnimation(data);
+});
+
+jobChangeController.on('stats-previewed', (data) => {
+  console.log('ステータスプレビュー:', data.preview);
+  showStatsComparison(data.preview);
+});</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        
+                        <h4>SkillLearnController</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>skill-selection-started</td>
+                                    <td>{ character, skills }</td>
+                                    <td>スキル選択が開始されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>skill-selected</td>
+                                    <td>{ skill }</td>
+                                    <td>スキルが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>skill-learned</td>
+                                    <td>{ skill, character }</td>
+                                    <td>スキルを習得したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>skill-leveled-up</td>
+                                    <td>{ skill, oldLevel, newLevel }</td>
+                                    <td>スキルレベルが上がったとき</td>
+                                </tr>
+                                <tr>
+                                    <td>skill-forgotten</td>
+                                    <td>{ skill }</td>
+                                    <td>スキルを忘れたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>learn-failed</td>
+                                    <td>{ reason }</td>
+                                    <td>習得に失敗したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>filter-changed</td>
+                                    <td>{ filterType }</td>
+                                    <td>フィルターが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>sort-changed</td>
+                                    <td>{ sortBy, order }</td>
+                                    <td>ソート順が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>selection-cancelled</td>
+                                    <td>{}</td>
+                                    <td>選択がキャンセルされたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>JobChangeController</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>job-selection-started</td>
+                                    <td>{ character, jobs }</td>
+                                    <td>ジョブ選択が開始されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>job-selected</td>
+                                    <td>{ job }</td>
+                                    <td>ジョブが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>stats-previewed</td>
+                                    <td>{ preview }</td>
+                                    <td>ステータスがプレビューされたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>job-changed</td>
+                                    <td>{ oldJob, newJob, character }</td>
+                                    <td>ジョブが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>job-change-failed</td>
+                                    <td>{ reason }</td>
+                                    <td>ジョブ変更に失敗したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>filter-changed</td>
+                                    <td>{ filterType }</td>
+                                    <td>フィルターが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>sort-changed</td>
+                                    <td>{ sortBy, order }</td>
+                                    <td>ソート順が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>selection-cancelled</td>
+                                    <td>{}</td>
+                                    <td>選択がキャンセルされたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
                         <h3>成長フロー</h3>
                         <p>GrowthControllerは以下の流れでキャラクター成長を進行します：</p>
                         <div class="flow-diagram">

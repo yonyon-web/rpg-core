@@ -65,6 +65,57 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
+                        <h3>基本的な使い方</h3>
+                        <p>敵AIは主にServiceレイヤーで動作します。BattleControllerと統合して使用します：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+const battleController = game.controllers.battle();
+
+// 戦闘を開始（敵AIは自動的に動作）
+await battleController.startBattle(playerParty, enemyGroup);
+
+// 敵の行動を監視
+battleController.on('action-executed', (data) => {
+  if (data.action.actor.type === 'enemy') {
+    console.log('敵の行動:', data.action);
+    console.log('AI戦略:', data.action.actor.aiStrategy);
+    showEnemyActionAnimation(data);
+  }
+});
+
+// 敵AIの難易度を設定（カスタマイズ時）
+const aiService = game.services.enemyAI;
+// AI戦略は敵データの一部として設定されます</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p>敵AIに関連するイベントは、BattleControllerの<code>on()</code>メソッドで購読できます：</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>action-executed</td>
+                                    <td>{ action, result }</td>
+                                    <td>敵の行動が実行されたとき（action.actor.type === 'enemy'で判定）</td>
+                                </tr>
+                                <tr>
+                                    <td>turn-started</td>
+                                    <td>{ turnNumber, turnOrder }</td>
+                                    <td>ターン開始時（敵の行動順を確認可能）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <p class="card" style="background-color: #fff3cd; border-color: #f59e0b;">
+                            <strong>注意:</strong> 敵AIは専用のHeadless UIコントローラーを持ちません。敵の行動は自動的に決定され、BattleControllerを通じて実行されます。
+                        </p>
+                        
                         <h3>AI決定フロー</h3>
                         <p>EnemyAIControllerは以下の流れで敵の行動を決定します：</p>
                         <div class="flow-diagram">
