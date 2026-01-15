@@ -1,0 +1,32 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+
+const sidebarLinks = [
+  { href: '#overview', text: '概要', active: true }
+];
+
+const relatedLinks = [
+  { href: `${baseUrl}docs/`, text: '← ドキュメントTOP' }
+];
+---
+
+<DocsLayout 
+  title="状態異常" 
+  sidebarTitle="状態異常"
+  sidebarLinks={sidebarLinks}
+  relatedLinks={relatedLinks}
+>
+    <h1 id="overview">状態異常</h1>
+    
+    <h2>概要</h2>
+    <p>
+        状態異常の詳細なドキュメントはこちらに記載されます。
+    </p>
+
+    <div class="card">
+        <h3>📝 このページは準備中です</h3>
+        <p>詳細なドキュメントは順次追加されます。</p>
+    </div>
+</DocsLayout>

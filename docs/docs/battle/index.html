@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="ja"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>戦闘システム - GEasy Kit</title><link rel="stylesheet" href="/GEasy-Kit/lib/syntax-highlight.css"><script src="/GEasy-Kit/lib/syntax-highlight.js"></script><link rel="stylesheet" href="/GEasy-Kit/lib/index.CkIf_nMB.css"></head> <body> <header class="header"> <nav class="nav"> <div class="container"> <div class="nav-content"> <a href="/GEasy-Kit/" class="logo">GEasy Kit</a> <ul class="nav-links"> <li><a href="/GEasy-Kit/">ホーム</a></li> <li><a href="/GEasy-Kit/docs/">ドキュメント</a></li> <li><a href="/GEasy-Kit/customization/">カスタマイズ</a></li> <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li> </ul> </div> </div> </nav> </header> <main>  <section class="docs-section"> <div class="container"> <div class="docs-layout"> <aside class="docs-sidebar"> <h3>戦闘システム</h3> <ul> <li><a href="#overview" class="active">機能の概要</a></li><li><a href="#headless-ui" class>Headless UI</a></li><li><a href="#service" class>Service</a></li><li><a href="#core-engine" class>Core Engine</a></li> </ul>  <h4 style="margin-top: 2rem;">関連ページ</h4> <ul> <li><a href="/GEasy-Kit/docs/">← ドキュメントTOP</a></li><li><a href="/GEasy-Kit/docs/item/">アイテム →</a></li> </ul>  </aside> <div class="docs-content">  <h1 id="overview">戦闘システム</h1> <h2>機能の概要</h2> <p>
+戦闘システムは、ターン制バトルの進行を管理する機能です。
+        コマンド選択、行動実行、ダメージ計算など、戦闘に必要な全ての機能を提供します。
+</p> <div class="card"> <h3>🎯 主な機能</h3> <ul> <li><strong>ダメージ計算</strong>: 物理攻撃、魔法攻撃、回復などの計算</li> <li><strong>行動順管理</strong>: 素早さに基づく行動順の決定</li> <li><strong>コマンド選択</strong>: プレイヤーの戦闘コマンド選択フロー</li> <li><strong>勝敗判定</strong>: 戦闘の勝利・敗北・逃走の判定</li> </ul> </div> <h2 id="headless-ui">Headless UI</h2> <h3>基本的な使い方</h3> <p>BattleControllerを使って戦闘を管理する基本的な例です：</p> <pre><code>import { GEasyKit } from &#39;geasy-kit&#39;;
+
+const game = new GEasyKit();
+const battleController = game.controllers.battle();
+
+// 戦闘を開始
+await battleController.startBattle(playerParty, enemyGroup);
+
+// 状態を購読
+battleController.subscribe((state) =&gt; {
+  console.log(&#39;現在のフェーズ:&#39;, state.phase);
+  console.log(&#39;ターン数:&#39;, state.turnNumber);
+  updateUI(state); // UIを更新
+});
+
+// イベントを購読
+battleController.on(&#39;action-executed&#39;, (data) =&gt; {
+  console.log(&#39;行動実行:&#39;, data.action, data.result);
+  showActionAnimation(data);
+});
+
+// コマンド選択
+await battleController.selectCommand(playerId, {
+  type: &#39;attack&#39;,
+  targetId: enemyId
+});
+
+// ターンを実行
+await battleController.executeTurn();</code></pre> <h3>イベント一覧</h3> <p><code>on()</code>メソッドで購読できるイベントです：</p> <table> <thead> <tr> <th>イベント名</th> <th>データ</th> <th>説明</th> </tr> </thead> <tbody> <tr> <td>battle-started</td> <td>{ party, enemies }</td> <td>戦闘が開始されたとき</td> </tr> <tr> <td>turn-started</td> <td>{ turnNumber, turnOrder }</td> <td>ターンが開始されたとき</td> </tr> <tr> <td>action-executed</td> <td>{ action, result }</td> <td>行動が実行されたとき</td> </tr> <tr> <td>battle-ended</td> <td>{ result, rewards }</td> <td>戦闘が終了したとき</td> </tr> <tr> <td>animation-started</td> <td>{ animation }</td> <td>アニメーションが開始されたとき</td> </tr> <tr> <td>animation-completed</td> <td>{ animation }</td> <td>アニメーションが完了したとき</td> </tr> <tr> <td>message-added</td> <td>{ message }</td> <td>メッセージが追加されたとき</td> </tr> </tbody> </table> <h3>戦闘フロー</h3> <p>BattleControllerは以下の流れで戦闘を進行します：</p> <div class="flow-diagram"> <div class="flow-step"> <div class="flow-node flow-start">戦闘開始<br><code>startBattle()</code></div> <div class="flow-arrow">↓</div> </div> <div class="flow-step"> <div class="flow-node">コマンド入力待ち<br><code>selectCommand()</code></div> <div class="flow-arrow">↓</div> </div> <div class="flow-step"> <div class="flow-node">ターン実行<br><code>executeTurn()</code></div> <div class="flow-arrow">↓</div> </div> <div class="flow-step"> <div class="flow-node flow-decision">勝敗判定</div> <div class="flow-branch"> <div class="flow-arrow-branch"> <span class="branch-label">戦闘継続</span> <div class="arrow-back">↑</div> </div> <div class="flow-arrow-branch"> <span class="branch-label">戦闘終了</span> <div class="arrow-down">↓</div> </div> </div> </div> <div class="flow-step"> <div class="flow-node flow-end">終了</div> </div> </div> <h3>フロー制御の関数</h3> <p>戦闘の流れを変更するために以下の関数を使用できます：</p> <ul> <li><code>startBattle(party, enemies)</code> - 戦闘を開始</li> <li><code>selectCommand(actorId, command)</code> - キャラクターの行動を選択</li> <li><code>executeTurn()</code> - 選択された行動を実行</li> <li><code>endBattle(result)</code> - 戦闘を強制終了</li> <li><code>pause()</code> - 戦闘を一時停止</li> <li><code>resume()</code> - 一時停止した戦闘を再開</li> </ul> <h2 id="service">Service</h2> <p>BattleServiceは、戦闘に関連する高レベルな操作を提供します。</p> <pre><code>const battleService = game.services.battle;
+
+// 戦闘を開始
+const battleState = battleService.initBattle(party, enemies);
+
+// ダメージを計算
+const damage = battleService.calculateDamage(attacker, target, skill);
+
+// 行動順を決定
+const turnOrder = battleService.determineTurnOrder(participants);</code></pre> <h2 id="core-engine">Core Engine</h2> <p>純粋な計算ロジックを提供するエンジンです。</p> <pre><code>import { BattleEngine } from &#39;geasy-kit&#39;;
+
+const engine = new BattleEngine(config);
+
+// ダメージ計算
+const damage = engine.calculatePhysicalDamage(attacker, target);
+const magicDamage = engine.calculateMagicDamage(attacker, target, spell);
+
+// 命中判定
+const isHit = engine.checkHit(attacker, target);
+
+// クリティカル判定
+const isCritical = engine.checkCritical(attacker, target);</code></pre>  </div> </div> </div> </section>  </main> <footer class="footer"> <div class="container"> <p>&copy; 2026 GEasy Kit. Licensed under ISC.</p> <p> <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+<a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
+<a href="/GEasy-Kit/docs/">Docs</a> </p> </div> </footer> </body></html> <script type="module">document.querySelectorAll('a[href^="#"]').forEach(t=>{t.addEventListener("click",function(c){c.preventDefault();const e=document.querySelector(this.getAttribute("href"));e&&(e.scrollIntoView({behavior:"smooth",block:"start"}),document.querySelectorAll(".docs-sidebar a").forEach(r=>r.classList.remove("active")),this.classList.add("active"))})});</script>

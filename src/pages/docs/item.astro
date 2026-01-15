@@ -1,0 +1,51 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+
+const sidebarLinks = [
+  { href: '#overview', text: '機能の概要', active: true },
+  { href: '#controllers', text: 'Controllers' }
+];
+
+const relatedLinks = [
+  { href: `${baseUrl}docs/`, text: '← ドキュメントTOP' },
+  { href: `${baseUrl}docs/character-growth/`, text: 'キャラクター成長 →' }
+];
+---
+
+<DocsLayout 
+  title="アイテム" 
+  sidebarTitle="アイテム"
+  sidebarLinks={sidebarLinks}
+  relatedLinks={relatedLinks}
+>
+    <h1 id="overview">アイテム</h1>
+    
+    <h2>機能の概要</h2>
+    <p>
+        アイテムシステムは、アイテム使用、インベントリ管理、装備システムを提供します。
+    </p>
+
+    <div class="card">
+        <h3>🎯 主な機能</h3>
+        <ul>
+            <li><strong>アイテム使用</strong>: アイテムの効果を適用</li>
+            <li><strong>インベントリ管理</strong>: アイテムの追加・削除・並び替え</li>
+            <li><strong>装備システム</strong>: 武器・防具の装備管理</li>
+            <li><strong>ショップ</strong>: アイテム売買</li>
+            <li><strong>強化</strong>: 装備の強化システム</li>
+        </ul>
+    </div>
+
+    <h2 id="controllers">Controllers</h2>
+    
+    <h3>関連コントローラー</h3>
+    <ul>
+        <li><a href={`${baseUrl}docs/item-controller/`}>ItemController</a> - アイテム使用</li>
+        <li><a href={`${baseUrl}docs/inventory-controller/`}>InventoryController</a> - インベントリ管理</li>
+        <li><a href={`${baseUrl}docs/equipment-controller/`}>EquipmentController</a> - 装備管理</li>
+        <li><a href={`${baseUrl}docs/shop-controller/`}>ShopController</a> - ショップ</li>
+        <li><a href={`${baseUrl}docs/enhance-controller/`}>EnhanceController</a> - 強化</li>
+    </ul>
+</DocsLayout>

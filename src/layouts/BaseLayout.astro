@@ -1,0 +1,57 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+---
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {description && <meta name="description" content={description}>}
+    <title>{title}</title>
+    <link rel="stylesheet" href={`${baseUrl}lib/syntax-highlight.css`}>
+    <script src={`${baseUrl}lib/syntax-highlight.js`}></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href={`${baseUrl}`} class="logo">GEasy Kit</a>
+                    <ul class="nav-links">
+                        <li><a href={`${baseUrl}`}>ホーム</a></li>
+                        <li><a href={`${baseUrl}docs/`}>ドキュメント</a></li>
+                        <li><a href={`${baseUrl}customization/`}>カスタマイズ</a></li>
+                        <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <slot />
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 GEasy Kit. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href={`${baseUrl}docs/`}>Docs</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
+
+<style is:global>
+@import '../styles/style.css';
+</style>
