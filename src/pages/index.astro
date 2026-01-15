@@ -1,0 +1,183 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+---
+
+<BaseLayout 
+    title="GEasy Kit - 手軽で柔軟なゲーム開発ライブラリ" 
+    description="GEasy Kit - 手軽で柔軟。ゲーム開発をもっとシンプルに。"
+>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1 class="hero-title">GEasy Kit</h1>
+            <p class="hero-subtitle">手軽で柔軟。ゲーム開発をもっとシンプルに。</p>
+            <div class="hero-buttons">
+                <a href="#quick-start" class="btn btn-primary">はじめる</a>
+                <a href="https://github.com/yonyon-web/GEasy-Kit" class="btn btn-secondary" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- RPG Capabilities Section -->
+    <section class="rpg-capabilities">
+        <div class="container">
+            <h2 class="section-title">実現できること</h2>
+            <p class="capabilities-intro">GEasy Kitを使うと、以下のような要素を簡単に実装できます</p>
+            <div class="capabilities-grid">
+                <div class="capability-item">
+                    <div class="capability-icon">⚔️</div>
+                    <h3>戦闘システム</h3>
+                    <p>ターン制バトル、コマンド選択、行動実行、ダメージ計算</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">📈</div>
+                    <h3>キャラクター成長</h3>
+                    <p>経験値獲得、レベルアップ、ステータス上昇</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">🎓</div>
+                    <h3>スキル習得</h3>
+                    <p>レベルやイベントによるスキル習得、スキルツリー</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">👥</div>
+                    <h3>パーティ編成</h3>
+                    <p>メンバー追加・削除、並び替え、パーティ管理</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">🎒</div>
+                    <h3>アイテム・装備</h3>
+                    <p>インベントリ管理、装備変更、アイテム使用</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">🛠️</div>
+                    <h3>クラフト・強化</h3>
+                    <p>アイテム合成、装備強化、素材管理</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">🤖</div>
+                    <h3>敵AI</h3>
+                    <p>敵の行動決定、グループ管理、戦術パターン</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">💫</div>
+                    <h3>状態異常・バフ</h3>
+                    <p>状態異常の付与・管理、バフ・デバフ効果</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">🎭</div>
+                    <h3>ジョブ変更</h3>
+                    <p>職業・クラス変更、ジョブシステム</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">🎁</div>
+                    <h3>報酬システム</h3>
+                    <p>戦闘報酬、経験値、お金、アイテムドロップ</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">🛒</div>
+                    <h3>ショップ</h3>
+                    <p>アイテム売買、価格計算、在庫管理</p>
+                </div>
+                <div class="capability-item">
+                    <div class="capability-icon">💾</div>
+                    <h3>セーブ・ロード</h3>
+                    <p>ゲーム状態の保存・復元、データ永続化</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">GEasy Kitの特徴</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">✨</div>
+                    <h3>手軽に始められる</h3>
+                    <p>シンプルなAPIで、すぐにゲーム開発を始められます。複雑な設定は不要です。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>柔軟にカスタマイズ</h3>
+                    <p>ゲーム固有のルールに対応できる拡張性を備えた設計</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>純粋な計算とルール</h3>
+                    <p>UIや操作フローに依存しない、数値計算とゲームルールの判定に特化</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3>テスト容易</h3>
+                    <p>モックや単体テストが容易に書ける設計で、品質の高い開発が可能</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📘</div>
+                    <h3>TypeScript完全対応</h3>
+                    <p>型定義付きで開発体験が向上し、エディタの支援を最大限活用</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏗️</div>
+                    <h3>JRPG設計思想</h3>
+                    <p>日本のRPGスタイルに最適化された、戦闘・成長・管理システム</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quick-start" class="quick-start">
+        <div class="container">
+            <h2 class="section-title">クイックスタート</h2>
+            
+            <div class="install-section">
+                <h3>インストール</h3>
+                <pre><code>npm install geasy-kit</code></pre>
+            </div>
+
+            <div class="usage-section">
+                <h3>基本的な使い方</h3>
+                <div class="code-example">
+                    <pre><code>{`import { GEasyKit } from 'geasy-kit';
+
+// ライブラリ全体を初期化
+const game = new GEasyKit({
+  config: customGameConfig,  // 省略可能
+  useEventBus: true          // 省略可能
+});
+
+// サービスに簡単にアクセス
+const battleService = game.services.battle;
+const itemService = game.services.item;
+
+// コントローラーも簡単に作成
+const battleController = game.controllers.battle();`}</code></pre>
+                </div>
+            </div>
+
+            <div class="next-steps">
+                <h3>次のステップ</h3>
+                <ul>
+                    <li><a href={`${baseUrl}docs/`}>ドキュメントを読む</a> - ライブラリの詳細な使い方を学ぶ</li>
+                    <li><a href={`${baseUrl}customization/`}>カスタマイズガイド</a> - ゲーム固有の実装方法</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta">
+        <div class="container">
+            <h2>今すぐ始めましょう</h2>
+            <p>GEasy Kitを使って、あなたのRPGゲームを作り始めましょう</p>
+            <div class="cta-buttons">
+                <a href={`${baseUrl}docs/`} class="btn btn-primary">ドキュメントを読む</a>
+                <a href="https://github.com/yonyon-web/GEasy-Kit" class="btn btn-outline" target="_blank" rel="noopener">GitHubで見る</a>
+            </div>
+        </div>
+    </section>
+</BaseLayout>

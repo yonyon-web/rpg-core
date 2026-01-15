@@ -8,6 +8,9 @@ yarn-error.log*
 dist/
 *.tsbuildinfo
 
+# Astro
+.astro/
+
 # IDE
 .vscode/
 .idea/

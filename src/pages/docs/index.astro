@@ -1,0 +1,115 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+
+const sidebarLinks = [
+  { href: '#overview', text: '概要', active: true },
+  { href: '#features', text: '機能別ドキュメント' }
+];
+---
+
+<DocsLayout 
+  title="ドキュメント" 
+  sidebarLinks={sidebarLinks}
+>
+    <h1 id="overview">ドキュメント</h1>
+    <p>
+        GEasy Kitは、JRPG（日本のロールプレイングゲーム）スタイルのターン制RPGを作成するための
+        TypeScriptライブラリです。手軽で柔軟な設計により、ゲーム開発をもっとシンプルにします。
+    </p>
+
+    <h2 style="margin-top: 3rem;">アーキテクチャの理解</h2>
+    <p>GEasy Kitは、以下のレイヤー構造で構成されています。各レイヤーの役割を理解することで、効率的にライブラリを活用できます。</p>
+    
+    <div class="card">
+        <h3>🎮 Headless UI（ヘッドレスUI）</h3>
+        <p>UI表示から独立した、状態管理とフロー制御を行う層です。選択・確認・キャンセルなどの操作フローを管理し、<code>on()</code>メソッドでイベントを購読できます。UIフレームワークに依存しないため、React、Vue、Pixiなど、どのようなUIライブラリとも組み合わせて使用できます。</p>
+    </div>
+
+    <div class="card">
+        <h3>🔧 Service（サービス）</h3>
+        <p>ゲームの操作フローを管理する層です。戦闘開始、アイテム使用、パーティ編成などの一連の処理を、わかりやすいメソッドで提供します。Core Engineとゲームステートを組み合わせて、実際のゲームロジックを実装します。</p>
+    </div>
+
+    <div class="card">
+        <h3>⚙️ Core Engine（コアエンジン）</h3>
+        <p>純粋な数値計算とルール判定を行う層です。ダメージ計算、命中判定、経験値計算など、ゲームの根幹となる計算ロジックを提供します。状態を持たないため、テストが容易で、カスタマイズもしやすい設計です。</p>
+    </div>
+
+    <div class="card">
+        <h3>💾 Game State（ゲームステート）</h3>
+        <p>ゲームの状態を保持する層です。キャラクターのステータス、所持アイテム、パーティ編成など、ゲームの永続的なデータを管理します。セーブ・ロード機能と連携して、ゲームの進行状況を保存できます。</p>
+    </div>
+
+    <h2 id="features">機能別ドキュメント</h2>
+    <p>各機能のドキュメントでは、Headless UI、Service、Core Engineの具体的な使い方を説明します。</p>
+
+    <div class="feature-list" style="margin-top: 2rem;">
+        <div class="feature-list-item">
+            <div class="feature-list-icon">⚔️</div>
+            <div class="feature-list-content">
+                <h3><a href={`${baseUrl}docs/battle/`}>戦闘システム</a></h3>
+                <p>ターン制バトル、コマンド選択、行動実行、ダメージ計算<br/>
+                <small style="opacity: 0.8;">→ <a href={`${baseUrl}docs/command-controller/`}>CommandController</a>も参照</small></p>
+            </div>
+            <a href={`${baseUrl}docs/battle/`} class="feature-list-link">→</a>
+        </div>
+
+        <div class="feature-list-item">
+            <div class="feature-list-icon">🎒</div>
+            <div class="feature-list-content">
+                <h3><a href={`${baseUrl}docs/item/`}>アイテム</a></h3>
+                <p>アイテム使用、インベントリ管理、装備システム<br/>
+                <small style="opacity: 0.8;">→ <a href={`${baseUrl}docs/item-controller/`}>ItemController</a>、<a href={`${baseUrl}docs/inventory-controller/`}>InventoryController</a>、<a href={`${baseUrl}docs/equipment-controller/`}>EquipmentController</a>、<a href={`${baseUrl}docs/shop-controller/`}>ShopController</a>、<a href={`${baseUrl}docs/enhance-controller/`}>EnhanceController</a></small></p>
+            </div>
+            <a href={`${baseUrl}docs/item/`} class="feature-list-link">→</a>
+        </div>
+
+        <div class="feature-list-item">
+            <div class="feature-list-icon">📈</div>
+            <div class="feature-list-content">
+                <h3><a href={`${baseUrl}docs/character-growth/`}>キャラクター成長</a></h3>
+                <p>経験値獲得、レベルアップ、スキル習得、ジョブ変更<br/>
+                <small style="opacity: 0.8;">→ <a href={`${baseUrl}docs/skill-learn-controller/`}>SkillLearnController</a>、<a href={`${baseUrl}docs/job-change-controller/`}>JobChangeController</a></small></p>
+            </div>
+            <a href={`${baseUrl}docs/character-growth/`} class="feature-list-link">→</a>
+        </div>
+
+        <div class="feature-list-item">
+            <div class="feature-list-icon">👥</div>
+            <div class="feature-list-content">
+                <h3><a href={`${baseUrl}docs/party/`}>パーティ編成</a></h3>
+                <p>メンバー追加・削除、並び替え、パーティ管理<br/>
+                <small style="opacity: 0.8;">→ <a href={`${baseUrl}docs/party-selection-controller/`}>PartySelectionController</a>も参照</small></p>
+            </div>
+            <a href={`${baseUrl}docs/party/`} class="feature-list-link">→</a>
+        </div>
+
+        <div class="feature-list-item">
+            <div class="feature-list-icon">💫</div>
+            <div class="feature-list-content">
+                <h3><a href={`${baseUrl}docs/status-effects/`}>状態異常</a></h3>
+                <p>状態異常の付与・管理、バフ・デバフ効果</p>
+            </div>
+            <a href={`${baseUrl}docs/status-effects/`} class="feature-list-link">→</a>
+        </div>
+
+        <div class="feature-list-item">
+            <div class="feature-list-icon">🤖</div>
+            <div class="feature-list-content">
+                <h3><a href={`${baseUrl}docs/enemy-ai/`}>敵AI</a></h3>
+                <p>敵の行動決定、グループ管理、戦術パターン</p>
+            </div>
+            <a href={`${baseUrl}docs/enemy-ai/`} class="feature-list-link">→</a>
+        </div>
+    </div>
+
+    <h2 style="margin-top: 2rem;">次のステップ</h2>
+    <div class="card">
+        <ul>
+            <li><a href={`${baseUrl}#quick-start`}>クイックスタート</a> - すぐに始める</li>
+            <li><a href={`${baseUrl}customization/`}>カスタマイズガイド</a> - ゲーム固有の実装方法</li>
+        </ul>
+    </div>
+</DocsLayout>
