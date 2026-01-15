@@ -501,78 +501,81 @@ code {
         align-items: flex-start;
         gap: 0.75rem;
     }
-    
+
     .nav-links {
         flex-direction: row;
         flex-wrap: wrap;
         gap: 0.75rem;
         font-size: 0.9rem;
     }
-    
+
     .hero {
         padding: 3rem 0;
     }
-    
+
     .hero-title {
         font-size: 2rem;
     }
-    
+
     .hero-subtitle {
         font-size: 1rem;
     }
-    
+
     .hero-buttons {
         flex-direction: column;
     }
-    
+
     .section-title {
         font-size: 1.75rem;
     }
-    
+
     .capabilities-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .features-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .docs-layout {
         grid-template-columns: 1fr;
     }
-    
+
     .docs-sidebar {
         position: static;
+        max-width: calc(100vw - 2rem);
     }
-    
+
     .docs-content {
         padding: 1rem;
+        max-width: calc(100vw - 2rem);
     }
-    
+
     .docs-content h1 {
         font-size: 1.75rem;
     }
-    
+
     .docs-content h2 {
         font-size: 1.5rem;
     }
-    
+
     .docs-content h3 {
         font-size: 1.25rem;
     }
-    
+
     .cta-buttons {
         flex-direction: column;
     }
-    
+
     table {
         font-size: 0.875rem;
     }
-    
-    th, td {
+
+    th,
+    td {
         padding: 0.5rem;
     }
-    
+
     pre {
         font-size: 0.75rem;
         padding: 1rem;
@@ -847,15 +850,15 @@ th code {
     .feature-list-item {
         padding: 0.75rem 1rem;
     }
-    
+
     .feature-list-icon {
         font-size: 1.5rem;
     }
-    
+
     .feature-list-content h3 {
         font-size: 1rem;
     }
-    
+
     .feature-list-content p {
         font-size: 0.8rem;
     }
