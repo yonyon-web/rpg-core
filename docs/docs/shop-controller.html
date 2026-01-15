@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ショップ(ShopController) - GEasy Kit</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../lib/syntax-highlight.css">
+    <script src="../lib/syntax-highlight.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="../index.html" class="logo">GEasy Kit</a>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">ホーム</a></li>
+                        <li><a href="index.html">ドキュメント</a></li>
+                        <li><a href="../customization/index.html">カスタマイズ</a></li>
+                        <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="docs-section">
+            <div class="container">
+                <div class="docs-layout">
+                    <aside class="docs-sidebar">
+                        <h3>ショップ(ShopController)</h3>
+                        <ul>
+                            <li><a href="#overview" class="active">機能の概要</a></li>
+                            <li><a href="#headless-ui">Headless UI</a></li>
+                            <li><a href="#service">Service</a></li>
+                            <li><a href="#core-engine">Core Engine</a></li>
+                        </ul>
+                        <h4 style="margin-top: 2rem;">関連ページ</h4>
+                        <ul>
+                            <li><a href="item.html">← アイテムTOP</a></li>
+                            <li><a href="inventory-controller.html">インベントリ管理 →</a></li>
+                        </ul>
+                    </aside>
+
+                    <div class="docs-content">
+                        <h1 id="overview">ショップ(ShopController)</h1>
+                        
+                        <h2>機能の概要</h2>
+                        <p>
+                            ShopControllerは、ショップでのアイテム売買を管理します。
+                            アイテムの購入と売却、在庫管理、価格計算、フィルタリング・ソート機能を提供します。
+                        </p>
+
+                        <div class="card">
+                            <h3>🎯 主な機能</h3>
+                            <ul>
+                                <li><strong>アイテム購入</strong>: ショップからアイテムを購入</li>
+                                <li><strong>アイテム売却</strong>: 所持アイテムをショップに売却</li>
+                                <li><strong>在庫管理</strong>: ショップの在庫数を管理</li>
+                                <li><strong>価格設定</strong>: 購入価格と売却価格の管理</li>
+                                <li><strong>フィルタ・ソート</strong>: アイテムのフィルタリングとソート</li>
+                                <li><strong>ページネーション</strong>: 大量のアイテムのページ分割表示</li>
+                            </ul>
+                        </div>
+
+                        <h2 id="headless-ui">Headless UI</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>ShopControllerを使う基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+
+// ショップ開始
+const shopController = game.controllers.shop();
+const shopItems = [
+  { item: sword, buyPrice: 1000, sellPrice: 500, stock: 10 },
+  { item: potion, buyPrice: 50, sellPrice: 25, stock: null } // null = 無限在庫
+];
+
+shopController.startShopping(shopItems, playerMoney);
+
+// イベント購読
+shopController.on('item-bought', (data) => {
+  console.log('購入:', data.item, '数量:', data.quantity, '金額:', data.totalPrice);
+  updateInventory(data.item, data.quantity);
+});
+
+shopController.on('item-sold', (data) => {
+  console.log('売却:', data.item, '数量:', data.quantity, '金額:', data.totalPrice);
+  removeFromInventory(data.item, data.quantity);
+});
+
+// モード切替（購入/売却）
+shopController.setMode('buy');  // または 'sell'
+
+// アイテム選択
+shopController.selectItem(shopItems[0]);
+
+// 数量設定
+shopController.setQuantity(3);
+
+// 取引実行
+const success = await shopController.executeTrade();</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>shop-started</td>
+                                    <td>{ items, playerMoney }</td>
+                                    <td>ショップが開始されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>mode-changed</td>
+                                    <td>{ mode }</td>
+                                    <td>モード（購入/売却）が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-selected</td>
+                                    <td>{ item }</td>
+                                    <td>アイテムが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>quantity-changed</td>
+                                    <td>{ quantity }</td>
+                                    <td>数量が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>stage-changed</td>
+                                    <td>{ stage }</td>
+                                    <td>ステージ（browsing/buying/selling/confirming/completed）が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-bought</td>
+                                    <td>{ item, quantity, totalPrice }</td>
+                                    <td>アイテムが購入されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-sold</td>
+                                    <td>{ item, quantity, totalPrice }</td>
+                                    <td>アイテムが売却されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>trade-failed</td>
+                                    <td>{ item, reason }</td>
+                                    <td>取引が失敗したとき</td>
+                                </tr>
+                                <tr>
+                                    <td>filter-changed</td>
+                                    <td>{ filterType }</td>
+                                    <td>フィルタが変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>sort-changed</td>
+                                    <td>{ sortBy, order }</td>
+                                    <td>ソート順が変更されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>page-changed</td>
+                                    <td>{ page }</td>
+                                    <td>ページが変更されたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h3>ショップ取引フロー</h3>
+                        <p>ShopControllerは以下の流れでアイテム取引を進行します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">ショップ開始<br/><code>startShopping()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">モード選択<br/><code>setMode('buy' | 'sell')</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">アイテム選択<br/><code>selectItem()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">数量設定<br/><code>setQuantity()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">取引確認<br/><code>confirmTrade()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">取引実行<br/><code>executeTrade()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">取引完了</div>
+                            </div>
+                        </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>ショップ取引の流れを制御するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>startShopping(items, playerMoney)</code> - ショップを開始</li>
+                            <li><code>setMode(mode)</code> - モードを切替（'buy' | 'sell'）</li>
+                            <li><code>selectItem(item)</code> - アイテムを選択</li>
+                            <li><code>setQuantity(quantity)</code> - 数量を設定</li>
+                            <li><code>confirmTrade()</code> - 取引を確認</li>
+                            <li><code>executeTrade()</code> - 取引を実行</li>
+                            <li><code>cancel()</code> - 取引をキャンセル</li>
+                            <li><code>setFilter(filterType)</code> - フィルタを設定</li>
+                            <li><code>setSortBy(sortBy, order)</code> - ソートを設定</li>
+                            <li><code>setPage(page)</code> - ページを設定</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>stage</td>
+                                    <td>string</td>
+                                    <td>現在のステージ（'browsing' | 'buying' | 'selling' | 'confirming' | 'completed'）</td>
+                                </tr>
+                                <tr>
+                                    <td>mode</td>
+                                    <td>'buy' | 'sell'</td>
+                                    <td>取引モード</td>
+                                </tr>
+                                <tr>
+                                    <td>shopItems</td>
+                                    <td>ShopUIItem[]</td>
+                                    <td>ショップのアイテム一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedItem</td>
+                                    <td>ShopUIItem | null</td>
+                                    <td>選択中のアイテム</td>
+                                </tr>
+                                <tr>
+                                    <td>quantity</td>
+                                    <td>number</td>
+                                    <td>取引数量</td>
+                                </tr>
+                                <tr>
+                                    <td>totalPrice</td>
+                                    <td>number</td>
+                                    <td>合計金額</td>
+                                </tr>
+                                <tr>
+                                    <td>playerMoney</td>
+                                    <td>number</td>
+                                    <td>プレイヤーの所持金</td>
+                                </tr>
+                                <tr>
+                                    <td>canTrade</td>
+                                    <td>boolean</td>
+                                    <td>取引可能かどうか</td>
+                                </tr>
+                                <tr>
+                                    <td>tradeReasons</td>
+                                    <td>string[]</td>
+                                    <td>取引不可の理由</td>
+                                </tr>
+                                <tr>
+                                    <td>filterType</td>
+                                    <td>string</td>
+                                    <td>フィルタタイプ（'all' | 'buyable' | 'unbuyable' | 'sellable'）</td>
+                                </tr>
+                                <tr>
+                                    <td>sortBy</td>
+                                    <td>string</td>
+                                    <td>ソート項目（'name' | 'price' | 'category'）</td>
+                                </tr>
+                                <tr>
+                                    <td>sortOrder</td>
+                                    <td>'asc' | 'desc'</td>
+                                    <td>ソート順</td>
+                                </tr>
+                                <tr>
+                                    <td>pagination</td>
+                                    <td>object</td>
+                                    <td>ページネーション情報（page, perPage, totalPages, totalItems）</td>
+                                </tr>
+                                <tr>
+                                    <td>loading</td>
+                                    <td>object</td>
+                                    <td>ローディング状態</td>
+                                </tr>
+                                <tr>
+                                    <td>error</td>
+                                    <td>object</td>
+                                    <td>エラー状態</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>startShopping</td>
+                                    <td>items: ShopUIItem[], playerMoney: number</td>
+                                    <td>void</td>
+                                    <td>ショップを開始する</td>
+                                </tr>
+                                <tr>
+                                    <td>setMode</td>
+                                    <td>mode: 'buy' | 'sell'</td>
+                                    <td>void</td>
+                                    <td>取引モードを設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectItem</td>
+                                    <td>item: ShopUIItem</td>
+                                    <td>void</td>
+                                    <td>アイテムを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>setQuantity</td>
+                                    <td>quantity: number</td>
+                                    <td>void</td>
+                                    <td>取引数量を設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>confirmTrade</td>
+                                    <td>-</td>
+                                    <td>void</td>
+                                    <td>取引を確認する</td>
+                                </tr>
+                                <tr>
+                                    <td>executeTrade</td>
+                                    <td>-</td>
+                                    <td>Promise&lt;boolean&gt;</td>
+                                    <td>取引を実行する</td>
+                                </tr>
+                                <tr>
+                                    <td>setFilter</td>
+                                    <td>filterType: ShopFilterType</td>
+                                    <td>void</td>
+                                    <td>フィルタを設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>setSortBy</td>
+                                    <td>sortBy: ShopSortBy, order?: 'asc' | 'desc'</td>
+                                    <td>void</td>
+                                    <td>ソート順を設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>setPage</td>
+                                    <td>page: number</td>
+                                    <td>void</td>
+                                    <td>ページを設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>cancel</td>
+                                    <td>-</td>
+                                    <td>void</td>
+                                    <td>取引をキャンセルする</td>
+                                </tr>
+                                <tr>
+                                    <td>setCharacter</td>
+                                    <td>character: Character | null</td>
+                                    <td>void</td>
+                                    <td>取引に使用するキャラクターを設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: ShopUIState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2 id="service">Service</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>ShopServiceはショップの取引ロジックを管理します：</p>
+                        <pre><code>const shopService = game.services.shop;
+
+// アイテム購入
+const buyResult = shopService.buyItem(character, shopItemIndex, quantity);
+if (buyResult.success) {
+  console.log('購入成功:', buyResult.moneySpent, 'G支払い');
+} else {
+  console.log('購入失敗:', buyResult.failureReason);
+}
+
+// アイテム売却
+const sellResult = shopService.sellItem(character, itemId, quantity);
+if (sellResult.success) {
+  console.log('売却成功:', sellResult.moneyGained, 'G獲得');
+} else {
+  console.log('売却失敗:', sellResult.failureReason);
+}</code></pre>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>buyItem</td>
+                                    <td>character: Character, shopItemIndex: number, quantity: number</td>
+                                    <td>BuyResult</td>
+                                    <td>アイテムを購入する</td>
+                                </tr>
+                                <tr>
+                                    <td>sellItem</td>
+                                    <td>character: Character, itemId: string, quantity: number</td>
+                                    <td>SellResult</td>
+                                    <td>アイテムを売却する</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2 id="core-engine">Core Engine</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>Core Engineは価格計算とバリデーションを行います：</p>
+                        <pre><code>const engine = game.engine;
+
+// 価格計算
+const buyPrice = engine.calculateBuyPrice(item, basePrice);
+const sellPrice = engine.calculateSellPrice(item, buyPrice);
+
+// 購入可能判定
+const canBuy = engine.checkCanBuy(character, item, price, quantity);
+
+// 売却可能判定
+const canSell = engine.checkCanSell(character, itemId, quantity);</code></pre>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>calculateBuyPrice</td>
+                                    <td>item: Item, basePrice: number</td>
+                                    <td>number</td>
+                                    <td>購入価格を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateSellPrice</td>
+                                    <td>item: Item, buyPrice: number</td>
+                                    <td>number</td>
+                                    <td>売却価格を計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkCanBuy</td>
+                                    <td>character: Character, item: Item, price: number, quantity: number</td>
+                                    <td>boolean</td>
+                                    <td>購入可能か判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkCanSell</td>
+                                    <td>character: Character, itemId: string, quantity: number</td>
+                                    <td>boolean</td>
+                                    <td>売却可能か判定する</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2>次のステップ</h2>
+                        <div class="card">
+                            <ul>
+                                <li><a href="item-controller.html">アイテム</a> - アイテム使用フロー</li>
+                                <li><a href="inventory-controller.html">インベントリ管理</a> - アイテムの管理</li>
+                                <li><a href="enhance-controller.html">装備強化</a> - 装備の強化システム</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 GEasy Kit. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
