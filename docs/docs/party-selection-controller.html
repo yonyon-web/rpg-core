@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パーティ選択(PartySelectionController) - GEasy Kit</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../lib/syntax-highlight.css">
+    <script src="../lib/syntax-highlight.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="../index.html" class="logo">GEasy Kit</a>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">ホーム</a></li>
+                        <li><a href="index.html">ドキュメント</a></li>
+                        <li><a href="../customization/index.html">カスタマイズ</a></li>
+                        <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="docs-section">
+            <div class="container">
+                <div class="docs-layout">
+                    <aside class="docs-sidebar">
+                        <h3>パーティ選択</h3>
+                        <ul>
+                            <li><a href="#overview" class="active">機能の概要</a></li>
+                            <li><a href="#headless-ui">Headless UI</a></li>
+                            <li><a href="#service">Service</a></li>
+                            <li><a href="#core-engine">Core Engine</a></li>
+                        </ul>
+                        <h4 style="margin-top: 2rem;">関連ページ</h4>
+                        <ul>
+                            <li><a href="party.html">← パーティ編成</a></li>
+                            <li><a href="index.html">ドキュメントTOP →</a></li>
+                        </ul>
+                    </aside>
+
+                    <div class="docs-content">
+                        <h1 id="overview">パーティ選択(PartySelectionController)</h1>
+                        
+                        <h2>機能の概要</h2>
+                        <p>
+                            PartySelectionControllerは、複数のパーティから編成するパーティを選択する機能を提供します。
+                            複数パーティの管理とアクティブパーティの選択を行い、PartyControllerと組み合わせて使用します。
+                        </p>
+
+                        <div class="card">
+                            <h3>🎯 主な機能</h3>
+                            <ul>
+                                <li><strong>複数パーティ管理</strong>: 複数のパーティ情報を管理</li>
+                                <li><strong>パーティ選択</strong>: アクティブなパーティを選択</li>
+                                <li><strong>パーティ追加・削除</strong>: パーティの動的な追加・削除</li>
+                                <li><strong>パーティ情報更新</strong>: 名前やメンバーの更新</li>
+                            </ul>
+                        </div>
+
+                        <h2 id="headless-ui">Headless UI</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>PartySelectionControllerを使う基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+
+// パーティ選択コントローラーの初期化
+const partySelectionController = game.controllers.partySelection();
+
+// パーティ情報を登録
+const parties = [
+  { id: 'party-a', name: 'メインパーティ', members: [hero, warrior] },
+  { id: 'party-b', name: 'サブパーティ', members: [mage, healer] },
+];
+partySelectionController.setParties(parties);
+
+// 状態を購読
+partySelectionController.subscribe((state) => {
+  console.log('パーティ一覧:', state.parties);
+  console.log('選択中:', state.selectedParty);
+  updatePartyList(state);
+});
+
+// イベントを購読
+partySelectionController.on('party-selected', (data) => {
+  console.log('パーティ選択:', data.party);
+  loadPartyForBattle(data.party);
+});
+
+partySelectionController.on('party-added', (data) => {
+  console.log('パーティ追加:', data.party);
+  showPartyAddedMessage(data.party);
+});
+
+// パーティを選択
+partySelectionController.selectParty('party-a');
+
+// 選択されたパーティでPartyControllerを使用
+const selected = partySelectionController.getSelectedParty();
+if (selected) {
+  partyController.startPartyManagement(selected.members, availableMembers);
+}</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>parties-updated</td>
+                                    <td>{ parties }</td>
+                                    <td>パーティ一覧が更新されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>party-selected</td>
+                                    <td>{ party }</td>
+                                    <td>パーティが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>party-added</td>
+                                    <td>{ party }</td>
+                                    <td>パーティが追加されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>party-removed</td>
+                                    <td>{ party }</td>
+                                    <td>パーティが削除されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>party-updated</td>
+                                    <td>{ party }</td>
+                                    <td>パーティ情報が更新されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>selection-cleared</td>
+                                    <td>{}</td>
+                                    <td>パーティ選択がクリアされたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>selection-failed</td>
+                                    <td>{ reason, partyId }</td>
+                                    <td>選択や操作が失敗したとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>パーティ選択フロー</h3>
+                        <p>PartySelectionControllerは以下の流れでパーティ選択を進行します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">パーティ一覧設定<br/><code>setParties()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">パーティ表示</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">パーティ選択<br/><code>selectParty()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">パーティ存在判定</div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">存在</span>
+                                        <div class="arrow-down">↓</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">なし</span>
+                                        <div class="arrow-down">→エラー</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">選択完了<br/>(PartyControllerへ)</div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">パーティ編成開始</div>
+                            </div>
+                        </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>パーティ選択の流れを制御するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>setParties(parties)</code> - パーティ一覧を設定</li>
+                            <li><code>selectParty(partyId)</code> - パーティを選択</li>
+                            <li><code>clearSelection()</code> - 選択をクリア</li>
+                            <li><code>addParty(party)</code> - パーティを追加</li>
+                            <li><code>removeParty(partyId)</code> - パーティを削除</li>
+                            <li><code>updateParty(partyId, updates)</code> - パーティ情報を更新</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>parties</td>
+                                    <td>PartyInfo[]</td>
+                                    <td>パーティ一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedPartyId</td>
+                                    <td>string | null</td>
+                                    <td>選択中のパーティID</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedParty</td>
+                                    <td>PartyInfo | null</td>
+                                    <td>選択中のパーティ情報</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>PartyInfo型</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>id</td>
+                                    <td>string</td>
+                                    <td>パーティID（一意）</td>
+                                </tr>
+                                <tr>
+                                    <td>name</td>
+                                    <td>string</td>
+                                    <td>パーティ名</td>
+                                </tr>
+                                <tr>
+                                    <td>members</td>
+                                    <td>Combatant[]</td>
+                                    <td>パーティメンバー</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>setParties</td>
+                                    <td>parties: PartyInfo[]</td>
+                                    <td>void</td>
+                                    <td>パーティ一覧を設定する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectParty</td>
+                                    <td>partyId: string</td>
+                                    <td>boolean</td>
+                                    <td>パーティを選択する（成功時true）</td>
+                                </tr>
+                                <tr>
+                                    <td>clearSelection</td>
+                                    <td>-</td>
+                                    <td>void</td>
+                                    <td>パーティ選択をクリアする</td>
+                                </tr>
+                                <tr>
+                                    <td>addParty</td>
+                                    <td>party: PartyInfo</td>
+                                    <td>void</td>
+                                    <td>パーティを追加する</td>
+                                </tr>
+                                <tr>
+                                    <td>removeParty</td>
+                                    <td>partyId: string</td>
+                                    <td>boolean</td>
+                                    <td>パーティを削除する（成功時true）</td>
+                                </tr>
+                                <tr>
+                                    <td>updateParty</td>
+                                    <td>partyId: string, updates: Partial&lt;PartyInfo&gt;</td>
+                                    <td>boolean</td>
+                                    <td>パーティ情報を更新する（成功時true）</td>
+                                </tr>
+                                <tr>
+                                    <td>getParty</td>
+                                    <td>partyId: string</td>
+                                    <td>PartyInfo | null</td>
+                                    <td>パーティIDでパーティを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>getSelectedParty</td>
+                                    <td>-</td>
+                                    <td>PartyInfo | null</td>
+                                    <td>選択中のパーティを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>PartySelectionState</td>
+                                    <td>現在の状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: PartySelectionState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>cleanup</td>
+                                    <td>-</td>
+                                    <td>void</td>
+                                    <td>リソースをクリーンアップする</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2 id="service">Service</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>PartySelectionControllerは主にHeadless UIレイヤーで動作し、専用のServiceレイヤーはありません。
+                        PartyServiceと連携して使用することで、パーティの永続化や状態管理を行います：</p>
+                        <pre><code>const partyService = game.services.party;
+const partySelectionController = game.controllers.partySelection();
+
+// Serviceから全パーティを取得してコントローラーに設定
+const allParties = await partyService.getAllParties();
+partySelectionController.setParties(allParties);
+
+// 選択されたパーティをServiceに保存
+partySelectionController.on('party-selected', async (data) => {
+  await partyService.setActiveParty(data.party.id);
+});</code></pre>
+
+                        <h2 id="core-engine">Core Engine</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>PartySelectionControllerはUI制御に特化しているため、専用のCore Engine機能はありません。
+                        パーティの能力計算などはPartyに関するCore Engine機能を使用します：</p>
+                        <pre><code>const engine = game.engine;
+
+// パーティステータス計算（PartyController関連）
+const stats = engine.calculatePartyStats(party);
+
+// パーティバランス判定
+const balance = engine.checkPartyBalance(party);</code></pre>
+
+                        <h2>PartyControllerとの連携</h2>
+                        <div class="card">
+                            <h3>使い分けのポイント</h3>
+                            <ul>
+                                <li><strong>PartySelectionController</strong>: 複数のパーティから1つを選択する</li>
+                                <li><strong>PartyController</strong>: 選択されたパーティのメンバー編成を行う</li>
+                            </ul>
+                            <p>典型的な使用フローは以下のようになります：</p>
+                            <ol>
+                                <li>PartySelectionControllerで編成するパーティを選択</li>
+                                <li>選択されたパーティ情報をPartyControllerに渡す</li>
+                                <li>PartyControllerでメンバーの追加・削除・並び替えを行う</li>
+                                <li>編成完了後、PartySelectionControllerのパーティ情報を更新</li>
+                            </ol>
+                        </div>
+
+                        <h2>次のステップ</h2>
+                        <div class="card">
+                            <ul>
+                                <li><a href="party.html">パーティ編成</a> - 選択したパーティのメンバー管理</li>
+                                <li><a href="battle.html">戦闘システム</a> - パーティで戦闘</li>
+                                <li><a href="character-growth.html">キャラクター成長</a> - メンバーの育成</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 GEasy Kit. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

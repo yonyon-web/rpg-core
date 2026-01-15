@@ -33,9 +33,7 @@
                         <h3>アイテム</h3>
                         <ul>
                             <li><a href="#overview" class="active">機能の概要</a></li>
-                            <li><a href="#headless-ui">Headless UI</a></li>
-                            <li><a href="#service">Service</a></li>
-                            <li><a href="#core-engine">Core Engine</a></li>
+                            <li><a href="#controllers">コントローラー一覧</a></li>
                         </ul>
                         <h4 style="margin-top: 2rem;">関連ページ</h4>
                         <ul>
@@ -63,140 +61,72 @@
                             </ul>
                         </div>
 
-                        <h2 id="headless-ui">Headless UI</h2>
+                        <h2 id="controllers">コントローラー一覧</h2>
+                        <p>アイテムシステムは以下のコントローラーで構成されています。各コントローラーの詳細は個別ページをご覧ください。</p>
+
+                        <div class="feature-list" style="margin-top: 2rem;">
+                            <div class="feature-list-item">
+                                <div class="feature-list-icon">📦</div>
+                                <div class="feature-list-content">
+                                    <h3><a href="item-controller.html">ItemController</a></h3>
+                                    <p>戦闘中・フィールドでのアイテム使用フローを管理します。アイテムの選択、ターゲットの選択、使用実行までの一連の流れを制御します。</p>
+                                </div>
+                                <a href="item-controller.html" class="feature-list-link">→</a>
+                            </div>
+
+                            <div class="feature-list-item">
+                                <div class="feature-list-icon">🎒</div>
+                                <div class="feature-list-content">
+                                    <h3><a href="inventory-controller.html">InventoryController</a></h3>
+                                    <p>アイテムの追加・削除・整理、フィルタリング、ソートなど、インベントリの管理機能を提供します。</p>
+                                </div>
+                                <a href="inventory-controller.html" class="feature-list-link">→</a>
+                            </div>
+
+                            <div class="feature-list-item">
+                                <div class="feature-list-icon">⚔️</div>
+                                <div class="feature-list-content">
+                                    <h3><a href="equipment-controller.html">EquipmentController</a></h3>
+                                    <p>武器・防具の装備変更を管理します。装備スロットの選択、装備可能アイテムの表示、装備変更時のステータス変化を提供します。</p>
+                                </div>
+                                <a href="equipment-controller.html" class="feature-list-link">→</a>
+                            </div>
+
+                            <div class="feature-list-item">
+                                <div class="feature-list-icon">🏪</div>
+                                <div class="feature-list-content">
+                                    <h3><a href="#shop-controller">ShopController</a></h3>
+                                    <p>アイテムの購入・売却を管理します。ショップモードの切り替え、数量選択、取引実行などの機能を提供します。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 id="shop-controller" style="margin-top: 3rem;">ShopController</h2>
+                        
+                        <h2 id="shop-controller" style="margin-top: 3rem;">ShopController</h2>
                         
                         <h3>基本的な使い方</h3>
-                        <p>ItemController、InventoryController、EquipmentControllerを使う基本的な例です：</p>
+                        <p>ShopControllerを使う基本的な例です：</p>
                         <pre><code>import { GEasyKit } from 'geasy-kit';
 
 const game = new GEasyKit();
 
-// アイテム使用
-const itemController = game.controllers.item();
-await itemController.startItemUse('battle'); // 'battle' or 'field'
+// ショップ
+const shopController = game.controllers.shop();
+await shopController.startShop(shopItems);
 
-itemController.on('item-selected', (data) => {
-  console.log('選択されたアイテム:', data.item);
-  showItemInfo(data.item);
+shopController.on('item-bought', (data) => {
+  console.log('購入:', data.item, data.quantity);
+  updateInventory();
 });
 
-// インベントリ管理
-const inventoryController = game.controllers.inventory();
-inventoryController.on('filter-changed', (data) => {
-  console.log('フィルター変更:', data.filter);
-  updateInventoryDisplay();
-});
-
-// 装備変更
-const equipmentController = game.controllers.equipment();
-equipmentController.on('equipment-changed', (data) => {
-  console.log('装備変更:', data.slot, data.newEquipment);
-  updateCharacterStats(data.statChanges);
+shopController.on('item-sold', (data) => {
+  console.log('売却:', data.item, data.quantity);
+  updateMoney(data.totalValue);
 });</code></pre>
 
                         <h3>イベント一覧</h3>
                         <p><code>on()</code>メソッドで購読できるイベントです：</p>
-                        
-                        <h4>ItemController</h4>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>イベント名</th>
-                                    <th>データ</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>context-changed</td>
-                                    <td>{ context }</td>
-                                    <td>コンテキストが変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>stage-changed</td>
-                                    <td>{ stage }</td>
-                                    <td>ステージが変更されたとき</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h4>InventoryController</h4>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>イベント名</th>
-                                    <th>データ</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>filter-changed</td>
-                                    <td>{ filter }</td>
-                                    <td>フィルターが変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>sort-changed</td>
-                                    <td>{ sortBy, sortOrder }</td>
-                                    <td>ソート順が変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>item-selected</td>
-                                    <td>{ slot }</td>
-                                    <td>アイテムが選択されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>item-removed</td>
-                                    <td>{ item, quantity, success }</td>
-                                    <td>アイテムが削除されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>item-discarded</td>
-                                    <td>{ item, quantity }</td>
-                                    <td>アイテムが破棄されたとき</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h4>EquipmentController</h4>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>イベント名</th>
-                                    <th>データ</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>stage-changed</td>
-                                    <td>{ stage }</td>
-                                    <td>ステージが変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>slot-selected</td>
-                                    <td>{ slot }</td>
-                                    <td>装備スロットが選択されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>equipment-selected</td>
-                                    <td>{ equipment }</td>
-                                    <td>装備が選択されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>equipment-changed</td>
-                                    <td>{ slot, oldEquipment, newEquipment, statChanges }</td>
-                                    <td>装備が変更されたとき</td>
-                                </tr>
-                                <tr>
-                                    <td>equipment-unequipped</td>
-                                    <td>{ slot, equipment }</td>
-                                    <td>装備が外されたとき</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h4>ShopController</h4>
                         <table>
                             <thead>
                                 <tr>
@@ -244,89 +174,8 @@ equipmentController.on('equipment-changed', (data) => {
                             </tbody>
                         </table>
                         
-                        <h3>アイテム使用フロー</h3>
-                        <p>ItemControllerは以下の流れでアイテム使用を進行します：</p>
-                        <div class="flow-diagram">
-                            <div class="flow-step">
-                                <div class="flow-node flow-start">使用開始<br/><code>startItemUse()</code></div>
-                                <div class="flow-arrow">↓</div>
-                            </div>
-                            <div class="flow-step">
-                                <div class="flow-node">アイテム選択<br/><code>selectItem()</code></div>
-                                <div class="flow-arrow">↓</div>
-                            </div>
-                            <div class="flow-step">
-                                <div class="flow-node">ターゲット選択<br/><code>selectTarget()</code></div>
-                                <div class="flow-arrow">↓</div>
-                            </div>
-                            <div class="flow-step">
-                                <div class="flow-node">使用実行<br/><code>executeItemUse()</code></div>
-                                <div class="flow-arrow">↓</div>
-                            </div>
-                            <div class="flow-step">
-                                <div class="flow-node flow-end">結果確認</div>
-                            </div>
-                        </div>
-
-                        <h3>フロー制御の関数</h3>
-                        <p>アイテム使用の流れを変更するために以下の関数を使用できます：</p>
-                        <ul>
-                            <li><code>startItemUse(context)</code> - アイテム使用を開始</li>
-                            <li><code>selectItem(itemId)</code> - アイテムを選択</li>
-                            <li><code>selectTarget(targetId)</code> - 対象を選択</li>
-                            <li><code>executeItemUse()</code> - アイテムを使用</li>
-                            <li><code>cancel()</code> - アイテム使用をキャンセル</li>
-                        </ul>
-
-                        <h3>ステート構造</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>プロパティ</th>
-                                    <th>型</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>phase</td>
-                                    <td>string</td>
-                                    <td>現在のフェーズ（'idle' | 'selecting_item' | 'selecting_target' | 'executing'）</td>
-                                </tr>
-                                <tr>
-                                    <td>context</td>
-                                    <td>'battle' | 'field'</td>
-                                    <td>使用コンテキスト</td>
-                                </tr>
-                                <tr>
-                                    <td>selectedItem</td>
-                                    <td>Item | null</td>
-                                    <td>選択中のアイテム</td>
-                                </tr>
-                                <tr>
-                                    <td>selectedTarget</td>
-                                    <td>string | null</td>
-                                    <td>選択中のターゲットID</td>
-                                </tr>
-                                <tr>
-                                    <td>availableItems</td>
-                                    <td>Item[]</td>
-                                    <td>使用可能なアイテム一覧</td>
-                                </tr>
-                                <tr>
-                                    <td>availableTargets</td>
-                                    <td>Target[]</td>
-                                    <td>選択可能なターゲット一覧</td>
-                                </tr>
-                                <tr>
-                                    <td>result</td>
-                                    <td>ItemUseResult | null</td>
-                                    <td>使用結果（実行後のみ）</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
                         <h3>メソッド一覧</h3>
+                        <p>ShopControllerに関連する主要なメソッドは以下の通りです：</p>
                         <table>
                             <thead>
                                 <tr>
@@ -338,214 +187,28 @@ equipmentController.on('equipment-changed', (data) => {
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>startItemUse</td>
-                                    <td>context: 'battle' | 'field'</td>
+                                    <td>startShop</td>
+                                    <td>items: ShopItem[]</td>
                                     <td>Promise&lt;void&gt;</td>
-                                    <td>アイテム使用を開始する</td>
+                                    <td>ショップを開始する</td>
                                 </tr>
                                 <tr>
                                     <td>selectItem</td>
                                     <td>itemId: string</td>
-                                    <td>Promise&lt;void&gt;</td>
-                                    <td>アイテムを選択する</td>
-                                </tr>
-                                <tr>
-                                    <td>selectTarget</td>
-                                    <td>targetId: string</td>
-                                    <td>Promise&lt;void&gt;</td>
-                                    <td>対象を選択する</td>
-                                </tr>
-                                <tr>
-                                    <td>executeItemUse</td>
-                                    <td>-</td>
-                                    <td>Promise&lt;ItemUseResult&gt;</td>
-                                    <td>アイテムを使用する</td>
-                                </tr>
-                                <tr>
-                                    <td>getState</td>
-                                    <td>-</td>
-                                    <td>ItemUseState</td>
-                                    <td>現在の状態を取得する</td>
-                                </tr>
-                                <tr>
-                                    <td>subscribe</td>
-                                    <td>listener: (state: ItemUseState) =&gt; void</td>
-                                    <td>() =&gt; void</td>
-                                    <td>状態変更を購読する（解除関数を返す）</td>
-                                </tr>
-                                <tr>
-                                    <td>on</td>
-                                    <td>event: string, handler: (data: any) =&gt; void</td>
-                                    <td>() =&gt; void</td>
-                                    <td>イベントを購読する（解除関数を返す）</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h2 id="service">Service</h2>
-                        
-                        <h3>基本的な使い方</h3>
-                        <p>ItemServiceとInventoryServiceはアイテム管理を行います：</p>
-                        <pre><code>const itemService = game.services.item;
-const inventoryService = game.services.inventory;
-
-// アイテムを使用
-await itemService.startItemUse('battle');
-const usableItems = itemService.getUsableItems();
-await itemService.selectItem(itemId);
-await itemService.selectTargets([targetId]);
-const result = await itemService.useItem();
-
-// インベントリ管理
-inventoryService.addItem(itemId, quantity);
-inventoryService.removeItem(itemId, quantity);
-const items = inventoryService.getItems();</code></pre>
-
-                        <h3>メソッド一覧 - ItemService</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>メソッド</th>
-                                    <th>引数</th>
-                                    <th>戻り値</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>startItemUse</td>
-                                    <td>context: 'battle' | 'field'</td>
-                                    <td>Promise&lt;void&gt;</td>
-                                    <td>アイテム使用を開始する</td>
-                                </tr>
-                                <tr>
-                                    <td>getUsableItems</td>
-                                    <td>-</td>
-                                    <td>Item[]</td>
-                                    <td>使用可能なアイテムを取得する</td>
-                                </tr>
-                                <tr>
-                                    <td>selectItem</td>
-                                    <td>itemId: string</td>
-                                    <td>Promise&lt;void&gt;</td>
-                                    <td>アイテムを選択する</td>
-                                </tr>
-                                <tr>
-                                    <td>selectTargets</td>
-                                    <td>targetIds: string[]</td>
-                                    <td>Promise&lt;void&gt;</td>
-                                    <td>対象を選択する</td>
-                                </tr>
-                                <tr>
-                                    <td>useItem</td>
-                                    <td>-</td>
-                                    <td>Promise&lt;ItemUseResult&gt;</td>
-                                    <td>アイテムを使用する</td>
-                                </tr>
-                                <tr>
-                                    <td>getState</td>
-                                    <td>-</td>
-                                    <td>ItemUseState</td>
-                                    <td>現在の状態を取得する</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h3>メソッド一覧 - InventoryService</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>メソッド</th>
-                                    <th>引数</th>
-                                    <th>戻り値</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>addItem</td>
-                                    <td>itemId: string, quantity: number</td>
                                     <td>void</td>
-                                    <td>アイテムを追加する</td>
+                                    <td>アイテムを選択する</td>
                                 </tr>
                                 <tr>
-                                    <td>removeItem</td>
+                                    <td>buyItem</td>
                                     <td>itemId: string, quantity: number</td>
-                                    <td>boolean</td>
-                                    <td>アイテムを削除する</td>
+                                    <td>Promise&lt;TradeResult&gt;</td>
+                                    <td>アイテムを購入する</td>
                                 </tr>
                                 <tr>
-                                    <td>getItems</td>
-                                    <td>-</td>
-                                    <td>Item[]</td>
-                                    <td>全アイテムを取得する</td>
-                                </tr>
-                                <tr>
-                                    <td>getItem</td>
-                                    <td>itemId: string</td>
-                                    <td>Item | undefined</td>
-                                    <td>指定されたアイテムを取得する</td>
-                                </tr>
-                                <tr>
-                                    <td>hasItem</td>
+                                    <td>sellItem</td>
                                     <td>itemId: string, quantity: number</td>
-                                    <td>boolean</td>
-                                    <td>アイテムを所持しているか確認する</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h2 id="core-engine">Core Engine</h2>
-                        
-                        <h3>基本的な使い方</h3>
-                        <p>Core Engineはアイテム効果の計算を行います：</p>
-                        <pre><code>const engine = game.engine;
-
-// アイテム効果計算
-const effect = engine.calculateItemEffect(item, user, target);
-console.log('効果量:', effect.value);
-console.log('効果タイプ:', effect.type);
-
-// アイテム使用可否判定
-const canUse = engine.checkItemUsable(item, user, context);
-
-// ターゲット取得
-const targets = engine.getItemTargets(item, context);</code></pre>
-
-                        <h3>メソッド一覧</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>メソッド</th>
-                                    <th>引数</th>
-                                    <th>戻り値</th>
-                                    <th>説明</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>calculateItemEffect</td>
-                                    <td>item: Item, user: Character, target: Character</td>
-                                    <td>ItemEffect</td>
-                                    <td>アイテム効果を計算する</td>
-                                </tr>
-                                <tr>
-                                    <td>checkItemUsable</td>
-                                    <td>item: Item, user: Character, context: 'battle' | 'field'</td>
-                                    <td>boolean</td>
-                                    <td>アイテムが使用可能か判定する</td>
-                                </tr>
-                                <tr>
-                                    <td>getItemTargets</td>
-                                    <td>item: Item, context: BattleContext</td>
-                                    <td>Character[]</td>
-                                    <td>選択可能なターゲットを取得する</td>
-                                </tr>
-                                <tr>
-                                    <td>calculateInventorySpace</td>
-                                    <td>items: Item[]</td>
-                                    <td>number</td>
-                                    <td>インベントリの使用容量を計算する</td>
+                                    <td>Promise&lt;TradeResult&gt;</td>
+                                    <td>アイテムを売却する</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -553,8 +216,9 @@ const targets = engine.getItemTargets(item, context);</code></pre>
                         <h2>次のステップ</h2>
                         <div class="card">
                             <ul>
-                                <li><a href="battle.html">戦闘システム</a> - アイテムを戦闘で使用</li>
-                                <li><a href="character-growth.html">キャラクター成長</a> - アイテムによる成長</li>
+                                <li><a href="item-controller.html">ItemController</a> - アイテム使用の詳細</li>
+                                <li><a href="inventory-controller.html">InventoryController</a> - インベントリ管理の詳細</li>
+                                <li><a href="equipment-controller.html">EquipmentController</a> - 装備システムの詳細</li>
                                 <li><a href="../customization/index.html">カスタマイズガイド</a> - アイテムシステムのカスタマイズ例</li>
                             </ul>
                         </div>
