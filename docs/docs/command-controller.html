@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コマンド選択(CommandController) - GEasy Kit</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../lib/syntax-highlight.css">
+    <script src="../lib/syntax-highlight.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="container">
+                <div class="nav-content">
+                    <a href="../index.html" class="logo">GEasy Kit</a>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">ホーム</a></li>
+                        <li><a href="index.html">ドキュメント</a></li>
+                        <li><a href="../customization/index.html">カスタマイズ</a></li>
+                        <li><a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="docs-section">
+            <div class="container">
+                <div class="docs-layout">
+                    <aside class="docs-sidebar">
+                        <h3>コマンド選択(CommandController)</h3>
+                        <ul>
+                            <li><a href="#overview" class="active">機能の概要</a></li>
+                            <li><a href="#headless-ui">Headless UI</a></li>
+                            <li><a href="#service">Service</a></li>
+                            <li><a href="#core-engine">Core Engine</a></li>
+                        </ul>
+                        <h4 style="margin-top: 2rem;">関連ページ</h4>
+                        <ul>
+                            <li><a href="battle.html">← 戦闘システム</a></li>
+                            <li><a href="item-controller.html">アイテム使用 →</a></li>
+                        </ul>
+                    </aside>
+
+                    <div class="docs-content">
+                        <h1 id="overview">コマンド選択(CommandController)</h1>
+                        
+                        <h2>機能の概要</h2>
+                        <p>
+                            CommandControllerは、戦闘中のコマンド選択UIを管理します。
+                            攻撃、スキル、アイテム、防御などのコマンド選択、ターゲット選択、ダメージプレビューを提供します。
+                        </p>
+
+                        <div class="card">
+                            <h3>🎯 主な機能</h3>
+                            <ul>
+                                <li><strong>コマンド選択</strong>: 攻撃、スキル、アイテム、防御の選択</li>
+                                <li><strong>スキル選択</strong>: 使用可能なスキルから選択</li>
+                                <li><strong>アイテム選択</strong>: 使用可能なアイテムから選択</li>
+                                <li><strong>ターゲット選択</strong>: 攻撃対象の選択</li>
+                                <li><strong>ダメージプレビュー</strong>: 予想ダメージの表示</li>
+                                <li><strong>カーソル操作</strong>: 上下移動によるUI操作</li>
+                            </ul>
+                        </div>
+
+                        <h2 id="headless-ui">Headless UI</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>CommandControllerを使う基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+
+// コマンド選択開始
+const commandController = game.controllers.command();
+const actor = party.members[0];
+const battleState = game.battle.getState();
+
+commandController.startCommandSelection(actor, battleState);
+
+// イベント購読
+commandController.on('command-selected', (data) => {
+  console.log('選択されたコマンド:', data.command);
+  updateCommandDisplay(data.command);
+});
+
+commandController.on('skill-selected', (data) => {
+  console.log('選択されたスキル:', data.skill);
+  showSkillInfo(data.skill);
+});
+
+commandController.on('target-selected', (data) => {
+  console.log('選択されたターゲット:', data.target);
+  highlightTarget(data.target);
+});
+
+commandController.on('action-confirmed', (data) => {
+  console.log('アクション確定:', data.action);
+  executeBattleAction(data.action);
+});
+
+// コマンド選択
+commandController.selectCommand('attack');  // または 'skill', 'item', 'defend'
+
+// スキル選択（'skill'コマンド選択後）
+commandController.selectSkill(fireSkill);
+
+// ターゲット選択
+commandController.selectTarget(enemy);
+
+// カーソル移動
+commandController.moveCursor(1);  // 下へ移動（-1で上へ）
+
+// ダメージプレビュー
+commandController.calculateDamagePreview(enemy);
+
+// アクション確定
+commandController.confirmAction();
+
+// キャンセル
+commandController.cancel();</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>command-selected</td>
+                                    <td>{ command }</td>
+                                    <td>コマンドが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>skill-selected</td>
+                                    <td>{ skill }</td>
+                                    <td>スキルが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>item-selected</td>
+                                    <td>{ item }</td>
+                                    <td>アイテムが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>target-selected</td>
+                                    <td>{ target }</td>
+                                    <td>ターゲットが選択されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>action-confirmed</td>
+                                    <td>{ action }</td>
+                                    <td>アクションが確定されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>action-cancelled</td>
+                                    <td>{}</td>
+                                    <td>アクションがキャンセルされたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h3>コマンド選択フロー</h3>
+                        <p>CommandControllerは以下の流れでコマンド選択を進行します：</p>
+                        <div class="flow-diagram">
+                            <div class="flow-step">
+                                <div class="flow-node flow-start">選択開始<br/><code>startCommandSelection()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">コマンド選択<br/><code>selectCommand()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-decision">コマンドタイプ</div>
+                                <div class="flow-branch">
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">攻撃</span>
+                                        <div class="arrow-down">→ターゲット選択</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">スキル</span>
+                                        <div class="arrow-down">→スキル選択</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">アイテム</span>
+                                        <div class="arrow-down">→アイテム選択</div>
+                                    </div>
+                                    <div class="flow-arrow-branch">
+                                        <span class="branch-label">防御</span>
+                                        <div class="arrow-down">→確定</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">ターゲット選択<br/><code>selectTarget()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node">アクション確定<br/><code>confirmAction()</code></div>
+                                <div class="flow-arrow">↓</div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-node flow-end">戦闘実行</div>
+                            </div>
+                        </div>
+
+                        <h3>フロー制御の関数</h3>
+                        <p>コマンド選択の流れを制御するために以下の関数を使用できます：</p>
+                        <ul>
+                            <li><code>startCommandSelection(actor, battleState)</code> - コマンド選択を開始</li>
+                            <li><code>selectCommand(command)</code> - コマンドを選択（'attack', 'skill', 'item', 'defend'）</li>
+                            <li><code>selectSkill(skill)</code> - スキルを選択</li>
+                            <li><code>selectItem(item)</code> - アイテムを選択</li>
+                            <li><code>selectTarget(target)</code> - ターゲットを選択</li>
+                            <li><code>moveCursor(direction)</code> - カーソルを移動（1: 下、-1: 上）</li>
+                            <li><code>calculateDamagePreview(target)</code> - ダメージプレビューを計算</li>
+                            <li><code>confirmAction()</code> - アクションを確定</li>
+                            <li><code>cancel()</code> - 選択をキャンセル</li>
+                        </ul>
+
+                        <h3>ステート構造</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>プロパティ</th>
+                                    <th>型</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>stage</td>
+                                    <td>string</td>
+                                    <td>現在のステージ（'selecting-command' | 'selecting-skill' | 'selecting-item' | 'selecting-target' | 'confirmed'）</td>
+                                </tr>
+                                <tr>
+                                    <td>actor</td>
+                                    <td>Character | null</td>
+                                    <td>行動するキャラクター</td>
+                                </tr>
+                                <tr>
+                                    <td>availableCommands</td>
+                                    <td>string[]</td>
+                                    <td>選択可能なコマンド一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>availableSkills</td>
+                                    <td>Skill[]</td>
+                                    <td>使用可能なスキル一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>availableItems</td>
+                                    <td>Item[]</td>
+                                    <td>使用可能なアイテム一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>availableTargets</td>
+                                    <td>Combatant[]</td>
+                                    <td>選択可能なターゲット一覧</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedCommand</td>
+                                    <td>string | null</td>
+                                    <td>選択されたコマンド</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedSkill</td>
+                                    <td>Skill | null</td>
+                                    <td>選択されたスキル</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedItem</td>
+                                    <td>Item | null</td>
+                                    <td>選択されたアイテム</td>
+                                </tr>
+                                <tr>
+                                    <td>selectedTargets</td>
+                                    <td>Combatant[]</td>
+                                    <td>選択されたターゲット</td>
+                                </tr>
+                                <tr>
+                                    <td>cursorIndex</td>
+                                    <td>number</td>
+                                    <td>現在のカーソル位置</td>
+                                </tr>
+                                <tr>
+                                    <td>damagePreview</td>
+                                    <td>number | null</td>
+                                    <td>予想ダメージ</td>
+                                </tr>
+                                <tr>
+                                    <td>targetPreview</td>
+                                    <td>Combatant | null</td>
+                                    <td>プレビュー対象</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>startCommandSelection</td>
+                                    <td>actor: Character, battleState: BattleState</td>
+                                    <td>void</td>
+                                    <td>コマンド選択を開始する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectCommand</td>
+                                    <td>command: string</td>
+                                    <td>void</td>
+                                    <td>コマンドを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectSkill</td>
+                                    <td>skill: Skill</td>
+                                    <td>void</td>
+                                    <td>スキルを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectItem</td>
+                                    <td>item: Item</td>
+                                    <td>void</td>
+                                    <td>アイテムを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectTarget</td>
+                                    <td>target: Combatant</td>
+                                    <td>void</td>
+                                    <td>ターゲットを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>moveCursor</td>
+                                    <td>direction: number</td>
+                                    <td>void</td>
+                                    <td>カーソルを移動する（1: 下、-1: 上）</td>
+                                </tr>
+                                <tr>
+                                    <td>calculateDamagePreview</td>
+                                    <td>target: Combatant</td>
+                                    <td>void</td>
+                                    <td>ダメージプレビューを計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>confirmAction</td>
+                                    <td>-</td>
+                                    <td>void</td>
+                                    <td>アクションを確定する</td>
+                                </tr>
+                                <tr>
+                                    <td>cancel</td>
+                                    <td>-</td>
+                                    <td>void</td>
+                                    <td>選択をキャンセルする</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>CommandUIState</td>
+                                    <td>現在の状態を取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>subscribe</td>
+                                    <td>listener: (state: CommandUIState) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>状態変更を購読する（解除関数を返す）</td>
+                                </tr>
+                                <tr>
+                                    <td>on</td>
+                                    <td>event: string, handler: (data: any) =&gt; void</td>
+                                    <td>() =&gt; void</td>
+                                    <td>イベントを購読する（解除関数を返す）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2 id="service">Service</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>CommandServiceはコマンド選択のビジネスロジックを管理します：</p>
+                        <pre><code>const commandService = game.services.command;
+
+// コマンド選択開始
+commandService.startCommandSelection(actor, battleState);
+
+// 利用可能なコマンドを取得
+const availableCommands = commandService.getAvailableCommands();
+
+// コマンド選択
+commandService.selectCommand('attack');
+
+// 利用可能なスキルを取得
+const availableSkills = commandService.getAvailableSkills();
+
+// 利用可能なターゲットを取得
+const availableTargets = commandService.getAvailableTargets();
+
+// 状態を取得
+const commandState = commandService.getState();</code></pre>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>startCommandSelection</td>
+                                    <td>actor: Character, battleState: BattleState</td>
+                                    <td>CommandState</td>
+                                    <td>コマンド選択を開始する</td>
+                                </tr>
+                                <tr>
+                                    <td>selectCommand</td>
+                                    <td>command: string</td>
+                                    <td>void</td>
+                                    <td>コマンドを選択する</td>
+                                </tr>
+                                <tr>
+                                    <td>getAvailableCommands</td>
+                                    <td>-</td>
+                                    <td>string[]</td>
+                                    <td>利用可能なコマンドを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>getAvailableSkills</td>
+                                    <td>-</td>
+                                    <td>Skill[]</td>
+                                    <td>利用可能なスキルを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>getAvailableTargets</td>
+                                    <td>-</td>
+                                    <td>Combatant[]</td>
+                                    <td>利用可能なターゲットを取得する</td>
+                                </tr>
+                                <tr>
+                                    <td>getState</td>
+                                    <td>-</td>
+                                    <td>CommandState</td>
+                                    <td>現在の状態を取得する</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2 id="core-engine">Core Engine</h2>
+                        
+                        <h3>基本的な使い方</h3>
+                        <p>Core Engineはダメージ計算や行動判定を行います：</p>
+                        <pre><code>const engine = game.engine;
+
+// ダメージ計算
+const damageResult = engine.calculateDamage(attacker, target, skill, config);
+console.log('ダメージ:', damageResult.finalDamage);
+console.log('クリティカル:', damageResult.isCritical);
+
+// スキル使用可能判定
+const canUseSkill = engine.checkSkillUsable(character, skill);
+
+// ターゲット取得
+const targets = engine.getValidTargets(skill, battleState);</code></pre>
+
+                        <h3>メソッド一覧</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>メソッド</th>
+                                    <th>引数</th>
+                                    <th>戻り値</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>calculateDamage</td>
+                                    <td>attacker: Character, target: Combatant, skill: Skill, config: GameConfig</td>
+                                    <td>DamageResult</td>
+                                    <td>ダメージを計算する</td>
+                                </tr>
+                                <tr>
+                                    <td>checkSkillUsable</td>
+                                    <td>character: Character, skill: Skill</td>
+                                    <td>boolean</td>
+                                    <td>スキルが使用可能か判定する</td>
+                                </tr>
+                                <tr>
+                                    <td>getValidTargets</td>
+                                    <td>skill: Skill, battleState: BattleState</td>
+                                    <td>Combatant[]</td>
+                                    <td>有効なターゲットを取得する</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2>次のステップ</h2>
+                        <div class="card">
+                            <ul>
+                                <li><a href="battle.html">戦闘システム</a> - 戦闘の全体フロー</li>
+                                <li><a href="item-controller.html">アイテム使用</a> - 戦闘中のアイテム使用</li>
+                                <li><a href="enemy-ai.html">敵AI</a> - 敵の行動決定</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 GEasy Kit. Licensed under ISC.</p>
+            <p>
+                <a href="https://github.com/yonyon-web/GEasy-Kit" target="_blank" rel="noopener">GitHub</a> |
+                <a href="https://github.com/yonyon-web/GEasy-Kit/issues" target="_blank" rel="noopener">Issues</a> |
+                <a href="index.html">Docs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.querySelectorAll('.docs-sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
