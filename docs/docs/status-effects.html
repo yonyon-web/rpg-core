@@ -65,6 +65,60 @@
 
                         <h2 id="headless-ui">Headless UI</h2>
                         
+                        <h3>基本的な使い方</h3>
+                        <p>StatusEffectControllerを使って状態異常を管理する基本的な例です：</p>
+                        <pre><code>import { GEasyKit } from 'geasy-kit';
+
+const game = new GEasyKit();
+const statusEffectController = game.controllers.statusEffect();
+
+// 状態を購読
+statusEffectController.subscribe((state) => {
+  console.log('アクティブな状態異常:', state.activeEffects);
+  updateStatusDisplay(state);
+});
+
+// イベントを購読
+statusEffectController.on('effect-applied', (data) => {
+  console.log('状態異常付与:', data.effect);
+  showEffectAppliedAnimation(data.target, data.effect);
+});
+
+statusEffectController.on('effect-removed', (data) => {
+  console.log('状態異常解除:', data.effectId);
+  showEffectRemovedAnimation(data.target, data.effectId);
+});
+
+// 状態異常を付与
+await statusEffectController.applyEffect(target, poisonEffect);
+
+// ターン経過処理
+await statusEffectController.tick(target);</code></pre>
+
+                        <h3>イベント一覧</h3>
+                        <p><code>on()</code>メソッドで購読できるイベントです：</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>イベント名</th>
+                                    <th>データ</th>
+                                    <th>説明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>effect-applied</td>
+                                    <td>{ target, effect }</td>
+                                    <td>状態異常が付与されたとき</td>
+                                </tr>
+                                <tr>
+                                    <td>effect-removed</td>
+                                    <td>{ target, effectId }</td>
+                                    <td>状態異常が解除されたとき</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
                         <h3>状態異常フロー</h3>
                         <p>StatusEffectControllerは以下の流れで状態異常を管理します：</p>
                         <div class="flow-diagram">
