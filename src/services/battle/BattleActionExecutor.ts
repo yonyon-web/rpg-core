@@ -25,19 +25,32 @@ import {
   BASE_ESCAPE_RATE,
   ESCAPE_SPEED_FACTOR
 } from '../../core/combat/constants';
+import { InterruptManager } from '../../core/combat/InterruptManager';
+import { InterruptContext } from '../../types/core/interrupt';
 
 /**
  * BattleActionExecutorクラス
  */
 export class BattleActionExecutor {
   private config: GameConfig;
+  private interruptManager: InterruptManager;
 
   /**
    * コンストラクタ
    * @param config ゲーム設定
+   * @param interruptManager 割り込みマネージャー（オプション）
    */
-  constructor(config: GameConfig) {
+  constructor(config: GameConfig, interruptManager?: InterruptManager) {
     this.config = config;
+    this.interruptManager = interruptManager || new InterruptManager();
+  }
+
+  /**
+   * 割り込みマネージャーを取得
+   * @returns 割り込みマネージャー
+   */
+  getInterruptManager(): InterruptManager {
+    return this.interruptManager;
   }
 
   /**
@@ -50,10 +63,10 @@ export class BattleActionExecutor {
 
     switch (action.type) {
       case 'attack':
-        result = this.executeAttack(action);
+        result = await this.executeAttack(action);
         break;
       case 'skill':
-        result = this.executeSkill(action);
+        result = await this.executeSkill(action);
         break;
       case 'defend':
         result = this.executeDefend(action);
@@ -76,7 +89,7 @@ export class BattleActionExecutor {
   /**
    * 通常攻撃を実行する
    */
-  executeAttack(action: BattleAction): ActionResult {
+  async executeAttack(action: BattleAction): Promise<ActionResult> {
     const attacker = action.actor;
     const target = action.targets[0];
 
@@ -100,18 +113,23 @@ export class BattleActionExecutor {
     // ダメージを適用
     target.currentHp = Math.max(0, target.currentHp - damageResult.finalDamage);
 
-    return {
+    const result: ActionResult = {
       success: true,
       damage: damageResult.finalDamage,
       critical: damageResult.isCritical,
       message: damageResult.isCritical ? 'Critical hit!' : 'Hit!'
     };
+
+    // 割り込み処理を実行
+    await this.executeInterrupts(action, result);
+
+    return result;
   }
 
   /**
    * スキルを実行する
    */
-  executeSkill(action: BattleAction): ActionResult {
+  async executeSkill(action: BattleAction): Promise<ActionResult> {
     const attacker = action.actor;
     const skill = action.skill;
     const target = action.targets[0];
@@ -157,12 +175,17 @@ export class BattleActionExecutor {
     // ダメージを適用
     target.currentHp = Math.max(0, target.currentHp - damageResult.finalDamage);
 
-    return {
+    const result: ActionResult = {
       success: true,
       damage: damageResult.finalDamage,
       critical: damageResult.isCritical,
       message: damageResult.isCritical ? 'Critical hit!' : 'Hit!'
     };
+
+    // 割り込み処理を実行
+    await this.executeInterrupts(action, result);
+
+    return result;
   }
 
   /**
@@ -220,5 +243,27 @@ export class BattleActionExecutor {
     }
 
     return { success: false, message: 'Failed to escape!' };
+  }
+
+  /**
+   * 割り込み処理を実行
+   * @param action 実行されたアクション
+   * @param result アクション結果
+   */
+  private async executeInterrupts(action: BattleAction, result: ActionResult): Promise<void> {
+    const target = action.targets[0];
+    if (!target) {
+      return;
+    }
+
+    const context: InterruptContext = {
+      actor: action.actor,
+      target,
+      result,
+      skill: action.skill
+    };
+
+    // 割り込みを実行
+    await this.interruptManager.executeInterrupts(context);
   }
 }
