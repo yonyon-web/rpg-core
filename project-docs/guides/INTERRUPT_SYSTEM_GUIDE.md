@@ -79,6 +79,28 @@ interruptManager.registerJob('monk', {
 });
 ```
 
+#### 装備個別の割り込み
+
+```typescript
+// 武器「炎の剣」装備時
+interruptManager.registerEquipment('flame-sword', {
+  id: 'flame-sword-burn',
+  name: 'Flame Sword Burn',
+  priority: 85,
+  handler: createStatusInflictWeaponHandler('burn', 0.25, 3, 5), // 25%の確率で火傷
+  enabled: true,
+});
+
+// 鎧「棘の鎧」装備時
+interruptManager.registerEquipment('thorns-armor', {
+  id: 'thorns-reflect',
+  name: 'Thorns Reflection',
+  priority: 60,
+  handler: createThornsArmorHandler(0.3), // 30%のダメージを反射
+  enabled: true,
+});
+```
+
 ## 組み込み割り込みハンドラー
 
 ### createSleepCancelOnDamageHandler
@@ -139,6 +161,11 @@ const handler = createCriticalHealthPowerUpHandler(
 
 ## 武器・装備専用の割り込みハンドラー
 
+**注意**: 装備効果は`registerEquipment`（装備ID指定）または`registerCharacter`（キャラクターID指定）のどちらでも登録できます。
+
+- **`registerEquipment`**: 装備IDで登録。同じ装備を持つ全キャラに効果が適用される
+- **`registerCharacter`**: キャラクターIDで登録。特定キャラのみに効果が適用される
+
 ### createThornsArmorHandler
 
 攻撃を受けた時に攻撃者にダメージを反射する（棘の鎧効果）
@@ -146,12 +173,21 @@ const handler = createCriticalHealthPowerUpHandler(
 ```typescript
 import { createThornsArmorHandler } from 'geasy-kit';
 
-// 鎧「棘の鎧」装備時
+// 装備IDで登録（推奨）：棘の鎧を装備した全キャラに適用
+manager.registerEquipment('thorns-armor', {
+  id: 'thorns-armor-effect',
+  name: 'Thorns Armor',
+  priority: 60,
+  handler: createThornsArmorHandler(0.3), // 30%のダメージを反射
+  enabled: true
+});
+
+// または、特定キャラのみに適用
 manager.registerCharacter('warrior1', {
   id: 'thorns-armor',
   name: 'Thorns Armor',
   priority: 60,
-  handler: createThornsArmorHandler(0.3), // 30%のダメージを反射
+  handler: createThornsArmorHandler(0.3),
   enabled: true
 });
 ```
@@ -163,9 +199,9 @@ manager.registerCharacter('warrior1', {
 ```typescript
 import { createStatusInflictWeaponHandler } from 'geasy-kit';
 
-// 武器「毒の短剣」装備時
-manager.registerCharacter('rogue1', {
-  id: 'poison-dagger',
+// 装備IDで登録（推奨）：毒の短剣を装備した全キャラに適用
+manager.registerEquipment('poison-dagger', {
+  id: 'poison-dagger-effect',
   name: 'Poison Dagger',
   priority: 70,
   handler: createStatusInflictWeaponHandler('poison', 0.3, 3, 5),

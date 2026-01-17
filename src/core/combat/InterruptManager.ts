@@ -97,6 +97,20 @@ export class InterruptManager {
   }
 
   /**
+   * 装備個別の割り込みを登録
+   * 
+   * @param equipmentId - 装備ID
+   * @param definition - 割り込み定義
+   */
+  registerEquipment(equipmentId: string, definition: InterruptDefinition): void {
+    this.interrupts.push({
+      type: 'equipment',
+      targetId: equipmentId,
+      definition
+    });
+  }
+
+  /**
    * 割り込みを削除
    * 
    * @param interruptId - 割り込みID
@@ -173,6 +187,20 @@ export class InterruptManager {
           if ('job' in context.target && 
               context.target.job === registration.targetId) {
             isApplicable = true;
+          }
+          break;
+
+        case 'equipment':
+          // 対象が装備を持っていて、装備IDが一致する場合
+          if (context.target.equipment) {
+            // 装備スロットを走査して、一致する装備IDを探す
+            for (const slot in context.target.equipment) {
+              const equip = context.target.equipment[slot as keyof typeof context.target.equipment];
+              if (equip && equip.id === registration.targetId) {
+                isApplicable = true;
+                break;
+              }
+            }
           }
           break;
       }

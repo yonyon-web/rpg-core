@@ -130,6 +130,22 @@ describe('InterruptManager', () => {
     });
   });
 
+  describe('registerEquipment', () => {
+    it('装備個別の割り込みを登録できる', () => {
+      const definition: InterruptDefinition = {
+        id: 'equipment-interrupt',
+        name: 'Equipment Interrupt',
+        priority: 65,
+        handler: async () => ({ executed: false }),
+        enabled: true,
+      };
+
+      manager.registerEquipment('sword-of-flames', definition);
+      expect(manager.getCount()).toBe(1);
+      expect(manager.getCountByType('equipment')).toBe(1);
+    });
+  });
+
   describe('unregister', () => {
     it('割り込みを削除できる', () => {
       const definition: InterruptDefinition = {
@@ -321,6 +337,86 @@ describe('InterruptManager', () => {
       const results = await manager.executeInterrupts(context);
       expect(executionCount).toBe(1);
       expect(results.length).toBe(1);
+    });
+
+    it('装備IDが一致する場合のみ装備個別の割り込みが実行される', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createCharacter('hero2', 'Warrior');
+
+      // 装備を追加
+      target.equipment = {
+        weapon: {
+          id: 'flame-sword',
+          name: 'Flame Sword',
+          type: 'weapon',
+          levelRequirement: 5,
+          statModifiers: { attack: 20 },
+        },
+      };
+
+      let executionCount = 0;
+      const definition: InterruptDefinition = {
+        id: 'flame-sword-interrupt',
+        name: 'Flame Sword Interrupt',
+        priority: 65,
+        handler: async () => {
+          executionCount++;
+          return { executed: true };
+        },
+        enabled: true,
+      };
+
+      manager.registerEquipment('flame-sword', definition);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 10 },
+      };
+
+      const results = await manager.executeInterrupts(context);
+      expect(executionCount).toBe(1);
+      expect(results.length).toBe(1);
+    });
+
+    it('装備IDが異なる場合は装備個別の割り込みは実行されない', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createCharacter('hero2', 'Warrior');
+
+      // 異なる装備を追加
+      target.equipment = {
+        weapon: {
+          id: 'iron-sword',
+          name: 'Iron Sword',
+          type: 'weapon',
+          levelRequirement: 1,
+          statModifiers: { attack: 10 },
+        },
+      };
+
+      let executionCount = 0;
+      const definition: InterruptDefinition = {
+        id: 'flame-sword-interrupt',
+        name: 'Flame Sword Interrupt',
+        priority: 65,
+        handler: async () => {
+          executionCount++;
+          return { executed: true };
+        },
+        enabled: true,
+      };
+
+      manager.registerEquipment('flame-sword', definition);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 10 },
+      };
+
+      const results = await manager.executeInterrupts(context);
+      expect(executionCount).toBe(0);
+      expect(results.length).toBe(0);
     });
 
     it('優先度順に割り込みが実行される', async () => {

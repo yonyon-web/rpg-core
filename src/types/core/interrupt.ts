@@ -74,8 +74,9 @@ export interface InterruptDefinition {
  * - enemy: 敵個別ルール
  * - character: キャラクター個別ルール
  * - job: ジョブ別ルール
+ * - equipment: 装備個別ルール
  */
-export type InterruptType = 'common' | 'enemy' | 'character' | 'job';
+export type InterruptType = 'common' | 'enemy' | 'character' | 'job' | 'equipment';
 
 /**
  * 割り込み登録情報
