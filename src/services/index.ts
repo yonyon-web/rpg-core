@@ -22,6 +22,9 @@ export * from './party';
 // 敵サービス
 export * from './enemy';
 
+// エンカウントサービス
+export * from './encounter';
+
 // 状態異常サービス
 export * from './status';
 
