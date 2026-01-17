@@ -73,6 +73,7 @@ export class StepCounterStrategy implements EncounterStrategy {
   private stepCount: number = 0;
   private encounterSteps: number;
   private randomRange: number;
+  private targetSteps: number;
 
   /**
    * コンストラクタ
@@ -88,6 +89,7 @@ export class StepCounterStrategy implements EncounterStrategy {
     }
     this.encounterSteps = encounterSteps;
     this.randomRange = randomRange;
+    this.targetSteps = this.calculateTargetSteps();
   }
 
   /**
@@ -96,12 +98,9 @@ export class StepCounterStrategy implements EncounterStrategy {
   checkEncounter(): boolean {
     this.stepCount++;
     
-    // ランダム範囲を考慮したエンカウントステップ数を計算
-    const targetSteps = this.encounterSteps + 
-      Math.floor(Math.random() * (this.randomRange * 2 + 1)) - this.randomRange;
-    
-    if (this.stepCount >= targetSteps) {
+    if (this.stepCount >= this.targetSteps) {
       this.stepCount = 0;
+      this.targetSteps = this.calculateTargetSteps();
       return true;
     }
     
@@ -113,6 +112,15 @@ export class StepCounterStrategy implements EncounterStrategy {
    */
   reset(): void {
     this.stepCount = 0;
+    this.targetSteps = this.calculateTargetSteps();
+  }
+
+  /**
+   * ランダム範囲を考慮した目標ステップ数を計算
+   */
+  private calculateTargetSteps(): number {
+    return this.encounterSteps + 
+      Math.floor(Math.random() * (this.randomRange * 2 + 1)) - this.randomRange;
   }
 
   /**
@@ -131,6 +139,7 @@ export class StepCounterStrategy implements EncounterStrategy {
       throw new Error('Encounter steps must be greater than 0');
     }
     this.encounterSteps = steps;
+    this.targetSteps = this.calculateTargetSteps();
   }
 }
 
