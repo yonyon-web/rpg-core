@@ -211,7 +211,7 @@ export class InterruptManager {
         }
       } catch (error) {
         // エラーが発生しても他の割り込みは続行
-        // エラーはログに記録されるが処理は継続
+        // エラー情報を結果に含める
         results.push({
           executed: false,
           message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
