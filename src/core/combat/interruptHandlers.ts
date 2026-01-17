@@ -236,11 +236,13 @@ export function createHPDrainHandler(drainRate: number = 0.3): InterruptHandler 
  * 
  * @param hpThresholdPercent - HP閾値（%）
  * @param powerMultiplier - 攻撃力倍率
+ * @param duration - 効果の持続ターン数（デフォルト: 99、実質永続）
  * @returns 割り込みハンドラー
  */
 export function createCriticalHealthPowerUpHandler(
   hpThresholdPercent: number = 25,
-  powerMultiplier: number = 1.5
+  powerMultiplier: number = 1.5,
+  duration: number = 99
 ): InterruptHandler {
   return (context: InterruptContext): InterruptResult => {
     const { target } = context;
@@ -269,8 +271,8 @@ export function createCriticalHealthPowerUpHandler(
       name: 'Critical Power',
       description: 'Increased power when HP is low',
       power: powerMultiplier,
-      duration: 99, // 長期間有効
-      maxDuration: 99,
+      duration,
+      maxDuration: duration,
       stackCount: 1,
       maxStack: 1,
       canBeDispelled: false,
