@@ -119,8 +119,8 @@ export class StepCounterStrategy implements EncounterStrategy {
    * ランダム範囲を考慮した目標ステップ数を計算
    */
   private calculateTargetSteps(): number {
-    return this.encounterSteps + 
-      Math.floor(Math.random() * (this.randomRange * 2 + 1)) - this.randomRange;
+    const randomOffset = Math.floor(Math.random() * (this.randomRange * 2 + 1)) - this.randomRange;
+    return Math.max(1, this.encounterSteps + randomOffset);
   }
 
   /**

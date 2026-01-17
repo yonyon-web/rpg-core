@@ -203,13 +203,13 @@ export class EnemyAppearanceService {
       throw new Error(`Pool not found: ${poolId}`);
     }
 
-    if (pool.appearances.length === 1) {
-      throw new Error(`Cannot remove last appearance from pool ${poolId}`);
-    }
-
     const index = pool.appearances.findIndex(app => app.groupType.id === groupTypeId);
     if (index === -1) {
       throw new Error(`Group type ${groupTypeId} not found in pool ${poolId}`);
+    }
+
+    if (pool.appearances.length === 1) {
+      throw new Error(`Cannot remove last appearance from pool ${poolId}`);
     }
 
     pool.appearances.splice(index, 1);
