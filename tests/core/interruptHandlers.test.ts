@@ -8,6 +8,11 @@ import {
   createCounterAttackHandler,
   createHPDrainHandler,
   createCriticalHealthPowerUpHandler,
+  createThornsArmorHandler,
+  createStatusInflictWeaponHandler,
+  createAutoReviveHandler,
+  createLifestealWeaponHandler,
+  createCriticalBonusWeaponHandler,
 } from '../../src/core/combat/interruptHandlers';
 import { InterruptContext } from '../../src/types/core/interrupt';
 import { Character, Enemy } from '../../src/types';
@@ -454,6 +459,267 @@ describe('Interrupt Handlers', () => {
 
       expect(result.executed).toBe(false);
       expect(target.statusEffects.length).toBe(1); // 重複しない
+    });
+  });
+
+  describe('createThornsArmorHandler', () => {
+    it('攻撃を受けた時にダメージを反射する', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+
+      // 反射率100%に設定（テスト用）
+      const handler = createThornsArmorHandler(1.0);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 20 },
+      };
+
+      const initialHp = actor.currentHp;
+      const result = await handler(context);
+
+      expect(result.executed).toBe(true);
+      expect(result.stateChanged).toBe(true);
+      expect(result.message).toContain('reflected');
+      expect(actor.currentHp).toBe(initialHp - 20); // 全ダメージを反射
+    });
+
+    it('ミスした攻撃では反射が発動しない', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+
+      const handler = createThornsArmorHandler(0.5);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, missed: true },
+      };
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(false);
+    });
+  });
+
+  describe('createStatusInflictWeaponHandler', () => {
+    it('攻撃命中時に状態異常を付与する', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+
+      // 付与確率100%に設定（テスト用）
+      const handler = createStatusInflictWeaponHandler('poison', 1.0, 3, 5);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 15 },
+      };
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(true);
+      expect(result.stateChanged).toBe(true);
+      expect(result.message).toContain('poison');
+      expect(target.statusEffects.length).toBe(1);
+      expect(target.statusEffects[0].type).toBe('poison');
+      expect(target.statusEffects[0].duration).toBe(3);
+    });
+
+    it('既に同じ状態異常を持っている場合は重複しない', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+
+      // 既に毒状態
+      target.statusEffects.push({
+        id: 'poison-1',
+        type: 'poison',
+        category: 'dot',
+        name: 'Poison',
+        description: 'Takes damage over time',
+        power: 5,
+        duration: 2,
+        maxDuration: 3,
+        stackCount: 1,
+        maxStack: 3,
+        canBeDispelled: true,
+        appliedAt: Date.now(),
+      });
+
+      const handler = createStatusInflictWeaponHandler('poison', 1.0, 3, 5);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 15 },
+      };
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(false);
+      expect(target.statusEffects.length).toBe(1); // 重複しない
+    });
+  });
+
+  describe('createAutoReviveHandler', () => {
+    it('HPが0になった時に復活する', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createCharacter('mage1', 'Mage');
+      target.currentHp = 10;
+
+      const handler = createAutoReviveHandler(0.3);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 10 },
+      };
+
+      // ダメージでHP0になる
+      target.currentHp = 0;
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(true);
+      expect(result.stateChanged).toBe(true);
+      expect(result.message).toContain('revived');
+      expect(target.currentHp).toBe(30); // 最大HP100の30%
+      expect(target.statusEffects.length).toBe(1); // 使用済みフラグ
+    });
+
+    it('既に復活済みの場合は再度発動しない', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createCharacter('mage1', 'Mage');
+
+      // 使用済みフラグをセット
+      target.statusEffects.push({
+        id: 'auto-revive-used-test',
+        type: 'attack-down',
+        category: 'buff',
+        name: 'Auto-Revive Used',
+        description: 'Auto-revive has been used',
+        power: 1,
+        duration: 999,
+        maxDuration: 999,
+        stackCount: 1,
+        maxStack: 1,
+        canBeDispelled: false,
+        appliedAt: Date.now(),
+        source: 'auto-revive-used',
+      });
+
+      const handler = createAutoReviveHandler(0.3);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 100 },
+      };
+
+      target.currentHp = 0;
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(false);
+      expect(target.currentHp).toBe(0); // 復活しない
+    });
+  });
+
+  describe('createLifestealWeaponHandler', () => {
+    it('攻撃時にHPを吸収する', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      actor.currentHp = 50;
+      const target = createEnemy('enemy1', 'Slime');
+
+      const handler = createLifestealWeaponHandler(0.5, false);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 20 },
+      };
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(true);
+      expect(result.stateChanged).toBe(true);
+      expect(result.message).toContain('drained');
+      expect(actor.currentHp).toBe(60); // 50 + (20 * 0.5)
+    });
+
+    it('物理攻撃のみフラグが有効な場合、魔法攻撃では発動しない', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      actor.currentHp = 50;
+      const target = createEnemy('enemy1', 'Slime');
+
+      const handler = createLifestealWeaponHandler(0.5, true);
+
+      const magicSkill: Skill = {
+        id: 'fire',
+        name: 'Fire',
+        type: 'magic',
+        targetType: 'single-enemy',
+        power: 2.0,
+        accuracy: 1.0,
+        criticalBonus: 0,
+        isGuaranteedHit: true,
+        cost: { mp: 10 },
+        element: 'fire',
+        description: 'Fire magic',
+      };
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 20 },
+        skill: magicSkill,
+      };
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(false);
+      expect(actor.currentHp).toBe(50); // 吸収しない
+    });
+  });
+
+  describe('createCriticalBonusWeaponHandler', () => {
+    it('クリティカルヒット時に追加ダメージを与える', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+
+      const handler = createCriticalBonusWeaponHandler(0.5);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 20, critical: true },
+      };
+
+      const initialHp = target.currentHp;
+      const result = await handler(context);
+
+      expect(result.executed).toBe(true);
+      expect(result.stateChanged).toBe(true);
+      expect(result.message).toContain('Critical bonus');
+      expect(target.currentHp).toBe(initialHp - 10); // 20 * 0.5の追加ダメージ
+    });
+
+    it('クリティカルでない場合は発動しない', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime');
+
+      const handler = createCriticalBonusWeaponHandler(0.5);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 20, critical: false },
+      };
+
+      const result = await handler(context);
+
+      expect(result.executed).toBe(false);
     });
   });
 });

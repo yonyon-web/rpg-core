@@ -137,6 +137,94 @@ const handler = createCriticalHealthPowerUpHandler(
 );
 ```
 
+## 武器・装備専用の割り込みハンドラー
+
+### createThornsArmorHandler
+
+攻撃を受けた時に攻撃者にダメージを反射する（棘の鎧効果）
+
+```typescript
+import { createThornsArmorHandler } from 'geasy-kit';
+
+// 鎧「棘の鎧」装備時
+manager.registerCharacter('warrior1', {
+  id: 'thorns-armor',
+  name: 'Thorns Armor',
+  priority: 60,
+  handler: createThornsArmorHandler(0.3), // 30%のダメージを反射
+  enabled: true
+});
+```
+
+### createStatusInflictWeaponHandler
+
+攻撃が命中した時に一定確率で状態異常を付与する（毒の短剣など）
+
+```typescript
+import { createStatusInflictWeaponHandler } from 'geasy-kit';
+
+// 武器「毒の短剣」装備時
+manager.registerCharacter('rogue1', {
+  id: 'poison-dagger',
+  name: 'Poison Dagger',
+  priority: 70,
+  handler: createStatusInflictWeaponHandler('poison', 0.3, 3, 5),
+  // 30%の確率で毒を3ターン、威力5で付与
+  enabled: true
+});
+```
+
+### createAutoReviveHandler
+
+HPが0になった時に自動的に一度だけ復活する（不死鳥の羽など）
+
+```typescript
+import { createAutoReviveHandler } from 'geasy-kit';
+
+// アクセサリー「不死鳥の羽」装備時
+manager.registerCharacter('mage1', {
+  id: 'phoenix-feather',
+  name: 'Phoenix Feather',
+  priority: 200, // 高優先度で他の処理より先に実行
+  handler: createAutoReviveHandler(0.3), // 最大HPの30%で復活
+  enabled: true
+});
+```
+
+### createLifestealWeaponHandler
+
+攻撃時にダメージの一定割合のHPを吸収する（吸血剣など）
+
+```typescript
+import { createLifestealWeaponHandler } from 'geasy-kit';
+
+// 武器「吸血剣」装備時
+manager.registerCharacter('knight1', {
+  id: 'vampire-sword',
+  name: 'Vampire Sword',
+  priority: 85,
+  handler: createLifestealWeaponHandler(0.2, true), // 物理攻撃の20%を吸収
+  enabled: true
+});
+```
+
+### createCriticalBonusWeaponHandler
+
+クリティカルヒット時に追加ダメージを与える（会心の剣など）
+
+```typescript
+import { createCriticalBonusWeaponHandler } from 'geasy-kit';
+
+// 武器「会心の剣」装備時
+manager.registerCharacter('warrior1', {
+  id: 'critical-sword',
+  name: 'Critical Sword',
+  priority: 90,
+  handler: createCriticalBonusWeaponHandler(0.5), // クリティカル時に50%追加ダメージ
+  enabled: true
+});
+```
+
 ## カスタム割り込みハンドラーの作成
 
 ### 基本的な形
