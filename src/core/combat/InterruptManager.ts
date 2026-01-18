@@ -111,6 +111,48 @@ export class InterruptManager {
   }
 
   /**
+   * スキル個別の割り込みを登録
+   * 
+   * @param skillId - スキルID
+   * @param definition - 割り込み定義
+   */
+  registerSkill(skillId: string, definition: InterruptDefinition): void {
+    this.interrupts.push({
+      type: 'skill',
+      targetId: skillId,
+      definition
+    });
+  }
+
+  /**
+   * 状態異常個別の割り込みを登録
+   * 
+   * @param statusEffectType - 状態異常タイプ
+   * @param definition - 割り込み定義
+   */
+  registerStatusEffect(statusEffectType: string, definition: InterruptDefinition): void {
+    this.interrupts.push({
+      type: 'statusEffect',
+      targetId: statusEffectType,
+      definition
+    });
+  }
+
+  /**
+   * 属性個別の割り込みを登録
+   * 
+   * @param elementType - 属性タイプ
+   * @param definition - 割り込み定義
+   */
+  registerElement(elementType: string, definition: InterruptDefinition): void {
+    this.interrupts.push({
+      type: 'element',
+      targetId: elementType,
+      definition
+    });
+  }
+
+  /**
    * 割り込みを削除
    * 
    * @param interruptId - 割り込みID
@@ -201,6 +243,28 @@ export class InterruptManager {
                 break;
               }
             }
+          }
+          break;
+
+        case 'skill':
+          // 使用されたスキルのIDが一致する場合
+          if (context.skill && context.skill.id === registration.targetId) {
+            isApplicable = true;
+          }
+          break;
+
+        case 'statusEffect':
+          // 対象が指定された状態異常を持っている場合
+          if (context.target.statusEffects && 
+              context.target.statusEffects.some(effect => effect.type === registration.targetId)) {
+            isApplicable = true;
+          }
+          break;
+
+        case 'element':
+          // 使用されたスキルの属性が一致する場合
+          if (context.skill && context.skill.element === registration.targetId) {
+            isApplicable = true;
           }
           break;
       }

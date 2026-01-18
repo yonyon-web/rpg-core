@@ -75,8 +75,11 @@ export interface InterruptDefinition {
  * - character: キャラクター個別ルール
  * - job: ジョブ別ルール
  * - equipment: 装備個別ルール
+ * - skill: スキル個別ルール
+ * - statusEffect: 状態異常個別ルール
+ * - element: 属性個別ルール
  */
-export type InterruptType = 'common' | 'enemy' | 'character' | 'job' | 'equipment';
+export type InterruptType = 'common' | 'enemy' | 'character' | 'job' | 'equipment' | 'skill' | 'statusEffect' | 'element';
 
 /**
  * 割り込み登録情報

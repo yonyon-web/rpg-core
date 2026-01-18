@@ -101,6 +101,57 @@ interruptManager.registerEquipment('thorns-armor', {
 });
 ```
 
+#### スキル個別の割り込み
+
+```typescript
+// スキル「ファイアボール」使用時
+interruptManager.registerSkill('fireball', {
+  id: 'fireball-burn',
+  name: 'Fireball Burn Effect',
+  priority: 90,
+  handler: createStatusInflictWeaponHandler('burn', 0.5, 2, 10), // 50%の確率で火傷
+  enabled: true,
+});
+```
+
+#### 状態異常個別の割り込み
+
+```typescript
+// 毒状態の敵に追加ダメージ
+interruptManager.registerStatusEffect('poison', {
+  id: 'poison-bonus-damage',
+  name: 'Poison Bonus Damage',
+  priority: 80,
+  handler: async (context) => {
+    // 毒状態の敵に20%追加ダメージ
+    const bonusDamage = Math.floor((context.result.damage || 0) * 0.2);
+    if (bonusDamage > 0) {
+      context.target.currentHp = Math.max(0, context.target.currentHp - bonusDamage);
+      return {
+        executed: true,
+        stateChanged: true,
+        message: `Poison weakness: +${bonusDamage} damage!`,
+      };
+    }
+    return { executed: false };
+  },
+  enabled: true,
+});
+```
+
+#### 属性個別の割り込み
+
+```typescript
+// 火属性攻撃時に追加効果
+interruptManager.registerElement('fire', {
+  id: 'fire-element-burn',
+  name: 'Fire Element Burn',
+  priority: 85,
+  handler: createStatusInflictWeaponHandler('burn', 0.3, 3, 8), // 30%の確率で火傷
+  enabled: true,
+});
+```
+
 ## 組み込み割り込みハンドラー
 
 ### createSleepCancelOnDamageHandler

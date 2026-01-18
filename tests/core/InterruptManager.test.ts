@@ -5,6 +5,7 @@
 import { InterruptManager } from '../../src/core/combat/InterruptManager';
 import { InterruptContext, InterruptResult, InterruptDefinition } from '../../src/types/core/interrupt';
 import { Character, Enemy } from '../../src/types';
+import { Skill } from '../../src/types/character/skill';
 
 describe('InterruptManager', () => {
   let manager: InterruptManager;
@@ -143,6 +144,54 @@ describe('InterruptManager', () => {
       manager.registerEquipment('sword-of-flames', definition);
       expect(manager.getCount()).toBe(1);
       expect(manager.getCountByType('equipment')).toBe(1);
+    });
+  });
+
+  describe('registerSkill', () => {
+    it('スキル個別の割り込みを登録できる', () => {
+      const definition: InterruptDefinition = {
+        id: 'skill-interrupt',
+        name: 'Skill Interrupt',
+        priority: 90,
+        handler: async () => ({ executed: false }),
+        enabled: true,
+      };
+
+      manager.registerSkill('fireball', definition);
+      expect(manager.getCount()).toBe(1);
+      expect(manager.getCountByType('skill')).toBe(1);
+    });
+  });
+
+  describe('registerStatusEffect', () => {
+    it('状態異常個別の割り込みを登録できる', () => {
+      const definition: InterruptDefinition = {
+        id: 'status-interrupt',
+        name: 'Status Effect Interrupt',
+        priority: 80,
+        handler: async () => ({ executed: false }),
+        enabled: true,
+      };
+
+      manager.registerStatusEffect('poison', definition);
+      expect(manager.getCount()).toBe(1);
+      expect(manager.getCountByType('statusEffect')).toBe(1);
+    });
+  });
+
+  describe('registerElement', () => {
+    it('属性個別の割り込みを登録できる', () => {
+      const definition: InterruptDefinition = {
+        id: 'element-interrupt',
+        name: 'Element Interrupt',
+        priority: 85,
+        handler: async () => ({ executed: false }),
+        enabled: true,
+      };
+
+      manager.registerElement('fire', definition);
+      expect(manager.getCount()).toBe(1);
+      expect(manager.getCountByType('element')).toBe(1);
     });
   });
 
@@ -417,6 +466,139 @@ describe('InterruptManager', () => {
       const results = await manager.executeInterrupts(context);
       expect(executionCount).toBe(0);
       expect(results.length).toBe(0);
+    });
+
+    it('スキルIDが一致する場合のみスキル個別の割り込みが実行される', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime', 'slime');
+
+      const fireballSkill: Skill = {
+        id: 'fireball',
+        name: 'Fireball',
+        type: 'magic',
+        targetType: 'single-enemy',
+        power: 2.5,
+        accuracy: 1.0,
+        criticalBonus: 0,
+        isGuaranteedHit: true,
+        cost: { mp: 15 },
+        element: 'fire',
+        description: 'Fire magic attack',
+      };
+
+      let executionCount = 0;
+      const definition: InterruptDefinition = {
+        id: 'fireball-interrupt',
+        name: 'Fireball Interrupt',
+        priority: 90,
+        handler: async () => {
+          executionCount++;
+          return { executed: true };
+        },
+        enabled: true,
+      };
+
+      manager.registerSkill('fireball', definition);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 25 },
+        skill: fireballSkill,
+      };
+
+      const results = await manager.executeInterrupts(context);
+      expect(executionCount).toBe(1);
+      expect(results.length).toBe(1);
+    });
+
+    it('状態異常を持っている場合のみ状態異常個別の割り込みが実行される', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime', 'slime');
+
+      // 対象に毒状態を付与
+      target.statusEffects.push({
+        id: 'poison-1',
+        type: 'poison',
+        category: 'dot',
+        name: 'Poison',
+        description: 'Takes damage over time',
+        power: 5,
+        duration: 3,
+        maxDuration: 3,
+        stackCount: 1,
+        maxStack: 3,
+        canBeDispelled: true,
+        appliedAt: Date.now(),
+      });
+
+      let executionCount = 0;
+      const definition: InterruptDefinition = {
+        id: 'poison-interrupt',
+        name: 'Poison Interrupt',
+        priority: 80,
+        handler: async () => {
+          executionCount++;
+          return { executed: true };
+        },
+        enabled: true,
+      };
+
+      manager.registerStatusEffect('poison', definition);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 10 },
+      };
+
+      const results = await manager.executeInterrupts(context);
+      expect(executionCount).toBe(1);
+      expect(results.length).toBe(1);
+    });
+
+    it('属性が一致する場合のみ属性個別の割り込みが実行される', async () => {
+      const actor = createCharacter('hero1', 'Hero');
+      const target = createEnemy('enemy1', 'Slime', 'slime');
+
+      const fireSkill: Skill = {
+        id: 'fire-attack',
+        name: 'Fire Attack',
+        type: 'magic',
+        targetType: 'single-enemy',
+        power: 2.0,
+        accuracy: 1.0,
+        criticalBonus: 0,
+        isGuaranteedHit: true,
+        cost: { mp: 10 },
+        element: 'fire',
+        description: 'Fire element attack',
+      };
+
+      let executionCount = 0;
+      const definition: InterruptDefinition = {
+        id: 'fire-interrupt',
+        name: 'Fire Interrupt',
+        priority: 85,
+        handler: async () => {
+          executionCount++;
+          return { executed: true };
+        },
+        enabled: true,
+      };
+
+      manager.registerElement('fire', definition);
+
+      const context: InterruptContext = {
+        actor,
+        target,
+        result: { success: true, damage: 20 },
+        skill: fireSkill,
+      };
+
+      const results = await manager.executeInterrupts(context);
+      expect(executionCount).toBe(1);
+      expect(results.length).toBe(1);
     });
 
     it('優先度順に割り込みが実行される', async () => {
