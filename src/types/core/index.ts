@@ -5,3 +5,4 @@
 export * from './damage';
 export * from './formulas';
 export * from './gameTypes';
+export * from './interrupt';
