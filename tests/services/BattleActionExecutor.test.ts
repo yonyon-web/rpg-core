@@ -67,7 +67,7 @@ describe('BattleActionExecutor', () => {
   });
 
   describe('executeAttack（通常攻撃）', () => {
-    it('通常攻撃を実行してダメージを与える', () => {
+    it('通常攻撃を実行してダメージを与える', async () => {
       const attacker = createCharacter('hero1', 'Hero');
       const target = createEnemy('enemy1', 'Slime');
       const initialHp = target.currentHp;
@@ -78,7 +78,7 @@ describe('BattleActionExecutor', () => {
         targets: [target],
       };
 
-      const result = executor.executeAttack(action);
+      const result = await executor.executeAttack(action);
 
       expect(result.success).toBe(true);
       // ダメージまたはミスのどちらか
@@ -88,7 +88,7 @@ describe('BattleActionExecutor', () => {
       }
     });
 
-    it('ターゲットがない場合はエラーを返す', () => {
+    it('ターゲットがない場合はエラーを返す', async () => {
       const attacker = createCharacter('hero1', 'Hero');
 
       const action = {
@@ -97,7 +97,7 @@ describe('BattleActionExecutor', () => {
         targets: [],
       };
 
-      const result = executor.executeAttack(action);
+      const result = await executor.executeAttack(action);
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('No target');
@@ -105,7 +105,7 @@ describe('BattleActionExecutor', () => {
   });
 
   describe('executeSkill（スキル実行）', () => {
-    it('ダメージスキルを実行する', () => {
+    it('ダメージスキルを実行する', async () => {
       const skill: Skill = {
         id: 'skill1',
         name: 'Fire',
@@ -133,7 +133,7 @@ describe('BattleActionExecutor', () => {
         targets: [target],
       };
 
-      const result = executor.executeSkill(action);
+      const result = await executor.executeSkill(action);
 
       expect(result.success).toBe(true);
       expect(attacker.currentMp).toBe(initialMp - 10);
@@ -142,7 +142,7 @@ describe('BattleActionExecutor', () => {
       }
     });
 
-    it('回復スキルを実行する', () => {
+    it('回復スキルを実行する', async () => {
       const healSkill: Skill = {
         id: 'heal1',
         name: 'Heal',
@@ -169,14 +169,14 @@ describe('BattleActionExecutor', () => {
       };
 
       const initialHp = attacker.currentHp;
-      const result = executor.executeSkill(action);
+      const result = await executor.executeSkill(action);
 
       expect(result.success).toBe(true);
       expect(result.heal).toBeGreaterThan(0);
       expect(attacker.currentHp).toBeGreaterThan(initialHp);
     });
 
-    it('MPが不足している場合スキルを使用できない', () => {
+    it('MPが不足している場合スキルを使用できない', async () => {
       const skill: Skill = {
         id: 'skill1',
         name: 'Fire',
@@ -202,13 +202,13 @@ describe('BattleActionExecutor', () => {
         targets: [target],
       };
 
-      const result = executor.executeSkill(action);
+      const result = await executor.executeSkill(action);
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('MP');
     });
 
-    it('スキルまたはターゲットが無効な場合はエラーを返す', () => {
+    it('スキルまたはターゲットが無効な場合はエラーを返す', async () => {
       const attacker = createCharacter('hero1', 'Hero');
 
       const action = {
@@ -218,7 +218,7 @@ describe('BattleActionExecutor', () => {
         targets: [],
       };
 
-      const result = executor.executeSkill(action);
+      const result = await executor.executeSkill(action);
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('Invalid skill or target');
